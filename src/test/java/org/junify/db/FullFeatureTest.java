@@ -633,21 +633,30 @@ class FullFeatureTest {
     }
 
     // ===========================================================================================
-    // 17. CORS HEADERS — HTTP
+    // 17. CORS POLICY — HTTP
     // ===========================================================================================
 
+    /**
+     * R-61: this test previously asserted that {@code Access-Control-Allow-Origin} was
+     * always present, which pinned the defect in place — the server advertised wildcard
+     * CORS on the default no-auth path while {@code SecurityConfig.disabled()} documented
+     * "secure default: CORS disabled". The documented policy is the one asserted here;
+     * the explicitly-enabled case is covered by {@code CorsPolicyConsistencyTest}.
+     */
     @Test @Order(170)
-    void http_corsHeadersPresent() throws Exception {
+    void http_corsHeadersAbsentByDefault() throws Exception {
         HttpURLConnection c = (HttpURLConnection)
                 new URL("http://localhost:" + port + "/api/health").openConnection();
         c.setRequestMethod("GET");
         c.setConnectTimeout(5_000);
         c.setReadTimeout(5_000);
         c.setRequestProperty("X-API-Key", API_KEY);
+        c.setRequestProperty("Origin", "https://evil.example");
         c.getResponseCode();
         String corsHeader = c.getHeaderField("Access-Control-Allow-Origin");
         c.disconnect();
-        assertNotNull(corsHeader, "CORS header Access-Control-Allow-Origin must be present");
+        assertNull(corsHeader,
+                "CORS is disabled by default; a server that never opted in must not advertise an allow-origin");
     }
 
     // ===========================================================================================

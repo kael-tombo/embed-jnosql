@@ -317,9 +317,15 @@ public class JunifyDB implements Closeable {
             server.stop();
         }
         server = new JunifyDBServer(this);
-        if (config.securityConfig() != null && config.securityConfig().authEnabled()) {
-            server.applySecurityConfig(config.securityConfig());
-        }
+        // R-61: always apply the security config, not only when auth is enabled.
+        // Applying it only for authenticated servers left the unauthenticated default
+        // path on JunifyDBServer's field defaults (corsEnabled=true, origins="*"),
+        // contradicting SecurityConfig.disabled()'s documented "secure default: CORS
+        // disabled" and making the junifydb.security.cors-enabled setting unreachable
+        // without an API key.
+        server.applySecurityConfig(config.securityConfig() != null
+                ? config.securityConfig()
+                : org.junify.db.config.SecurityConfig.disabled());
         server.start(port);
         return server;
     }

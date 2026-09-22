@@ -87,6 +87,15 @@ DBMS.**
   database" and the code), primary/foreign/unique/check/not-null **constraints**, sequences,
   identity columns, views, stored procedures, functions, triggers, and any query planner or
   `EXPLAIN` (execution is interpretation).
+- **Durability caveat, measured (R-62):** `CREATE TABLE` reports success for a table whose
+  *existence* is not durable — an empty table leaves no collection on disk and disappears on
+  restart — while **rows are safe** (an `INSERT` persists the collection and survives the same
+  restart). The console's SQL workspace therefore says "success" for state that will not
+  persist; the fix needs a storage-SPI hook and is deferred with that decision recorded (B-7).
+- **Missing capability, not a false claim (R-63):** no collection-level delete exists
+  (`DELETE /api/collections/{name}` → 405 for existing collections) and `DROP TABLE` empties a
+  table without removing the collection, so catalogs can only be pruned outside the API. The
+  REST documentation and the console UI claim neither, so no user-visible promise is broken.
 - **Positioning:** valuable for embedded and admin workloads and for SQL-shaped querying of
   documents; must not be advertised as constraint-enforcing or JDBC-compatible.
 
@@ -179,7 +188,17 @@ now documented in `35-demo-project-audit.md`.
 ## Security Verdict
 
 **PASS for an embedded/local-development database; not audited as a hardened multi-tenant
-server.** No credentials or secrets are tracked in the repository (pattern scan clean, and no
+server.** One **High** finding was found and fixed in this round, and it is worth stating
+plainly because of how it survived earlier rounds: the server advertised
+`Access-Control-Allow-Origin: *` on its default path. `SecurityConfig.disabled()` documents
+"secure default: CORS disabled" and a unit test asserts it, but `startServer` applied the
+security config **only when auth was enabled**, so the no-auth server — and the `--api-key`
+path, which enables auth after the server starts — kept wildcard CORS; the metrics SSE stream
+set the wildcard unconditionally. With auth off by default, **any website the operator visited
+could read the whole database**: proven in a real browser by a hostile page on a different
+origin using plain `fetch()`, with no credentials and no interaction. It is now off by default,
+the documented opt-in works without an API key, and the same browser proof is blocked (R-61,
+SEC-06). No credentials or secrets are tracked in the repository (pattern scan clean, and no
 `.env`/keystore/`.pem` in the tree). No public endpoint exposes raw SQL execution beyond the
 Console's own authenticated workspace. Unauthenticated Console access is controlled by the
 auth gate. Identified risks are the Console's dev-oriented defaults — acceptable for the
@@ -212,7 +231,9 @@ not a documented limitation.
    no old branding or false claim remains live.
 2. **State the limitation list** on the release page and in the README: no JDBC driver, no
    constraints, no sequences/views/procedures/triggers, no planner; SQL is a query layer over
-   the document store; the <5 MB scope; `B_TREE` has no WAL; vectors are an auxiliary index.
+   the document store; an empty `CREATE TABLE` is session-scoped until it has rows (R-62);
+   there is no collection-level delete and `DROP TABLE` only empties (R-63); the <5 MB scope;
+   `B_TREE` has no WAL; vectors are an auxiliary index.
 3. **Tag `v0.9.0`** and attach the shaded jar, sources, and javadoc to the GitHub release.
 
 ## Deferred Work (safe post-release)
@@ -242,7 +263,7 @@ execution backs it — that rule now applies to the corpus itself.
 | Baseline snapshot + validation | `docs/release-audit/baseline/` |
 | Deep codebase assessment | `00-current-codebase-assessment.md` |
 | Architecture decisions | `67-architecture-decision-records.md` |
-| Defect register (R-31…R-56; every fix falsified against its pre-fix commit) | `53-defect-register.md` |
+| Defect register (R-31…R-63; every fix falsified against its pre-fix commit) | `53-defect-register.md` |
 | Release-blocker register (only R-13 + R-20 open, both non-blocking) | `54-release-blocker-register.md` |
 | Maven Central evidence (MC-02 still `NOT VERIFIED`; MC-04 records the false-claim correction) | `46-maven-central-readiness.md` |
 | Release checklist at `v0.9.0` | `60-public-release-checklist.md` |
@@ -253,7 +274,9 @@ execution backs it — that rule now applies to the corpus itself.
 | Browser network traces | `docs/browser-testing/evidence/network/` |
 | Footprint bytes | `02-size-and-footprint-audit.md` |
 | Gates | `scripts/console-contract-gate.sh`, `scripts/console-auth-gate.sh`, `.github/workflows/ci.yml` |
-| Live verification premise | 795 + 4 + 4 green; gates PASS on FILE, LSM_TREE, B_TREE |
+| Live verification premise | 801 + 4 + 4 green; gates PASS on FILE, LSM_TREE, B_TREE (CORS assertions included); reproducibility gate PASS; 43/43 demo tests on nine demos |
+| R-61 before/after browser proof | hostile page on `127.0.0.1:8099` read the catalog pre-fix (`READ SUCCESS`) and is `BLOCKED` post-fix |
+| R-62 measured repro (empty table not durable; rows survive) | live `--sync` FILE server create → restart → `SELECT` |
 
 ## Final Checklist
 
@@ -269,7 +292,7 @@ execution backs it — that rule now applies to the corpus itself.
 | Procedures/functions/triggers implemented or explicitly unsupported | ✅ explicitly unsupported |
 | NoSQL engine independently validated | ✅ 14 defects fixed, live-verified |
 | Core footprint under 5 MB | ✅ 3.11 MB + 3 mandatory deps |
-| Tests and demos pass from a clean checkout | ✅ 795 + 4 + 4 |
+| Tests and demos pass from a clean checkout | ✅ 801 + 4 + 4 (43/43 across nine demos) |
 | Console browser-tested | ✅ 22 routes, gates on 3 engines |
 | Website accurately reflects the product | ✅ after corrections — **remote push still pending** |
 | Website and Console share the yellow/white identity | ✅ |

@@ -75,7 +75,15 @@ public class JunifyDBServer {
      * Call setApiKey() to enable it, or disableAuthentication() to explicitly opt out.
      */
     private boolean authEnabled = false;
-    private boolean corsEnabled = true;
+    /**
+     * Secure default, matching {@link org.junify.db.config.SecurityConfig}:
+     * a server that is never handed a security config must not answer with
+     * wildcard CORS. The console SPA is served from this same origin, so it
+     * never needs CORS; opt in explicitly via
+     * {@code junifydb.security.cors-enabled} / {@code JUNIFYDB_SECURITY_CORS_ENABLED}
+     * for a cross-origin frontend.
+     */
+    private boolean corsEnabled = false;
     private boolean compressionEnabled = true;
     private int rateLimit = 1000;
     private long maxRequestSizeBytes = 10 * 1024 * 1024; // 10MB default max request size
@@ -2744,7 +2752,10 @@ public class JunifyDBServer {
             exchange.getResponseHeaders().set("Content-Type", "text/event-stream");
             exchange.getResponseHeaders().set("Cache-Control", "no-cache");
             exchange.getResponseHeaders().set("Connection", "keep-alive");
-            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+            // R-61: honour the operator's CORS policy here too. This stream used to
+            // advertise wildcard CORS unconditionally, bypassing both the
+            // corsEnabled flag and any configured origin allowlist.
+            addCorsHeaders(exchange);
             
             exchange.sendResponseHeaders(200, 0);
             

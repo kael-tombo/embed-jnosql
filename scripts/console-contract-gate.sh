@@ -28,6 +28,7 @@ LOG="target/contract-gate-server-${ENGINE}.log"
 
 FAILURES=0
 SERVER_PID=""
+CORS_PID=""
 
 fail() {
   echo "FAIL: $1"
@@ -72,6 +73,10 @@ cleanup() {
   if [ -n "$SERVER_PID" ] && kill -0 "$SERVER_PID" 2>/dev/null; then
     kill "$SERVER_PID" 2>/dev/null
     wait "$SERVER_PID" 2>/dev/null
+  fi
+  if [ -n "$CORS_PID" ] && kill -0 "$CORS_PID" 2>/dev/null; then
+    kill "$CORS_PID" 2>/dev/null
+    wait "$CORS_PID" 2>/dev/null
   fi
 }
 trap cleanup EXIT
@@ -458,6 +463,62 @@ if [ -n "$SNAP" ]; then
     *Keyboard*) pass "p1 restored with payload" ;;
     *) fail "p1 missing after restore: $(echo "$AFTER_RESTORE" | head -c 120)" ;;
   esac
+fi
+
+echo
+echo "== R-61: a default server must not advertise wildcard CORS =="
+# SecurityConfig documents "secure default: CORS disabled", and the console SPA is
+# served from this same origin, so it never needs CORS. A wildcard allow-origin makes
+# response bodies readable by any site the operator visits while the server runs.
+DEFAULT_ACAO=$(curl -s -m 5 -D - -o /dev/null -H 'Origin: https://evil.example' \
+  "$BASE/api/health" | tr -d '\r' | grep -i '^access-control-allow-origin:' || true)
+if [ -z "$DEFAULT_ACAO" ]; then
+  pass "no Access-Control-Allow-Origin on a data endpoint"
+else
+  fail "default server advertised '$DEFAULT_ACAO' — the documented default is CORS off"
+fi
+STREAM_ACAO=$(curl -s -m 5 -D - -o /dev/null -H 'Origin: https://evil.example' \
+  "$BASE/api/metrics/stream" 2>/dev/null | tr -d '\r' | grep -i '^access-control-allow-origin:' || true)
+if [ -z "$STREAM_ACAO" ]; then
+  pass "metrics stream honours the CORS policy"
+else
+  fail "metrics stream advertised '$STREAM_ACAO' — it must not bypass the policy"
+fi
+
+echo
+echo "== R-61: CORS opt-in is reachable without an API key =="
+# Before R-61 the security config was applied only when auth was enabled, so this
+# documented setting did nothing on a no-auth server.
+CORS_PORT=$((PORT + 1))
+CORS_BASE="http://127.0.0.1:$CORS_PORT"
+if curl -s -m 2 -o /dev/null "$CORS_BASE/api/health" 2>/dev/null; then
+  fail "something is already listening on :$CORS_PORT — cannot verify the CORS opt-in"
+else
+  JUNIFYDB_SECURITY_CORS_ENABLED=true JUNIFYDB_SECURITY_ALLOWED_ORIGINS=https://app.example \
+    java -jar "$JAR" --port "$CORS_PORT" --data-dir "$DATA_DIR-cors" --engine "$ENGINE" --sync >"$LOG.cors" 2>&1 &
+  CORS_PID=$!
+  CORS_UP=0
+  for i in $(seq 1 30); do
+    if [ "$(curl -s -m 2 -o /dev/null -w '%{http_code}' "$CORS_BASE/api/health" 2>/dev/null)" = "200" ]; then
+      CORS_UP=1
+      break
+    fi
+    sleep 1
+  done
+  if [ "$CORS_UP" = "1" ]; then
+    OPTIN_ACAO=$(curl -s -m 5 -D - -o /dev/null -H 'Origin: https://app.example' \
+      "$CORS_BASE/api/health" | tr -d '\r' | grep -i '^access-control-allow-origin:' | head -1 || true)
+    case "$OPTIN_ACAO" in
+      *"https://app.example"*) pass "opt-in CORS echoes the configured origin" ;;
+      *) fail "opt-in CORS not applied: got '${OPTIN_ACAO:-no header}'" ;;
+    esac
+  else
+    fail "CORS opt-in server did not come up (see $LOG.cors)"
+  fi
+  if [ -n "$CORS_PID" ] && kill -0 "$CORS_PID" 2>/dev/null; then
+    kill "$CORS_PID" 2>/dev/null
+    wait "$CORS_PID" 2>/dev/null
+  fi
 fi
 
 echo
