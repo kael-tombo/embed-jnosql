@@ -14,7 +14,7 @@ Application of the automatic-blocker policy to this audit's findings.
 | Publicly exposed secrets | None found (no credentials in repo; run docs record procedures only) | **CLEAR** |
 | Misleading compatibility claims | R-07 (README overclaims; vision contradiction) | **MITIGATED — fixed** (02/40/43) |
 | Broken clean installation | Baseline build green from clean state (env-lock artifact documented) | **CLEAR** |
-| Broken Maven publication | R-13: not Central-ready (plugins missing) | **BLOCKS CENTRAL ONLY** — not GitHub-first release; disposition: GitHub-first (61), Central after plugins + staging run |
+| Broken Maven publication | R-13: not Central-verified — the `maven-central` profile now carries source/javadoc/GPG/Central plugins (MC-01 **FIXED**), but **no staging or dry-run has ever been executed** (MC-02 `NOT VERIFIED`) because no credentials or signing key exist here | **BLOCKS CENTRAL ONLY** — not the GitHub-first release; disposition: GitHub-first with no Central claim (ADR-007), Central after a verified staging run |
 | Demos not working as documented | R-22: prerequisite undocumented; not all re-executed here | **MITIGATED — acceptable** with documented follow-through in 60 (run-all before tag) |
 | Documented feature entirely non-functional | CDC (documented as status-only, not claimed as change stream); B-Tree "page store" claim removed | **MITIGATED — fixed/corrected** |
 | Console actions silently losing/corrupting data | Delete confirmations verified; durability fixes close the loss paths | **MITIGATED — fixed** |
@@ -26,10 +26,13 @@ Application of the automatic-blocker policy to this audit's findings.
 **None.**
 
 ## Open Blockers for Maven Central Publication
-MC-01/MC-02 (source/javadoc/GPG plugins + verified staging) — documented path in 46.
+MC-02 only (verified staging/dry-run) — the plugin work of MC-01 is done; the residual blocker
+is **credentials + signing key**, an external dependency rather than product work. Documented
+path in 46.
 
 ## Final Status
-**CONDITIONAL PASS** (GitHub-first GO path clear; Central gated)
+**CONDITIONAL PASS** (GitHub-first GO path clear; Central gated) — canonical decision:
+`final-go-no-go-decision.md` (**RELEASE APPROVED WITH EXPLICIT LIMITATIONS**, `v0.9.0`).
 
 ## 2026-09-21 final validation round
 | ID | Finding | Status | Disposition |

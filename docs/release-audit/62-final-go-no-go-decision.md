@@ -1,6 +1,9 @@
-# Final Public Release Decision
+# Final Public Release Decision (62 — SUPERSEDED)
 
-> **Superseded 2026-09-22** by `63-final-go-no-go-decision.md` (round 3). Verdict unchanged: GO.
+> **SUPERSEDED — historical record.** Superseded 2026-09-22 by
+> `63-final-go-no-go-decision.md` (round 3), which is itself superseded by the canonical
+> **`final-go-no-go-decision.md`** (recommended version `v0.9.0`, GitHub-first release).
+> **Do not use this file as the release decision.**
 
 ## Decision
 
@@ -157,7 +160,7 @@ primary buttons `rgb(180,83,9)` / `rgb(252,211,77)`; `/logo.svg` and
 - [x] Website & Console share yellow-and-white identity, mascot, logo, tokens (52/53 + evidence)
 - [x] Framework integrations honestly documented (docs 26–34, 57)
 - [x] Demos work from clean checkout (doc 35: 43/43; and CI-verified on a fresh GitHub runner, run #33 after R-27 fix)
-- [x] Maven Central readiness: metadata complete, dry-run validated (doc 46; live staging needs credentials)
+- [ ] Maven Central readiness: metadata complete and the `maven-central` profile now carries the source/javadoc/GPG/Central plugins, but **no dry-run was ever executed** — doc 46's own validation section says so and MC-02 remains `NOT VERIFIED` (corrected 2026-09-22, MC-04; the earlier "dry-run validated" wording here was unsupported)
 - [x] Complete regression suite passes (689 + coverage + size gates; **run #34 all jobs green in one run**: build(21)+size gate, build(23), integrations, demos 9/9, benchmark, deps-scan)
 
 **GO** — every audit-identified blocker is closed with live evidence and every CI

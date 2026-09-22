@@ -1,7 +1,10 @@
 # 60 — Public Release Checklist
 
 ## Scope
-Objective, checkboxed verification for the public GitHub release of 1.0.0.
+Objective, checkboxed verification for the public GitHub release. Version and release path
+are set by the canonical decision, **`final-go-no-go-decision.md`**: recommended version
+**`v0.9.0`**, published from **GitHub Releases** with the limitation list (ADR-007/ADR-008).
+The older `1.0.0` framing in the checklist lines below is preserved as history.
 
 ## Checklist (state at audit close)
 ### Code & Tests
@@ -30,8 +33,8 @@ Objective, checkboxed verification for the public GitHub release of 1.0.0.
 ### Release Mechanics
 - [x] Repo litter removed ($null/server.*)
 - [x] `mvnw` shell script (P1-3) — done 2026-09-21, round 1 (smoke-tested; CI dogfoods it)
-- [x] GitHub Release draft: tag `v1.0.0`, attach core jar (2.89 MB, size-gated), link audit docs (created 2026-09-21 after run #34 full green; jar is `junify-db-core-1.0.0.jar` — the shade step replaces the plain jar in place)
-- [x] Recommended version: **1.0.0** (47-VER-02)
+- [ ] GitHub Release: tag **`v0.9.0`** and attach the core jar — **pending**. The earlier `v1.0.0` draft note here is unverified in this environment and is superseded by the canonical decision; the current artifact is `target/junify-db-core-1.0.0.jar` at **3,113,904 bytes (3.11 MB)**, size-gated (the shade step replaces the plain jar in place). The earlier "2.89 MB" figure was stale
+- [x] Recommended version: **`v0.9.0`** per `final-go-no-go-decision.md` (was `1.0.0` / 47-VER-02 — revised because a 1.0 database is expected to ship JDBC and constraint enforcement, which this build does not)
 - [ ] Maven Central: blocked until 46 items (P2-1) — GitHub-first release is valid without it
 
 ### Console
@@ -41,4 +44,9 @@ Objective, checkboxed verification for the public GitHub release of 1.0.0.
 - [ ] README screenshots (39-WS-03)
 
 ## Final Status
-**PASS** — all P0 pre-tag items closed. The remaining open boxes (Playwright UI suite, README screenshots, GitHub Release mechanics, Maven Central staging) are P1/P2 post-release items per `59-prioritized-fix-roadmap.md` and do not gate tagging `v1.0.0`. Improvement rounds 1–2 closed every engine/CI/docs item; see 64 and 65 (rounds 1–2, renumbered) and 66 / 63 (round 3 + current final decision) for evidence.
+**PASS** — all P0 pre-tag items closed. The remaining open boxes (Playwright UI suite, README screenshots, GitHub Release mechanics, Maven Central staging) are P1/P2 post-release items per `59-prioritized-fix-roadmap.md` and do not gate the tag. Improvement rounds 1–2 closed every engine/CI/docs item; see 64 and 65 (rounds 1–2, renumbered) and 66 / 63 (round 3) for evidence.
+
+**Version gate (2026-09-22):** tag **`v0.9.0`** and publish from GitHub Releases with the
+explicit limitation list — the release decision is `final-go-no-go-decision.md`, and
+**Maven Central is not claimed** (doc 46 MC-02 stays `NOT VERIFIED`; R-13 is the missing
+credential, not missing work).

@@ -223,6 +223,18 @@ triggers · a query planner and `EXPLAIN` · persisting HNSW indexes for `IN_MEM
 review · WAL for `B_TREE` (D-02) · Maven Central publication once credentials exist (R-13) ·
 a stress/soak benchmark programme (doc 24).
 
+## Documentation-Integrity Verdict
+
+**CORRECTED — the corpus was not self-consistent, and finding that was the audit working.**
+Reconciling the 74 audit documents against this decision exposed **R-56**: two files
+(`62-…`, `63-…`) asserted Maven Central readiness had been "dry-run validated / verified"
+while `46-…`'s own validation section records that **no staging or dry-run was ever
+executed**; `46-…`'s plugin table was stale; **four files each claimed to be "the final
+decision"**; and `60-…` recommended `v1.0.0` with a stale 2.89 MB jar. All corrected — doc 46
+carries the new MC-04 finding, docs 61/62/63 now declare themselves superseded history and
+point here, and `60-…` recommends `v0.9.0`. A claim in this corpus is a defect unless an
+execution backs it — that rule now applies to the corpus itself.
+
 ## Evidence Summary
 
 | Evidence | Location |
@@ -230,7 +242,11 @@ a stress/soak benchmark programme (doc 24).
 | Baseline snapshot + validation | `docs/release-audit/baseline/` |
 | Deep codebase assessment | `00-current-codebase-assessment.md` |
 | Architecture decisions | `67-architecture-decision-records.md` |
-| Defect register (R-31…R-53, 23 fixed) | `53-defect-register.md` |
+| Defect register (R-31…R-56; every fix falsified against its pre-fix commit) | `53-defect-register.md` |
+| Release-blocker register (only R-13 + R-20 open, both non-blocking) | `54-release-blocker-register.md` |
+| Maven Central evidence (MC-02 still `NOT VERIFIED`; MC-04 records the false-claim correction) | `46-maven-central-readiness.md` |
+| Release checklist at `v0.9.0` | `60-public-release-checklist.md` |
+| Decision history, all banners pointing here | `61-…`, `62-…`, `63-…` (historical) |
 | Round-3 improvement evidence | `66-improvement-round-3-evidence.md` |
 | Per-surface audits | docs 05–12, 16, 26, 35, 44, 45, 52 |
 | Brand/consistency | `44-…`, `45-…`, `docs/browser-testing/` |

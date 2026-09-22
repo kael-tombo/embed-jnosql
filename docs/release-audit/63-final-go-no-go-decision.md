@@ -1,4 +1,10 @@
-# Final Public Release Decision
+# Final Public Release Decision (63 — SUPERSEDED)
+
+> **SUPERSEDED — historical record.** This round-3 verdict is superseded as the canonical
+> public-release decision by **`final-go-no-go-decision.md`**, which keeps the GO verdict but
+> makes the limitations explicit and recommends **`v0.9.0` on GitHub Releases** rather than
+> the `v1.0.0` framing used here (reasoning: ADR-007/ADR-008 in
+> `67-architecture-decision-records.md`). **Do not use this file as the release decision.**
 
 *Third validation round (2026-09-22). Supersedes `61-…`/`62-…` as the current
 decision; round-3 evidence: `66-improvement-round-3-evidence.md`. This round
@@ -303,7 +309,8 @@ live-site redeploy, deployment-origin mismatch, CI demos job — docs 53/62).
 2. Cut the `v1.0.0` tag on the pushed main and publish the GitHub Release
    with the core jar + audit-doc links.
 3. Maven Central staging when owner credentials exist (metadata complete,
-   dry-run validated — doc 46; external dependency, not a product defect).
+   **not executed to date** — doc 46 MC-02 `NOT VERIFIED`; the blocker is credentials, not
+   product work, so this stays an external dependency rather than a defect).
 
 ## Safe Post-Release Improvements
 
@@ -357,7 +364,7 @@ live-site redeploy, deployment-origin mismatch, CI demos job — docs 53/62).
 - [x] The website accurately reflects the product (live-verified today)
 - [x] Website and Console share the same yellow-and-white identity, mascot, logo, tokens
 - [x] Security risks are addressed (doc 22; deps-scan green run #34)
-- [x] Maven Central readiness is verified (metadata + dry-run; staging needs credentials)
+- [ ] Maven Central readiness is **not** verified — the `maven-central` profile (source/javadoc/GPG/Central plugins) exists but no staging or dry-run was ever executed: doc 46's validation section records that, MC-02 remains `NOT VERIFIED`, and the earlier "verified (metadata + dry-run)" wording in this checklist was unsupported (corrected 2026-09-22, MC-04). The canonical decision releases from GitHub instead and makes no Central claim (ADR-007)
 - [x] All critical blockers are resolved
 - [x] The complete regression suite passes (791/791 core + 4/4 CLI today)
 - [x] Destructive endpoints are safe: index maintenance cannot delete documents (R-41), and no endpoint reports success for work it did not do (R-34..R-40) — and this is no longer a one-time manual claim: the `console-contract` CI job re-probes every console-called path on every push (`scripts/console-contract-gate.sh`), and the gate itself was falsified against the pre-fix commit (10 failures incl. the data-loss check) before being trusted

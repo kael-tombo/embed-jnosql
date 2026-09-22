@@ -1,4 +1,9 @@
-# 61 — Final Go / No-Go Decision
+# 61 — Final Go / No-Go Decision (SUPERSEDED)
+
+> **SUPERSEDED — historical record.** Superseded by `62-…`, then `63-…` (round 3), and now by
+> the canonical **`final-go-no-go-decision.md`** (recommended version `v0.9.0`, GitHub-first
+> release). Kept because its per-finding evidence is still cited. **Do not use this file as
+> the release decision.**
 
 ## Scope
 The evidence-based release decision for JunifyDB 1.0.0, applying the release-blocker policy to every finding in this audit.
