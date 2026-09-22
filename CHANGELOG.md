@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Fixed
+- **Console API correctness** (found by probing the running server; defect register R-31…R-52,
+  evidence in `docs/release-audit/`):
+  - Document update-by-id no longer drops fields omitted from the request body.
+  - Backups capture real data (all collections) and refuse to report success for an empty
+    snapshot; the restore endpoint works and round-trips (R-35/R-36).
+  - CDC connectors are wired to the event stream and deliver events (R-39); connector
+    management returns honest 400/404s (R-40); the CDC Subscribers metric reflects
+    subscribers, not log size (R-34).
+  - `DELETE /api/indexes/{collection}` no longer deletes the collection's documents (R-41).
+  - Transaction commit/rollback of an unknown id returns 404 instead of a fake 200 (R-42);
+    bulk inserts honour client-supplied ids (R-44).
+  - NoSQL query operators: `$regex` is substring matching (`String.matches` anchoring
+    removed), top-level `$and`/`$or` combine correctly, unknown operators return 400
+    instead of silently matching everything (R-45…R-47).
+  - SQL: reads and DDL never create tables — SELECT/JOIN/UPDATE/DELETE/DROP on a missing
+    table return 404 (SQL `SqlUnknownTableException`); only INSERT and CREATE TABLE create
+    one (R-48). `DROP TABLE` on a missing table no longer reports success (R-49).
+  - Vectors: search on an unknown index returns 404 instead of silently creating an empty
+    index; malformed search input returns 400 (R-50). Vector indexes persist under
+    `<dataDir>/vectors/` and survive restarts (R-52).
+  - TTL: expired documents read as absent from point reads, scans, queries, and SQL
+    (R-51).
+  - Storage engines: persisted collections re-materialize into the catalog after restart
+    on LSM_TREE and B_TREE (R-53).
+  - Malformed/empty request bodies no longer drop the TCP connection on any endpoint
+    (R-37).
+
+### Added
+- Contract gates (`scripts/console-contract-gate.sh`, `scripts/console-auth-gate.sh`) that
+  probe every console-called endpoint for honest behavior — including engine-specific
+  restart semantics — and run in CI on FILE, LSM_TREE, and B_TREE.
+- Regression suites for the fixes above; suite at 785 tests, all green.
+
+### Changed
+- CDC and backup data directories now live under the configured data directory
+  (`<dataDir>/backups`, `<dataDir>/vectors`) so clean builds do not silently remove them.
+
 ## [1.0.0] - 2026-09-09
 
 ### Added

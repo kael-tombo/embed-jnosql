@@ -1184,7 +1184,7 @@ db.<span class="fn">kv</span>().<span class="fn">set</span>(<span class="str">"a
         <div class="pillar-icon-box">🧾</div>
         <div class="pillar-title">Honest Capability Boundaries</div>
         <div class="pillar-desc">
-          The SQL surface is a built-in dialect — not a full ANSI grammar: no DDL, no views, no sequences, no stored procedures. Vectors and the Kafka CDC connector ship as clearly-labeled experimental features.
+          The SQL surface is a built-in dialect — not a full ANSI grammar: basic DDL (CREATE TABLE, DROP TABLE) is supported, but no views, no sequences, no stored procedures. Vectors and the Kafka CDC connector ship as clearly-labeled experimental features.
         </div>
         <div class="pillar-code">SELECT · INSERT · UPDATE · DELETE · JOIN · GROUP BY</div>
       </div>
@@ -1318,7 +1318,7 @@ db.<span class="fn">kv</span>().<span class="fn">set</span>(<span class="str">"a
           Document collections with fluent criteria queries, key-value buckets with TTL, Redis-style lists / sets / hashes, wide-column families, and secondary + text indexes.
         </div>
         <div class="engine-use">Best for: <strong>flexible schemas, caches, queues, session state</strong></div>
-        <div class="engine-use" style="color: var(--text-muted);">Experimental: <strong>HNSW vector search (fixed 128 dimensions), Kafka CDC connector</strong></div>
+        <div class="engine-use" style="color: var(--text-muted);">Experimental: <strong>HNSW vector search (dimensionality from the first vector), Kafka CDC connector</strong></div>
       </div>
     </div>
 
@@ -1601,7 +1601,7 @@ db.<span class="fn">kv</span>().<span class="fn">set</span>(<span class="str">"a
         <div class="uc-icon">🔍</div>
         <div>
           <div class="uc-title">In-Process Search</div>
-          <div class="uc-desc">Built-in inverted text indexes for token search, plus an experimental HNSW vector index for k-NN over 128-dimension embeddings — no external search cluster.</div>
+          <div class="uc-desc">Built-in inverted text indexes for token search, plus an experimental HNSW vector index for k-NN over embeddings of any fixed dimensionality — no external search cluster.</div>
           <div class="uc-highlight">⚡ In-JVM text search · HNSW vectors (experimental)</div>
         </div>
       </div>

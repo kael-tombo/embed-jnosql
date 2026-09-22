@@ -422,6 +422,18 @@ curl -X POST http://localhost:8080/api/collections/products \
 # Query documents
 curl http://localhost:8080/api/collections/products
 
+# Filter with MongoDB-style JSON operators (POST /api/collections/{name}/query)
+curl -X POST http://localhost:8080/api/collections/products/query \
+  -H "Content-Type: application/json" \
+  -d '{"category":{"$eq":"Peripherals"},"price":{"$lt":100}}'
+
+# Supported operators: $eq $ne $gt $gte $lt $lte $in $nin $regex $exists $and $or
+#   - $regex is substring matching (write "^prefix" / "suffix$" to anchor)
+#   - $and / $or take arrays of sub-queries and combine with the rest of the filter
+#   - unknown operators and malformed filters are rejected with HTTP 400
+#   - SQL-style reads never create collections: SELECT/UPDATE/DELETE/DROP on a
+#     missing table return 404; only INSERT (and CREATE TABLE) create one
+
 # Execute SQL
 curl -X POST http://localhost:8080/api/sql \
   -H "Content-Type: application/json" \

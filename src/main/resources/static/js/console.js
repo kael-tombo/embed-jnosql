@@ -256,7 +256,7 @@ async function runSql() {
     $('#sqlOut').innerHTML = `<div class="card card-pad" style="border-color:var(--err-dim)" role="alert">
       <strong style="color:var(--err)">✖ SQL error — ${esc(e.message)}</strong>
       ${e.data && e.data.message ? `<div style="margin-top:6px;color:var(--text-1)">${esc(e.data.message)}</div>` : ''}
-      <div style="margin-top:8px;font-size:12px;color:var(--text-2)">The Relational SQL Engine runs a built-in dialect (SELECT · INSERT · UPDATE · DELETE · JOIN · GROUP BY). DDL, views, and sequences are not supported.</div>
+      <div style="margin-top:8px;font-size:12px;color:var(--text-2)">The Relational SQL Engine runs a built-in dialect (SELECT · INSERT · UPDATE · DELETE · JOIN · GROUP BY · CREATE/DROP TABLE). Views, sequences, and stored procedures are not supported.</div>
     </div>`;
   }
 }
