@@ -17,13 +17,14 @@ final decision in `63-final-go-no-go-decision.md`.
 ## Clean build + full regression
 
 - `mvn clean verify -Pcoverage-check` → **BUILD SUCCESS**.
-- Final suite: **778/778 tests, 0 failures/errors/skipped** with the coverage gate met
+- Final suite: **781/781 tests, 0 failures/errors/skipped** with the coverage gate met
   (`mvn clean verify -Pcoverage-check`, re-run after each fix cluster: 715 → 733 with
   +8 `BackupIntegrityTest`, +8 `ConsoleBackupEndpointTest`, +2 `CdcStatusAccuracyTest`;
   then → 741 with +8 `ConsoleIndexAndCdcEndpointTest`; then → 749 with
   +8 `ConsoleTransactionAndBulkTest`; then → 760 with +11 `ConsoleQueryEndpointTest`;
   then → 769 with +9 `SqlUnknownTableTest`; then → 778 with +5
-  `VectorSearchAndTtlReadTest`, +4 `ConsoleVectorSearchTest`).
+  `VectorSearchAndTtlReadTest`, +4 `ConsoleVectorSearchTest`; then → 781 with +3
+  `VectorPersistenceTest`).
   Starting point last round was 689 (+6 `LaunchOptionValidationTest`,
   +7 `BenchmarkOptionValidationTest`, +2 `DocumentUpdateMergeTest`, +1 `SchemaNumericTypeTest`,
   +2 `DocumentTtlPersistenceTest`, +3 `KvTtlPersistenceTest`, +2 `ColumnFamilyTtlPersistenceTest`,
@@ -370,6 +371,32 @@ round-trip assertions retained.
 `6d47a4c` fail **9/9**. Contract gate extended with 6 vector checks and 3 TTL checks
 (including the sweep count). Suite now **778/778** + 4/4 CLI; both gates PASS; live
 after-states verified on the redeployed preview.
+
+## Durability round (R-52, 2026-09-22 latest)
+
+The honest 404 that R-50 introduced exposed its bigger sibling: vector indexes existed
+**only in the console server's memory**. Every restart silently lost all vectors and
+dimensions while documents, KV entries, and column families all survived the same
+restart. A vector store that forgets its vectors on restart is a durability defect,
+not a design choice the user ever agreed to.
+
+Fix:
+- `HNSWIndex.toJson()` output (vectors + parameters; the HNSW graph is rebuildable and
+  is never serialized) is written to `<dataDir>/vectors/{index}.json` on every add and
+  remove — best-effort, mirroring the audit writer: a disk failure never fails the API
+  call.
+- `HNSWIndex.fromJson()` rebuilds the index by re-adding vectors in stored order (same
+  search semantics; link layout may differ from the pre-restart graph).
+- Restore runs at server start on both bind paths; a corrupt file is renamed aside
+  (`*.json.corrupt-<ts>`) instead of blocking startup; IN_MEMORY neither persists nor
+  restores.
+
+Covered by `VectorPersistenceTest` (3 tests, full close/reopen cycles over the same
+data directory, including deletion persistence and the corrupt-file quarantine),
+**falsified at `443fcac`** (restart test fails there). Verified live on the preview:
+add vector → kill server → restart → index present with `size:1`, search returns
+`lv1`. Contract gate extended with a persistence-file check. Suite **781/781** + 4/4
+CLI; both gates PASS.
 
 ## Repository / release mechanics state
 

@@ -475,6 +475,7 @@ public class JunifyDBServer {
 
         registerHandlers(server);
         server.setExecutor(getOrCreateExecutor());
+        restoreVectorIndexes();
         server.start();
 
         // Start HTTPS server if SSL is configured
@@ -499,6 +500,7 @@ public class JunifyDBServer {
 
         registerHandlers(server);
         server.setExecutor(getOrCreateExecutor());
+        restoreVectorIndexes();
         server.start();
 
         if (sslPort > 0 && sslKeystorePath != null) {
@@ -2473,6 +2475,71 @@ public class JunifyDBServer {
     private org.junify.db.core.schema.SchemaValidator schemaValidator = new org.junify.db.core.schema.SchemaValidator();
     private java.util.Map<String, org.junify.db.index.hnsw.HNSWIndex> vectorIndexes = new java.util.concurrent.ConcurrentHashMap<>();
 
+    /**
+     * R-52: vector indexes used to live only in this server instance's memory —
+     * every restart silently lost all vectors and dimensions. Persisted as one
+     * JSON document per index under {@code <dataDir>/vectors/} on every
+     * mutation (best-effort, mirroring the audit writer: a failure never fails
+     * the request) and restored at server start. Skipped entirely for the
+     * IN_MEMORY engine, which promises no durability.
+     */
+    private void persistVectorIndexes() {
+        java.nio.file.Path dir;
+        try {
+            var dataDir = db.config().dataDir();
+            if (dataDir == null
+                    || db.config().storageEngine() == org.junify.db.config.JunifyDBConfig.StorageEngineType.IN_MEMORY) {
+                return;
+            }
+            dir = dataDir.resolve("vectors");
+        } catch (Exception e) {
+            return;
+        }
+        try {
+            java.nio.file.Files.createDirectories(dir);
+            for (var entry : vectorIndexes.entrySet()) {
+                java.nio.file.Path file = dir.resolve(entry.getKey() + ".json");
+                java.nio.file.Files.writeString(file, entry.getValue().toJson());
+            }
+        } catch (Exception e) {
+            System.err.println("[VECTORS] disk persist failed (continuing): " + e.getMessage());
+        }
+    }
+
+    private void restoreVectorIndexes() {
+        java.nio.file.Path dir;
+        try {
+            var dataDir = db.config().dataDir();
+            if (dataDir == null
+                    || db.config().storageEngine() == org.junify.db.config.JunifyDBConfig.StorageEngineType.IN_MEMORY) {
+                return;
+            }
+            dir = dataDir.resolve("vectors");
+        } catch (Exception e) {
+            return;
+        }
+        if (!java.nio.file.Files.isDirectory(dir)) return;
+        try (var files = java.nio.file.Files.list(dir)) {
+            files.filter(p -> p.getFileName().toString().endsWith(".json")).forEach(p -> {
+                String name = p.getFileName().toString().replace(".json", "");
+                try {
+                    vectorIndexes.put(name, org.junify.db.index.hnsw.HNSWIndex.fromJson(
+                            java.nio.file.Files.readString(p)));
+                    logger.info("[JunifyDBServer] Restored vector index '{}' from disk", name);
+                } catch (Exception e) {
+                    // A corrupt index file must not prevent the server from
+                    // starting — it is renamed aside and reported.
+                    System.err.println("[VECTORS] restore failed for '" + name + "': " + e.getMessage());
+                    try {
+                        java.nio.file.Files.move(p, p.resolveSibling(name + ".json.corrupt-" + System.currentTimeMillis()));
+                    } catch (Exception ignored) {}
+                }
+            });
+        } catch (Exception e) {
+            System.err.println("[VECTORS] restore scan failed (continuing): " + e.getMessage());
+        }
+    }
+
     private class VectorHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
@@ -2576,15 +2643,16 @@ public class JunifyDBServer {
                     String vecId = bodyData.containsKey("id") ? bodyData.get("id").toString() : id;
                     var vector = parseVector((java.util.List<?>) bodyData.get("vector"));
                     hnsw.add(vecId, vector);
+                    persistVectorIndexes();
                     sendJson(exchange, 201, Map.of("id", vecId, "status", "added"));
                 } catch (Exception e) {
                     sendJson(exchange, 400, Map.of("error", "Insert failed", "message", e.getMessage()));
                 }
             } else if ("DELETE".equals(exchange.getRequestMethod())) {
-                try { hnsw.remove(id); sendJson(exchange, 204, null); }
+                try { hnsw.remove(id); persistVectorIndexes(); sendJson(exchange, 204, null); }
                 catch (Exception e) { sendJson(exchange, 500, Map.of("error", e.getMessage())); }
             }
-        }
+        }        
         private float[] parseVector(java.util.List<?> list) {
             float[] vector = new float[list.size()];
             for (int i = 0; i < list.size(); i++) {

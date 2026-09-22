@@ -357,6 +357,22 @@ D=$(curl -s -m 5 -X POST "$BASE/api/collections/gate_ttl/cleanup")
 expect_contains "cleanup sweep reports the physical delete" "$D" '"deleted":1'
 
 echo
+echo "== vector indexes are persisted next to the data (R-52) =="
+curl -s -m 5 -X POST "$BASE/api/vectors/gate_vec/gpersist" -H 'Content-Type: application/json' -d '{"vector":[4,5,6]}' >/dev/null
+if ls "$DATA_DIR"/vectors/gate_vec.json >/dev/null 2>&1; then
+  pass "vector index written to <dataDir>/vectors/gate_vec.json on mutation"
+else
+  fail "no vectors/gate_vec.json under $DATA_DIR — restart will lose every vector"
+fi
+
+SIZE=$(grep -o 'gpersist' "$DATA_DIR/vectors/gate_vec.json" 2>/dev/null | wc -l)
+if [ "$SIZE" -ge 1 ]; then
+  pass "persisted JSON contains the added vector id"
+else
+  fail "persisted JSON missing the added vector id"
+fi
+
+echo
 echo "== a body-less POST must never drop the connection =="
 CODE=$(curl -s -m 10 -o /tmp/contract-gate-body.json -w '%{http_code}' -X POST "$BASE/api/backup")
 CURL_EXIT=$?

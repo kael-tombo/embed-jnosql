@@ -453,6 +453,42 @@ public class HNSWIndex {
         );
     }
 
+    /**
+     * R-52: rebuild an index from {@link #toJson()} output. The HNSW graph is
+     * not serialized — vectors and constructor parameters are — and the graph
+     * is deterministically rebuilt by re-adding every vector in stored order.
+     * The result answers the same searches, though link structure may differ
+     * from the pre-restart graph (same recall characteristics, not byte-identical
+     * layout).
+     *
+     * @throws IllegalArgumentException when the JSON is structurally invalid or
+     *         a stored vector's width disagrees with the stored dimensionality.
+     */
+    public static HNSWIndex fromJson(String json) {
+        Map<String, Object> root = org.junify.db.core.util.JsonSerde.fromJson(json, Map.class);
+        if (root == null || !(root.get("dimensions") instanceof Number dims)) {
+            throw new IllegalArgumentException("Invalid vector index JSON: missing dimensions");
+        }
+        HNSWIndex index = new HNSWIndex(dims.intValue());
+        if (!(root.get("vectors") instanceof Map<?, ?> stored)) {
+            return index; // no vectors yet
+        }
+        for (Map.Entry<?, ?> entry : stored.entrySet()) {
+            if (!(entry.getValue() instanceof List<?> raw)) {
+                throw new IllegalArgumentException("Invalid vector entry for id '" + entry.getKey() + "'");
+            }
+            float[] vector = new float[raw.size()];
+            for (int i = 0; i < raw.size(); i++) {
+                if (!(raw.get(i) instanceof Number n)) {
+                    throw new IllegalArgumentException("Non-numeric vector component in '" + entry.getKey() + "'");
+                }
+                vector[i] = n.floatValue();
+            }
+            index.add(entry.getKey().toString(), vector);
+        }
+        return index;
+    }
+
     public String toJson() {
         var sb = new StringBuilder();
         sb.append("{\"dimensions\":").append(dimensions).append(",");
