@@ -12,7 +12,10 @@ The older `1.0.0` framing in the checklist lines below is preserved as history.
 - [x] Critical durability/conflict defects fixed **with pre-fix failing evidence** (`.freebuff/prefix-failures.log`)
 - [x] New regression suite `ReleaseAuditRegressionTest` (8 tests) in CI path
 - [x] No test asserting the buggy behavior remains (updated where semantics corrected)
-- [x] **All 9 demos re-run on the fixed build — 43/43 tests green, 0 failures (2026-09-21; see 35 for the per-demo table and evidence)** ← P0-2 CLOSED
+- [x] **All 9 demos re-run on the fixed build — 43/43 tests green, 0 failures (2026-09-22, from a clean local `mvn install`; per-demo table and the R-59 defect this run caught are in 35)** ← P0-2 CLOSED
+  - The earlier 2026-09-21 demos run also reported 43/43, which is exactly why the run was repeated before the tag: the older suite passed while a real catalog defect (R-59) was present but unexercised. Re-running from a clean install is the check that keeps this item meaningful
+- [x] **Reproducibility gate in CI** (2026-09-22): `scripts/reproducibility-check.sh` builds twice from clean and requires byte-identical artifacts, wired in as the CI `reproducibility` job; verified PASS (`sha256 e7fe3558…93f18`) and falsified to FAIL with the timestamp property removed
+- [x] **Core suite re-run after the R-59 change: 795/795** (+4/4 CLI), contract gate PASS on FILE, LSM_TREE and B_TREE, auth gate PASS
 - [x] CHANGELOG amended with audit fixes (P0-3) — committed `ed6da57`
 - [x] CI Docker job removed; benchmark job mainClass fixed (P0-4) — committed `ed6da57`
 

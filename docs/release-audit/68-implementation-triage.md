@@ -40,6 +40,7 @@ cheaply. Each needs an ADR and an explicit scope statement **before** implementa
 | B-3 | **Module split** into per-engine artifacts (`junify-db-sql`, `-nosql`, `-storage-*`, `-console`) | Whether the split is worth breaking coordinates and consumer imports for (ADR-001 deliberately deferred it) | High blast radius, invalidates demo/e2e verification, zero functional gain at this moment |
 | B-4 | **Query planner + `EXPLAIN`** | Whether to introduce a plan representation and a cost model, or remain interpretive with better diagnostics | A planner is a subsystem, not a patch; the honest alternative is to keep documenting that execution is interpretive |
 | B-5 | **Vector model as first-class** (not an auxiliary index) | Whether vectors become a supported model with its own guarantees (durability, recall, sizing) or stay an index feature | Today it must not be marketed as a vector database (assessment §3.1) |
+| B-6 | **Transactional console writes** (R-60) | Whether REST/console write paths accept a `transactionId` and route through `ActiveTx.documentCollection`, or whether the console stays lifecycle-only | Half-transactional tooling is worse than none: the console currently offers begin/commit over writes it does not govern. Labelling removed the false impression; wiring needs a decision on response semantics (what does a write return before commit?), read visibility inside an open transaction, and bulk/SQL scope |
 
 ## Bucket C — Must be deferred (post-release)
 

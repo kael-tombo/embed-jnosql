@@ -69,10 +69,16 @@ stale core) produced one failure and one repair:
 
 | Demo | Result |
 |---|---|
-| `end-to-end-validation` | **4/4 PASS** |
+| `end-to-end-validation` | **4/4 PASS** (four engines) |
 | `advanced-queries-demo` | **5/5 PASS** |
-| `batch-processing-demo` | **5/5 PASS** |
 | `annotation-showcase-demo` | **FAILED 2/5** → **5/5 PASS** after the R-59 fix |
+| `batch-processing-demo` | **5/5 PASS** |
+| `vertx-demo` | **4/4 PASS** |
+| `spring-boot-demo` | **6/6 PASS** |
+| `quarkus-demo` | **4/4 PASS** |
+| `micronaut-demo` | **4/4 PASS** |
+| `load-and-stress-demo` | **6/6 PASS** |
+| **Total** | **43/43 PASS** (9 demos; one defect found and fixed) |
 
 **R-59 is the payoff.** `annotation-showcase-demo` persists an `@Entity @Table(name = "invoices")`
 through a transaction and then runs `SELECT ... FROM invoices`; both SQL-backed tests errored with

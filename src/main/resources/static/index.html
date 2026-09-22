@@ -272,6 +272,15 @@
           <h1>Transactions <span class="engine-tag shared" title="Shared capability — both engines">Both Engines</span></h1>
           <span class="hint">Begin, inspect, commit, or roll back active transactions (MVCC)</span>
         </div>
+        <div class="card" style="border-left: 3px solid var(--warn, #E8B923); margin-bottom: 12px;">
+          <div style="font-size: 13px; line-height: 1.6;">
+            <strong>Scope:</strong> this panel manages transaction <em>lifecycle</em> only. Console
+            CRUD — collection writes, bulk, KV and the SQL workspace — writes directly to the
+            engine and is <strong>not</strong> governed by a transaction begun here, and no REST
+            write path currently accepts a transaction id. To put writes inside a transaction,
+            use the Java API (<code>db.beginTransaction()</code>).
+          </div>
+        </div>
         <div class="card">
           <div class="card-head">
             <h2>Active</h2>
