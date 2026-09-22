@@ -26,7 +26,7 @@ Publishability to Maven Central per current requirements.
 | GPG signing | ✅ `maven-gpg-plugin` + `sign-artifacts` execution (needs a key to run) |
 | No snapshot deps | ✅ |
 | No system/local-path deps | ✅ |
-| Reproducible build config | ⚠️ not configured (no `-Dproject.build.outputTimestamp`) |
+| Reproducible build config | ✅ **configured and verified reproducible** — `project.build.outputTimestamp` is set in the POM, and two clean builds produce the byte-identical artifact `sha256 e7fe3558…93f18` (3,114,172 bytes). Enforced by `scripts/reproducibility-check.sh`, wired into CI as the `reproducibility` job (MC-05) |
 | Published coordinates match README | ✅ (README references building from source; add an install-snippet at publication) |
 
 ## Validation Performed
@@ -40,6 +40,7 @@ executing the process.**
 | MC-01 | **FIXED** (2026-09-22) | High | Source/javadoc/GPG/Central plugins were missing; they now exist in the `maven-central` profile. |
 | MC-02 | **NOT VERIFIED** | High | Actual staging + resolution-by-consumer still not executed — must be done before any "available on Maven Central" claim. This is R-13 in the defect register: the blocker is **credentials**, not product work. |
 | MC-03 | CONFIRMED | Low | `createDependencyReducedPom=false` on shade: fine while publishing only the plain jar; revisit if the shaded jar is ever published. |
+| MC-05 | **FIXED** (2026-09-22) | Low | This file listed reproducible-build config as "⚠️ not configured (no `project.build.outputTimestamp`)" — **but the property has been present in the POM** and the build was already byte-for-byte reproducible. A stale negative claim: it understated a real, Central-relevant property, the same class as R-54 understating DDL, and it survived because nothing ever *measured* reproducibility. Now measured and enforced: `scripts/reproducibility-check.sh` builds twice from clean and fails unless the SHA-256 matches, with a diagnostic that diffs the archive listings; it is falsified — with the property removed the two builds differ (`Tue Sep 22 15:25:32 EAT 2026` build timestamps leak into every entry) and the gate fails. Wired into CI as the `reproducibility` job. |
 | MC-04 | **CONFIRMED** (2026-09-22) | Medium | **Two audit documents claimed Central readiness had been verified when this file's own evidence says otherwise.** `62-…` line 160 ("metadata complete, **dry-run validated**") and `63-…` lines 306/360 ("Maven Central readiness **is verified** (metadata + dry-run…)") contradict the Validation section above and MC-02. Corrected in place, with the corrections pointing here. False claims inside the audit corpus are the same defect class as false claims in public docs — the whole point of the corpus is that each statement is backed by an execution. |
 
 ## Improvement Plan

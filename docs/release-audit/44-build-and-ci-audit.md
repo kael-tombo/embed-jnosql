@@ -29,8 +29,10 @@ Two full clean builds in this audit; CI file read; POM profile inspection.
 | CI-05 | ACCEPTABLE | Low | Windows path-lock: clean fails if a DB is open on `target/` (OS behavior; documented in run doc). |
 | CI-06 | **FIXED — root cause confirmed** (2026-09-21) | Medium | `demos` job red on every run (#30, #31): the job never installed the starter modules, so the three framework demos (spring-boot, quarkus, micronaut) could not resolve `junify-db-spring-boot-starter` / quarkus / micronaut artifacts (published to no repository) on fresh runners. Diagnosis path: reworked job emits per-demo `::error::`/`::notice::` annotations → run #32 proved 6/9 demos pass and isolated failures to exactly the 3 framework demos; local falsification (uninstall starter → reproduce, reinstall → green) confirmed. Fix: starter `mvn install` step added before the demo loop (`1bc94a9`). |
 
+| CI-07 | **ADDED** (2026-09-22) | Low | **No job measured build reproducibility**, so `project.build.outputTimestamp` was unverified and could have regressed silently — which is how doc 46 came to report the property as *absent* while it was present and working (R-57). New `reproducibility` CI job runs `scripts/reproducibility-check.sh`: two clean builds, byte-identical artifacts required. **Verified locally:** both builds `sha256 e7fe3558…93f18`, 3,114,172 bytes. **Falsified:** with the property removed the two builds differ and the gate fails, naming the leaked `Tue Sep 22 15:25:32 EAT 2026` build timestamps in every entry. |
+
 ## Improvement Plan
-CI additions: `-Pcoverage-check`; matrix job for starter modules; demo smoke job; remove/fix Docker job; add `mvnw`.
+CI additions: `-Pcoverage-check`; matrix job for starter modules; demo smoke job; remove/fix Docker job; add `mvnw`; **reproducibility gate (added 2026-09-22 — CI-07)**.
 
 ## Acceptance Criteria
 Core CI green (met); gates/gaps documented (met); full CI closure scheduled (60-checklist).

@@ -239,3 +239,24 @@ jobs:
           path: |
             target/contract-gate-server.log
             target/contract-auth-gate-server.log
+
+  reproducibility:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: maven
+
+      # Maven Central requires reproducible builds, and the POM's
+      # project.build.outputTimestamp is only load-bearing if something checks the result.
+      # Build twice and require byte-identical artifacts; the gate was falsified locally
+      # against a POM with the timestamp removed, where the two hashes differ.
+      - name: Build twice and require a byte-identical artifact
+        run: bash scripts/reproducibility-check.sh
