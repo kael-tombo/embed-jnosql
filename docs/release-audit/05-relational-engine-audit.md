@@ -23,7 +23,7 @@ Per README (as corrected): a built-in SQL dialect over collections — SELECT (w
 ## Findings
 | ID | Status | Severity | Description |
 |---|---|---|---|
-| SQL-01 | CONFIRMED | Medium | Dialect is a subset: no DDL, no views/sequences/transactions-via-SQL, no subquery coverage claim. Documented as such in README. Not a defect — a boundary. |
+| SQL-01 | CONFIRMED (corrected 2026-09-22) | Medium | Dialect is a subset: **DDL limited to `CREATE TABLE`/`DROP TABLE`** (`parseCreate`/`parseDrop`), no `ALTER`, no `CREATE INDEX`, no constraints, no views/sequences/transactions-via-SQL, no subquery coverage claim. Documented as such in README, ROADMAP and `docs/api/REST-API.md`. Not a defect — a boundary. **The "no DDL" wording this row previously used was itself false and is R-54.** |
 | SQL-02 | CONFIRMED | Medium | No JDBC driver; `27-` records the absence and forbids JDBC claims. |
 | SQL-03 | PARTIALLY VERIFIED | Low | Constraint enforcement (PK uniqueness, NOT NULL) not systematically audited at SQL level; document-level id uniqueness exists via `upsert` semantics. Listed in 55-feature-test-traceability as a coverage gap. |
 | SQL-04 | CONFIRMED (fixed) | High | SQL-created collections were invisible after restart (shared root cause with B-05; fixed via collection rediscovery). |

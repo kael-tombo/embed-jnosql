@@ -11,7 +11,7 @@ This document outlines the evolutionary development roadmap for **JunifyDB (JNoS
 - [x] Write-Ahead Logging (WAL) with deterministic fsync crash durability.
 - [x] Framework starters and extensions: Spring Boot, Quarkus, Micronaut, Vert.x.
 - [x] Embedded HTTP Developer Console & Admin API.
-- [x] Built-in SQL dialect over documents (SELECT/INSERT/UPDATE/DELETE, WHERE, JOIN, aggregation; no DDL/views/sequences — see docs/release-audit/08).
+- [x] Built-in SQL dialect over documents (SELECT/INSERT/UPDATE/DELETE, WHERE, JOIN, aggregation, plus `CREATE TABLE`/`DROP TABLE`; no `ALTER`, no views/sequences/constraints — see docs/release-audit/08).
 - [x] CDC change feed wired to the write path (in-memory ring + file connector; Kafka connector optional).
 - [x] Crash-safety hardening: WAL replay on FILE and LSM engines, snapshot rotation, corrupt-snapshot quarantine, MVCC write-write conflict detection.
 - [x] 682 automated tests, 0 failures (release-audit baseline; full suite green).

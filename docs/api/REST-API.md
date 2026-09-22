@@ -75,7 +75,9 @@ POST /api/sql
 {"query":"SELECT 1"}
 → {"columns":["1"],"rows":[{"1":1}],"executionTimeMs":2,"rowCount":1,"status":"success"}
 ```
-See audit doc 08 for the supported dialect surface (no DDL, views, or sequences).
+See audit doc 08 for the supported dialect surface. DDL is limited to `CREATE TABLE` and
+`DROP TABLE`; there is no `ALTER`, no `CREATE INDEX`, no constraints, views, sequences,
+stored procedures, or JDBC driver.
 
 ## Key-Value
 

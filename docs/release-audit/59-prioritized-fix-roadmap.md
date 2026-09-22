@@ -3,6 +3,13 @@
 ## Scope
 Ordered remediation plan with why/what/priority/risk/dependencies/acceptance/verification for each item.
 
+> **SUPERSEDED for sequencing (2026-09-22).** This is the round-1 roadmap, written when the
+> suite was at 669 tests and the decision document was `61-…`. Its P0 items are closed
+> (suite green at **791/791**; CHANGELOG amended; CI Docker job removed; demos re-executed) and
+> the P1/P2 items it lists are now triaged into three explicit buckets in
+> **`68-implementation-triage.md`**. Use 68 for current order of work; keep this file as the
+> historical plan. Version to tag is **`v0.9.0`** per `final-go-no-go-decision.md`.
+
 ## P0 — Before tagging the public release
 | ID | Item | Why | What | Risk | Deps | Acceptance & Verification |
 |---|---|---|---|---|---|---|
