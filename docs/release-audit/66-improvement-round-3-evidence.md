@@ -17,11 +17,11 @@ final decision in `63-final-go-no-go-decision.md`.
 ## Clean build + full regression
 
 - `mvn clean verify -Pcoverage-check` → **BUILD SUCCESS**.
-- Final suite: **749/749 tests, 0 failures/errors/skipped** with the coverage gate met
+- Final suite: **760/760 tests, 0 failures/errors/skipped** with the coverage gate met
   (`mvn clean verify -Pcoverage-check`, re-run after each fix cluster: 715 → 733 with
   +8 `BackupIntegrityTest`, +8 `ConsoleBackupEndpointTest`, +2 `CdcStatusAccuracyTest`;
   then → 741 with +8 `ConsoleIndexAndCdcEndpointTest`; then → 749 with
-  +8 `ConsoleTransactionAndBulkTest`).
+  +8 `ConsoleTransactionAndBulkTest`; then → 760 with +11 `ConsoleQueryEndpointTest`).
   Starting point last round was 689 (+6 `LaunchOptionValidationTest`,
   +7 `BenchmarkOptionValidationTest`, +2 `DocumentUpdateMergeTest`, +1 `SchemaNumericTypeTest`,
   +2 `DocumentTtlPersistenceTest`, +3 `KvTtlPersistenceTest`, +2 `ColumnFamilyTtlPersistenceTest`,
@@ -293,6 +293,31 @@ the console UI).
 
 Contract gate extended with the R-42/R-44 blocks (unknown-tx commit → 404, double commit →
 404, `rolled_back` string, bulk id addressability); suite **749/749** + 4/4 CLI.
+
+## NoSQL query-operator sweep (R-45..R-47, 2026-09-22 latest)
+
+Probed the `/api/collections/{name}/query` endpoint operator-by-operator against the seeded
+preview data. Two operators were silently wrong and one silently permissive — all invisible
+to the suite because **no test had ever covered `$regex`, `$and`, or `$or`**:
+
+| # | Finding | Live evidence (seeded `products`) |
+|---|---|---|
+| R-45 | `$regex` used `String.matches()` — implicitly anchored at both ends, so substring patterns never matched; any `$and`-joined query containing a `$regex` clause silently returned **zero rows** | `{"name":{"$regex":"Key"}}` with "Keyboard" present: **0 → 1** result |
+| R-46 | Top-level `{"$and":[...]}` / `{"$or":[...]}` were unreachable: arrays fell through `parseField` to "simple equality on a field named `$and`", so every document failed | `{"$and":[{"name":{"$eq":"Keyboard"}}]}`: **0 → 1** result |
+| R-47 | Unknown operators silently ignored (`default -> doc -> true`): a typo returned **every document**; `$in` with a non-list threw a raw ClassCastException → 500 | `{"$gteX":1}`: silent 4-rows → **400** naming the operator; `[unclosed` regex → **400** |
+
+Fix: substring `Matcher.find()` semantics for `$regex` (users who want anchoring write
+`^...$`), `$and`/`$or` extracted before the field loop (ANDed with remaining top-level
+conditions, MongoDB-style), and a new `QueryParser.QueryFormatException` mapped by the
+query endpoint to **400** (parse errors must never be 500).
+
+**Falsified before trusted**: the new `ConsoleQueryEndpointTest` (11 tests) run in a
+throwaway worktree at the pre-fix commit `08c4e4f` fails **9/11**; on the fixed tree 11/11.
+`CoverageExtensionTest.queryParser_unknownOperatorIgnored` had codified the old
+ignore-unknown-operators behavior and was inverted to
+`queryParser_unknownOperatorRefused`. Contract gate extended with regex/`$and`/`$or`
+match-count blocks and 400 assertions. Suite now **760/760** + 4/4 CLI; both gates PASS.
+Live after-states verified on the redeployed preview (regex=1, `$and`=1, typo=400).
 
 ## Repository / release mechanics state
 

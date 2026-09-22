@@ -178,9 +178,11 @@ class CoverageExtensionTest {
     }
 
     @Test
-    void queryParser_unknownOperatorIgnored() {
-        var q = QueryParser.parse(Map.of("name", Map.of("$unknown", "value")));
-        assertTrue(q.docPredicate().test(docA)); // unknown op = pass-through
+    void queryParser_unknownOperatorRefused() {
+        // R-47: unknown operators used to be silently ignored (pass-through),
+        // which turned every typo into "match all documents". They must throw.
+        assertThrows(QueryParser.QueryFormatException.class,
+                () -> QueryParser.parse(Map.of("name", Map.of("$unknown", "value"))));
     }
 
     @Test

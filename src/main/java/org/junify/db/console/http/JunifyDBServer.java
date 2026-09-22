@@ -1127,7 +1127,12 @@ public class JunifyDBServer {
                                     map.putAll(doc.getFields());
                                     return map;
                                 })
-                                .collect(java.util.stream.Collectors.toList()));
+                                .collect(java.util.stream.Collectors.toList()));                        } catch (org.junify.db.nosql.document.QueryParser.QueryFormatException e) {
+                            // R-45/R-46/R-47: malformed queries are client errors, not
+                            // server errors — a 500 here made every silent-wrong-result
+                            // bug invisible as "query failed".
+                            System.err.println("[CollectionsHandler] Bad query: " + e.getMessage());
+                            sendJson(exchange, 400, Map.of("error", "Invalid query", "message", e.getMessage()));
                         } catch (Exception e) {
                             System.err.println("[CollectionsHandler] Query error: " + e.getMessage());
                             e.printStackTrace();

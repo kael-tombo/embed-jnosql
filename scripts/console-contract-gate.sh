@@ -195,6 +195,55 @@ else
 fi
 
 echo
+echo "== nosql query operators must match and combine (R-45, R-46) =="
+curl -s -m 5 -X POST "$BASE/api/collections/gateq" -H 'Content-Type: application/json' -d '{"id":"q1","name":"Keyboard","stock":41}' >/dev/null
+curl -s -m 5 -X POST "$BASE/api/collections/gateq" -H 'Content-Type: application/json' -d '{"id":"q2","name":"Mouse Pad","stock":7}' >/dev/null
+
+N=$(curl -s -m 5 -X POST "$BASE/api/collections/gateq/query" -H 'Content-Type: application/json' -d '{"name":{"$regex":"Key"}}' | grep -o '"id"' | wc -l)
+if [ "$N" = "1" ]; then
+  pass "regex 'Key' matches Keyboard (substring semantics)"
+else
+  fail "regex 'Key' matched $N docs (want 1) — String.matches anchoring is back"
+fi
+
+N=$(curl -s -m 5 -X POST "$BASE/api/collections/gateq/query" -H 'Content-Type: application/json' -d '{"$and":[{"name":{"$eq":"Keyboard"}},{"stock":{"$gt":10}}]}' | grep -o '"id"' | wc -l)
+if [ "$N" = "1" ]; then
+  pass "top-level \$and returns the conjunction"
+else
+  fail "top-level \$and matched $N docs (want 1) — unreachable \$and is back"
+fi
+
+N=$(curl -s -m 5 -X POST "$BASE/api/collections/gateq/query" -H 'Content-Type: application/json' -d '{"$or":[{"name":"Keyboard"},{"name":"Mouse Pad"}]}' | grep -o '"id"' | wc -l)
+if [ "$N" = "2" ]; then
+  pass "top-level \$or returns the union"
+else
+  fail "top-level \$or matched $N docs (want 2)"
+fi
+
+echo
+echo "== malformed queries are 400, never silent all-docs or 500 (R-47) =="
+CODE=$(curl -s -m 5 -o /dev/null -w '%{http_code}' -X POST "$BASE/api/collections/gateq/query" -H 'Content-Type: application/json' -d '{"name":{"$gteX":1}}')
+if [ "$CODE" = "400" ]; then
+  pass "typo'd operator refused with 400"
+else
+  fail "typo'd operator returned $CODE (want 400)"
+fi
+
+N=$(curl -s -m 5 -X POST "$BASE/api/collections/gateq/query" -H 'Content-Type: application/json' -d '{"name":{"$gteX":1}}' | grep -o '"id"' | wc -l)
+if [ "$N" = "0" ]; then
+  pass "typo'd operator returns no rows"
+else
+  fail "typo'd operator returned $N rows — silent-ignore is back"
+fi
+
+CODE=$(curl -s -m 5 -o /dev/null -w '%{http_code}' -X POST "$BASE/api/collections/gateq/query" -H 'Content-Type: application/json' -d '{"name":{"$regex":"[unclosed"}}')
+if [ "$CODE" = "400" ]; then
+  pass "invalid regex pattern refused with 400"
+else
+  fail "invalid regex pattern returned $CODE (want 400)"
+fi
+
+echo
 echo "== a body-less POST must never drop the connection =="
 CODE=$(curl -s -m 10 -o /tmp/contract-gate-body.json -w '%{http_code}' -X POST "$BASE/api/backup")
 CURL_EXIT=$?
