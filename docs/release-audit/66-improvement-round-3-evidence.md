@@ -17,14 +17,17 @@ final decision in `63-final-go-no-go-decision.md`.
 ## Clean build + full regression
 
 - `mvn clean verify -Pcoverage-check` → **BUILD SUCCESS**.
-- Final suite: **785/785 tests, 0 failures/errors/skipped** with the coverage gate met
+- Final suite: **791/791 tests, 0 failures/errors/skipped** with the coverage gate met
+  (785 at the close of the round-3 clusters, +6 `ConsoleCollectionResolutionTest` in the
+  final docs-alignment round — see the last section of this file)
   (`mvn clean verify -Pcoverage-check`, re-run after each fix cluster: 715 → 733 with
   +8 `BackupIntegrityTest`, +8 `ConsoleBackupEndpointTest`, +2 `CdcStatusAccuracyTest`;
   then → 741 with +8 `ConsoleIndexAndCdcEndpointTest`; then → 749 with
   +8 `ConsoleTransactionAndBulkTest`; then → 760 with +11 `ConsoleQueryEndpointTest`;
   then → 769 with +9 `SqlUnknownTableTest`; then → 778 with +5
   `VectorSearchAndTtlReadTest`, +4 `ConsoleVectorSearchTest`;  then → 781 with +3
-  `VectorPersistenceTest`; then → 785 with +4 `EngineRestartDiscoveryTest`).
+  `VectorPersistenceTest`; then → 785 with +4 `EngineRestartDiscoveryTest`;
+  then → 791 with +6 `ConsoleCollectionResolutionTest`).
   Starting point last round was 689 (+6 `LaunchOptionValidationTest`,
   +7 `BenchmarkOptionValidationTest`, +2 `DocumentUpdateMergeTest`, +1 `SchemaNumericTypeTest`,
   +2 `DocumentTtlPersistenceTest`, +3 `KvTtlPersistenceTest`, +2 `ColumnFamilyTtlPersistenceTest`,
@@ -419,7 +422,8 @@ after a leftover IN_MEMORY probe server on :8097 masqueraded as the gate's fresh
 built jar and produced a false persistence failure, the gate **fails fast if its port
 is already bound** — a green gate can no longer be silently earned against the wrong
 server. Suite **785/785** + 4/4 CLI; all gates PASS on all three engines; preview
-redeployed and re-registered.
+redeployed and re-registered. (Later the same day the suite reached **791/791** with the
+R-55 collection-resolution tests — see the final section.)
 
 ## Repository / release mechanics state
 
@@ -441,4 +445,54 @@ redeployed and re-registered.
   and live verification.
 - Two product-identity residue defects (javadoc ANSI SQL; CHANGELOG/LICENSE
   old name) found and fixed with this file as evidence.
-- Decision document: `63-final-go-no-go-decision.md`.
+- Decision document: `63-final-go-no-go-decision.md` (round-3 internal verdict);
+  the canonical public-release decision is now `final-go-no-go-decision.md`.
+
+## Docs-alignment + collection-resolution round (R-54, R-55, 2026-09-22 latest)
+
+This round began as the baseline/assessment work and ended with two more defects, one of
+them the read-side twin of R-48.
+
+**R-54 — public docs misstated the SQL engine's DDL surface.** The README described the
+dialect as "no DDL, no sequences, no views" and the website engine card listed "DDL"
+under *Not included*, while `SqlParser.parseCreate()`/`parseDrop()` (lines 231/256)
+genuinely implement `CREATE TABLE` and `DROP TABLE`. Found by grepping the parser for DDL
+keywords instead of trusting the docs, and confirmed against the lexer: `TABLE` is the
+**only** DDL keyword that exists (`ALTER`/`INDEX`/`VIEW`/`SEQUENCE` are not tokens). Both
+surfaces now state the exact surface. This is a public-claim defect: the docs *understated*
+and *misstated* a working capability — the same class of dishonesty as over-claiming, in
+the other direction.
+
+**R-55 — collection resolution was a write.** `CollectionsHandler` resolved its target
+with `db.documentCollection(name)` **before** dispatching on the HTTP method, and that
+accessor auto-creates. Consequence, observed live on the preview while cleaning up R-48's
+leftovers:
+
+| Request | Before | After |
+|---|---|---|
+| `GET /api/collections/zz_typo_read` | **200** `[]` **and the collection was created** (catalog 15 → 16) | **404** `Collection not found` |
+| `DELETE /api/collections/no_such_table` | **405** *and created the collection it was asked to remove* | **404** |
+| `POST /api/collections/live_created` | 201 (correct) | 201 — unchanged, the documented schemaless workflow |
+| `DELETE` on an existing collection | 405 bare `Method not allowed` | 405 naming the limitation (no collection-drop capability exists) |
+
+A **read** that silently writes to the catalog is the worst variant of the fake-success
+family found in this session: it corrupts the catalog permanently, from a request that
+looked like a failed lookup. Fixed by resolving without creating for every non-document-
+write request (GET, DELETE, and the `stats`/`set-ttl`/`cleanup`/`query` sub-resources),
+404 for an unknown collection, and keeping auto-create **only** for POST/PUT document
+writes — the R-48/ADR-004 contract, applied consistently to the Console API surface this
+time rather than the SQL engine.
+
+Coverage: 6 tests in `ConsoleCollectionResolutionTest`, **falsified: 4/6 fail at pre-fix
+`7709d31`** with the defect verbatim in the assertions (`expected: <404> but was: <200>`
+returning body `[]`; `expected: <404> but was: <405>`; the bare 405 message). The other two
+are guard-rails that must pass on both sides (POST still creates; existing reads still
+work). Contract gate extended with five R-55 checks (404s, catalog-count immutability, no
+ghost collection, POST-still-creates), and the gate re-verified on FILE, LSM_TREE and
+B_TREE. Suite **791/791** core + 4/4 CLI.
+
+**Also this round (release artefacts, not defects):** the recoverable baseline
+(`baseline/`, validated with its 28-checksum caveat), the deep current-codebase assessment
+(`00-current-codebase-assessment.md` — which is where the missing JDBC driver and the
+SQL-over-document-store coupling were documented), the architecture decision records
+(`67-…`), and the canonical `final-go-no-go-decision.md`.

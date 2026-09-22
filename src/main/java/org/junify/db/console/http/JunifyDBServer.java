@@ -1000,6 +1000,26 @@ public class JunifyDBServer {
             
             // /api/collections/{name} - delegate to collection logic
             var name = parts[3];
+
+            // R-55: resolving a collection must not be a write. `documentCollection(name)`
+            // auto-creates, so before this guard *any* method on a typo'd name created the
+            // collection — `GET /api/collections/typo` returned 200 [] and left the typo in
+            // the catalog forever, and `DELETE /api/collections/typo` answered 405 while
+            // creating the very resource it was asked to remove. Only document-write
+            // requests (POST/PUT) may auto-create, which is the documented schemaless
+            // workflow INSERT and the repositories rely on; reads, DELETE, and the typed
+            // sub-resources are 404 for an unknown collection.
+            boolean reservedSub = parts.length >= 5
+                    && ("stats".equals(parts[4]) || "set-ttl".equals(parts[4])
+                        || "cleanup".equals(parts[4]) || "query".equals(parts[4]));
+            boolean documentWrite = !reservedSub
+                    && ("POST".equals(exchange.getRequestMethod())
+                        || "PUT".equals(exchange.getRequestMethod()));
+            if (!documentWrite && !db.getCollectionNames().contains(name)) {
+                sendJson(exchange, 404, Map.of("error", "Collection not found: " + name));
+                return;
+            }
+
             var collection = db.documentCollection(name);
 
             if (parts.length == 4) {
@@ -1034,7 +1054,13 @@ public class JunifyDBServer {
                         }
                     }
                 } else {
-                    sendJson(exchange, 405, Map.of("error", "Method not allowed"));
+                    // Honest 405: there is no collection-drop capability in the engine, and
+                    // the UI offers no such control, so name the limitation instead of
+                    // emitting a bare "Method not allowed".
+                    sendJson(exchange, 405, Map.of(
+                            "error", "Method not allowed",
+                            "message", "Deleting a whole collection is not supported; "
+                                    + "delete its documents via /api/collections/" + name + "/{id}"));
                 }
             } else if (parts.length >= 5) {
                 // Check for /api/collections/{name}/stats endpoint

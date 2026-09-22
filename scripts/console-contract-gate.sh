@@ -296,6 +296,51 @@ else
   fail "SELECT on existing table returned $CODE (want 200)"
 fi
 
+echo "== collection resolution must never create (R-55) =="
+COLS_BEFORE=$(curl -s -m 5 "$BASE/api/collections" | grep -o '"name"' | wc -l)
+
+CODE=$(curl -s -m 5 -o /dev/null -w '%{http_code}' "$BASE/api/collections/gate_ghost_coll")
+if [ "$CODE" = "404" ]; then
+  pass "GET unknown collection -> 404"
+else
+  fail "GET on an unknown collection returned $CODE (want 404) — reads are resolving collections into existence"
+fi
+
+CODE=$(curl -s -m 5 -o /dev/null -w '%{http_code}' -X DELETE "$BASE/api/collections/gate_ghost_coll")
+if [ "$CODE" = "404" ]; then
+  pass "DELETE unknown collection -> 404"
+else
+  fail "DELETE on an unknown collection returned $CODE (want 404) — it must not create what it was asked to remove"
+fi
+
+CODE=$(curl -s -m 5 -o /dev/null -w '%{http_code}' -X POST "$BASE/api/collections/gate_ghost_coll/query" -H 'Content-Type: application/json' -d '{}')
+if [ "$CODE" = "404" ]; then
+  pass "query on unknown collection -> 404"
+else
+  fail "query on an unknown collection returned $CODE (want 404)"
+fi
+
+COLS_AFTER=$(curl -s -m 5 "$BASE/api/collections" | grep -o '"name"' | wc -l)
+if [ "$COLS_BEFORE" = "$COLS_AFTER" ]; then
+  pass "failed collection requests left the catalog unchanged ($COLS_BEFORE)"
+else
+  fail "catalog grew on failed requests ($COLS_BEFORE -> $COLS_AFTER)"
+fi
+
+N=$(curl -s -m 5 "$BASE/api/collections" | grep -o 'gate_ghost_coll' | wc -l)
+if [ "$N" = "0" ]; then
+  pass "no ghost collection left behind"
+else
+  fail "gate_ghost_coll exists — collection resolution created it"
+fi
+
+CODE=$(curl -s -m 5 -o /dev/null -w '%{http_code}' -X POST "$BASE/api/collections/gate_fresh_coll" -H 'Content-Type: application/json' -d '{"id":"g1","v":1}')
+if [ "$CODE" = "201" ]; then
+  pass "POST still auto-creates (schemaless workflow intact)"
+else
+  fail "POST to a new collection returned $CODE (want 201)"
+fi
+
 echo
 echo "== vector search must not create indexes or fake success (R-50) =="
 CODE=$(curl -s -m 5 -o /dev/null -w '%{http_code}' -X POST "$BASE/api/vectors/gate_typo/search" -H 'Content-Type: application/json' -d '{"vector":[1,2,3],"k":3}')
