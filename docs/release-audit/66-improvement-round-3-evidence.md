@@ -17,7 +17,7 @@ final decision in `63-final-go-no-go-decision.md`.
 ## Clean build + full regression
 
 - `mvn clean verify -Pcoverage-check` → **BUILD SUCCESS**.
-- Final suite: **791/791 tests, 0 failures/errors/skipped** with the coverage gate met
+- Final suite: **795/795 tests, 0 failures/errors/skipped** with the coverage gate met
   (785 at the close of the round-3 clusters, +6 `ConsoleCollectionResolutionTest` in the
   final docs-alignment round — see the last section of this file)
   (`mvn clean verify -Pcoverage-check`, re-run after each fix cluster: 715 → 733 with
@@ -27,7 +27,7 @@ final decision in `63-final-go-no-go-decision.md`.
   then → 769 with +9 `SqlUnknownTableTest`; then → 778 with +5
   `VectorSearchAndTtlReadTest`, +4 `ConsoleVectorSearchTest`;  then → 781 with +3
   `VectorPersistenceTest`; then → 785 with +4 `EngineRestartDiscoveryTest`;
-  then → 791 with +6 `ConsoleCollectionResolutionTest`).
+  then → 791 with +6 `ConsoleCollectionResolutionTest`; then → 795 with +4 `TransactionalCatalogVisibilityTest` (R-59)).
   Starting point last round was 689 (+6 `LaunchOptionValidationTest`,
   +7 `BenchmarkOptionValidationTest`, +2 `DocumentUpdateMergeTest`, +1 `SchemaNumericTypeTest`,
   +2 `DocumentTtlPersistenceTest`, +3 `KvTtlPersistenceTest`, +2 `ColumnFamilyTtlPersistenceTest`,
@@ -422,8 +422,8 @@ after a leftover IN_MEMORY probe server on :8097 masqueraded as the gate's fresh
 built jar and produced a false persistence failure, the gate **fails fast if its port
 is already bound** — a green gate can no longer be silently earned against the wrong
 server. Suite **785/785** + 4/4 CLI; all gates PASS on all three engines; preview
-redeployed and re-registered. (Later the same day the suite reached **791/791** with the
-R-55 collection-resolution tests — see the final section.)
+redeployed and re-registered. (Later the same day the suite reached **795/795** with the
+R-55 collection-resolution and **R-59** transactional-catalog tests — see the final section.)
 
 ## Repository / release mechanics state
 
@@ -489,7 +489,7 @@ returning body `[]`; `expected: <404> but was: <405>`; the bare 405 message). Th
 are guard-rails that must pass on both sides (POST still creates; existing reads still
 work). Contract gate extended with five R-55 checks (404s, catalog-count immutability, no
 ghost collection, POST-still-creates), and the gate re-verified on FILE, LSM_TREE and
-B_TREE. Suite **791/791** core + 4/4 CLI.
+B_TREE. Suite **795/795** core + 4/4 CLI.
 
 **Also this round (release artefacts, not defects):** the recoverable baseline
 (`baseline/`, validated with its 28-checksum caveat), the deep current-codebase assessment

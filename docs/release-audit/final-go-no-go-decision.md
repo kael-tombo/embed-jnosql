@@ -55,7 +55,7 @@ modified files were never touched by this audit.
 and dependency graph, measured engine boundaries, SQL/NoSQL/Console/website/test/dependency
 assessments, and the product-honesty judgment. Headline structural facts: **single Maven
 module** (97 main / 62 test sources, 10 demos), **three mandatory runtime dependencies**,
-**22 Console API routes**, 74 audit documents, **785 + 4 + 4 tests green**.
+**22 Console API routes**, 76 audit documents, **795 + 4 + 4 tests green**.
 
 ---
 
@@ -162,7 +162,7 @@ The <5 MB claim must always be published with this scope attached.
 
 ## Test-Quality Verdict
 
-**PASS.** **785/785** core, **4/4** CLI, **4/4** cross-engine demo, both Console gates PASS on
+**PASS.** **795/795** core, **4/4** CLI, **4/4** cross-engine demo, both Console gates PASS on
 three engines, and CI runs the contract gate across FILE/LSM_TREE/B_TREE.
 
 Tests are not trusted merely for existing: every fix in this session was **falsified** — its
@@ -253,7 +253,7 @@ execution backs it — that rule now applies to the corpus itself.
 | Browser network traces | `docs/browser-testing/evidence/network/` |
 | Footprint bytes | `02-size-and-footprint-audit.md` |
 | Gates | `scripts/console-contract-gate.sh`, `scripts/console-auth-gate.sh`, `.github/workflows/ci.yml` |
-| Live verification premise | 785 + 4 + 4 green; gates PASS on FILE, LSM_TREE, B_TREE |
+| Live verification premise | 795 + 4 + 4 green; gates PASS on FILE, LSM_TREE, B_TREE |
 
 ## Final Checklist
 
@@ -269,7 +269,7 @@ execution backs it — that rule now applies to the corpus itself.
 | Procedures/functions/triggers implemented or explicitly unsupported | ✅ explicitly unsupported |
 | NoSQL engine independently validated | ✅ 14 defects fixed, live-verified |
 | Core footprint under 5 MB | ✅ 3.11 MB + 3 mandatory deps |
-| Tests and demos pass from a clean checkout | ✅ 785 + 4 + 4 |
+| Tests and demos pass from a clean checkout | ✅ 795 + 4 + 4 |
 | Console browser-tested | ✅ 22 routes, gates on 3 engines |
 | Website accurately reflects the product | ✅ after corrections — **remote push still pending** |
 | Website and Console share the yellow/white identity | ✅ |

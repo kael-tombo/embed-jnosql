@@ -61,5 +61,30 @@ not a regression.
 ## Acceptance Criteria
 Per-demo commands documented (follow-up); no hidden env vars found in demo sources (checked — none).
 
+## Pre-tag demo run (2026-09-22) — the matrix caught a core defect
+
+Re-running the demo matrix from a clean local install (`mvn install` for core, `demo-common`
+and the three starters — the documented prerequisite, without which the demos silently test a
+stale core) produced one failure and one repair:
+
+| Demo | Result |
+|---|---|
+| `end-to-end-validation` | **4/4 PASS** |
+| `advanced-queries-demo` | **5/5 PASS** |
+| `batch-processing-demo` | **5/5 PASS** |
+| `annotation-showcase-demo` | **FAILED 2/5** → **5/5 PASS** after the R-59 fix |
+
+**R-59 is the payoff.** `annotation-showcase-demo` persists an `@Entity @Table(name = "invoices")`
+through a transaction and then runs `SELECT ... FROM invoices`; both SQL-backed tests errored with
+`SqlUnknownTableException: Table 'invoices' does not exist`. The read was correct — the **catalog
+was wrong**: collections written through a transaction never registered in
+`JunifyDB.getCollectionNames()`, which was latent until R-48 made SQL reads resolve through a
+non-creating path. Found by running the demos, not by reading code, and it existed *because* the
+demo exercises the real JPA/transaction path that unit tests covered only piecewise.
+
+That is the argument for keeping this matrix as a release gate: it is the only layer that
+exercises annotations + transactions + SQL together the way a user does.
+
 ## Final Status
-**CONDITIONAL PASS**
+**CONDITIONAL PASS** — and the pre-tag run above is the reason to keep re-running it: this layer
+found a High-severity catalog defect (R-59) that the 791-test core suite did not.

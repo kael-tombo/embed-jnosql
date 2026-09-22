@@ -218,7 +218,7 @@ visually and terminologically distinguished, corrected SQL hint text this round.
 
 | Suite | Result |
 |---|---|
-| Core (`mvn test`) | **785/785**, 0 failures, 0 errors, 0 skipped |
+| Core (`mvn test`) | **795/795**, 0 failures, 0 errors, 0 skipped (785 at assessment time; +6 R-55, +4 R-59) |
 | CLI module | 4/4 |
 | `demo/end-to-end-validation` | 4/4 across four engines |
 | `scripts/console-contract-gate.sh` | PASS on **FILE, LSM_TREE, B_TREE** (wired into CI) |
@@ -291,6 +291,6 @@ mature, tested, honestly-limited embedded database — which is exactly what exi
 | Website | **PASS after this round's corrections**; remote deploy pending |
 | Brand consistency | **PASS** — shared yellow/white tokens, logo, mark, favicon across all surfaces |
 | Footprint | **PASS** — 3.11 MB core + 3 mandatory deps, both under 5 MB |
-| Test quality | **PASS** — 785 + 4 + 4 green, every fix falsified against its pre-fix commit |
+| Test quality | **PASS** — 795 + 4 + 4 green, every fix falsified against its pre-fix commit |
 | Honesty of public claims | **PASS after correction** of the DDL, dimension, and DDL-hint falsehoods |
 | Release blockers remaining | **None technical** — R-13 (Maven Central credentials) is external; R-20 (mixed-writer) is a documented fundamental limitation |

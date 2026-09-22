@@ -276,7 +276,23 @@ public class JunifyDB implements Closeable {
     public Transaction beginTransaction() {
         checkOpen();
         metrics.recordTransaction();
-        return new Transaction(engine, eventBus, metrics, mvcc);
+        // R-59: transactions write straight to the engine, so the catalog never learned about
+        // the collections they touched and getCollectionNames() omitted them — which then broke
+        // SQL reads (R-48 makes a read on an unlisted collection a hard 404) and made committed
+        // data invisible to backups and the console. The transaction reports its collections on
+        // successful commit.
+        return new Transaction(engine, eventBus, metrics, mvcc).onCommit(this::registerCommittedCollection);
+    }
+
+    /**
+     * Registers a collection that a committed transaction has written data into (R-59).
+     * Resolving through {@link #documentCollection(String)} is deliberate: it creates the
+     * database-level wrapper (and loads its indexes) exactly as a normal write path would.
+     */
+    private void registerCommittedCollection(String name) {
+        if (!collections.containsKey(name)) {
+            documentCollection(name);
+        }
     }
 
     public MVCCManager mvcc() {

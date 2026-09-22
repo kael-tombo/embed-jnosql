@@ -165,7 +165,7 @@ credentials exist. Recorded as the only external-dependency blocker (R-13).
 
 **Status:** ACCEPTED
 
-**Context.** The product is tested (785 + 4 + 4 green), tiny (3.11 MB), and honest — but a
+**Context.** The product is tested (795 + 4 + 4 green), tiny (3.11 MB), and honest — but a
 1.0 database is expected to ship **JDBC** and **constraint enforcement**, and this one has
 neither.
 

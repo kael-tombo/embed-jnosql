@@ -8,9 +8,12 @@ import org.junify.db.storage.spi.StorageEngine;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 public class Transaction implements AutoCloseable {
 
@@ -27,6 +30,19 @@ public class Transaction implements AutoCloseable {
     private final Instant createdAt;
     private volatile long timeoutMs;
     private volatile Instant lastActivity;
+
+    /**
+     * Collections this transaction has written to.
+     *
+     * <p><b>R-59 (2026-09-22):</b> a transactional write goes straight to the storage engine
+     * through {@link TransactionalCollection}, bypassing the database's in-memory collection
+     * catalog. Data committed through a transaction was therefore invisible to
+     * {@code JunifyDB.getCollectionNames()} — and so to SQL reads, backups and the console's
+     * catalog — until some unrelated call happened to resolve the collection by name. The
+     * names gathered here are handed to the owning database on a successful commit.</p>
+     */
+    private final Set<String> touchedCollections = new LinkedHashSet<>();
+    private Consumer<String> commitRegistrar;
 
     public Transaction(StorageEngine engine, EventBus eventBus, DatabaseMetrics metrics) {
         this(engine, eventBus, metrics, 30000, null);
@@ -139,7 +155,20 @@ public class Transaction implements AutoCloseable {
     public DocumentCollection documentCollection(String name) {
         checkOpen();
         lastActivity = Instant.now();
+        touchedCollections.add(name);
         return new TransactionalCollection(name, engine, operations, eventBus, metrics);
+    }
+
+    /**
+     * Registers the collections this transaction wrote to with {@code registrar}, called once
+     * per collection <b>only after a successful commit</b> (R-59). Set by
+     * {@code JunifyDB.beginTransaction()}. A rolled-back transaction registers nothing: it
+     * holds no committed data, and adding its collections to the catalog would misdescribe
+     * the database.
+     */
+    public Transaction onCommit(Consumer<String> registrar) {
+        this.commitRegistrar = registrar;
+        return this;
     }
 
     public void commit() {
@@ -207,6 +236,19 @@ public class Transaction implements AutoCloseable {
         if (mvccOk) {
             metrics.recordTransactionCommit();
             eventBus.emit(EventBus.EventType.AFTER_COMMIT, id);
+            // R-59: the collections this transaction wrote to now hold data, so the owning
+            // database's catalog must list them. Best-effort: a registration failure must not
+            // turn a committed transaction into a thrown exception.
+            if (commitRegistrar != null) {
+                for (String name : touchedCollections) {
+                    try {
+                        commitRegistrar.accept(name);
+                    } catch (RuntimeException e) {
+                        System.err.println("[Transaction] collection registration failed for "
+                                + name + ": " + e.getMessage());
+                    }
+                }
+            }
         } else {
             metrics.recordTransactionRollback();
             eventBus.emit(EventBus.EventType.AFTER_ROLLBACK, id);

@@ -42,7 +42,7 @@ What is in scope for the first public release, and what is explicitly out of sco
 Add an aggregator/flatten POM strategy in a later minor release so `mvn verify` at root covers starters; publish a SUPPORTED-MATRIX page. The `maven-central` profile already supplies the source/javadoc/GPG plugins (doc 46, MC-01 fixed); Central publication itself remains gated on credentials (R-13).
 
 ## Current verification state (2026-09-22)
-**791/791** core tests + 4/4 CLI + 4/4 cross-engine demo; contract gate PASS on FILE,
+**795/795** core tests + 4/4 CLI + 4/4 cross-engine demo; contract gate PASS on FILE,
 LSM_TREE and B_TREE; auth gate PASS; core jar **3,114,172 bytes** with three mandatory
 runtime dependencies — inside the <5 MB requirement. Baseline comparison and delta:
 `baseline/BASELINE-COMPARISON.md`.

@@ -271,7 +271,7 @@ This round's sweep found no placeholder/framework branding on either surface.
 > collection returned 200 `[]` and created it**, and `DELETE` answered 405 *while creating
 > the resource it was asked to remove*. Non-document-write requests now resolve without
 > creating (404 if absent); POST/PUT keep auto-create. 6 tests, falsified 4/6 at `7709d31`;
-> gate extended and re-verified on FILE/LSM_TREE/B_TREE. Totals move to **791/791** core
+> gate extended and re-verified on FILE/LSM_TREE/B_TREE. Totals move to **795/795** core
 > + 4/4 CLI.
 >
 > **This document is superseded as the canonical public-release decision by
@@ -323,7 +323,7 @@ live-site redeploy, deployment-origin mismatch, CI demos job — docs 53/62).
 ## Evidence Summary
 
 - Clean build: `mvn clean verify -Pcoverage-check` → SUCCESS,
-  **791/791 tests green** (+4/4 in `cli/`), coverage gate met (Java 23 / Maven 3.9.15,
+  **795/795 tests green** (+4/4 in `cli/`), coverage gate met (Java 23 / Maven 3.9.15,
   Windows Server 2022) — `66-improvement-round-3-evidence.md`.
 - Endpoint-integrity sweep (R-39..R-41): every console-called path probed live — index route
   data loss reproduced (4 → 0 documents) and fixed, starved CDC connectors wired and verified
@@ -366,7 +366,7 @@ live-site redeploy, deployment-origin mismatch, CI demos job — docs 53/62).
 - [x] Security risks are addressed (doc 22; deps-scan green run #34)
 - [ ] Maven Central readiness is **not** verified — the `maven-central` profile (source/javadoc/GPG/Central plugins) exists but no staging or dry-run was ever executed: doc 46's validation section records that, MC-02 remains `NOT VERIFIED`, and the earlier "verified (metadata + dry-run)" wording in this checklist was unsupported (corrected 2026-09-22, MC-04). The canonical decision releases from GitHub instead and makes no Central claim (ADR-007)
 - [x] All critical blockers are resolved
-- [x] The complete regression suite passes (791/791 core + 4/4 CLI today)
+- [x] The complete regression suite passes (795/795 core + 4/4 CLI today)
 - [x] Destructive endpoints are safe: index maintenance cannot delete documents (R-41), and no endpoint reports success for work it did not do (R-34..R-40) — and this is no longer a one-time manual claim: the `console-contract` CI job re-probes every console-called path on every push (`scripts/console-contract-gate.sh`), and the gate itself was falsified against the pre-fix commit (10 failures incl. the data-loss check) before being trusted
 - [x] Backups capture real data, refuse to report success when empty, and restore round-trips (R-35/R-36 — added this round, since the previous answer was "no")
 
