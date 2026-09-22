@@ -11,8 +11,11 @@ against the saved baseline**. This is that comparison. Snapshot under comparison
 | `7709d31` | Preserve a verified baseline and document the codebase as it actually exists |
 | `66abb5d` | Stop collection resolution from creating the collection it addresses |
 | `1d3367c` | Make the audit corpus agree with its own evidence and name one canonical decision |
+| `19497a6` | Finish the DDL correction everywhere and close out the assessment deliverables |
 
-**Totals:** 3 commits, 26 files changed, **+2,386 / −33** lines.
+**Totals as of `19497a6`:** 4 commits, 34 files changed, **+2,574 / −42** lines — of which
+exactly **3 files are not documentation** (see below). Reproduce with:
+`git diff --stat junifydb-baseline-before-public-release-audit-20260922..HEAD`.
 
 ## What changed — production code
 
@@ -28,7 +31,7 @@ Everything else is tests, gates, and documentation:
 |---|---|
 | `src/test/java/org/junify/db/ConsoleCollectionResolutionTest.java` | +175 (new, 6 tests) |
 | `scripts/console-contract-gate.sh` | +37 (five R-55 checks) |
-| 22 documentation files | assessment, ADRs, decision, corpus corrections, register |
+| 31 documentation files | assessment, ADRs, decision, implementation triage, corpus corrections, public-doc claim fixes, register |
 
 **No engine, storage, WAL, index, SQL, or NoSQL implementation file changed.** The defect
 fixed since the baseline was in the Console's HTTP layer, not in the database.
