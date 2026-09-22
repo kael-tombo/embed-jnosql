@@ -17,10 +17,14 @@
 set -u
 
 PORT="${1:-8097}"
+# R-53: ENGINE env var lets CI run the full contract on every storage engine
+# (FILE, LSM_TREE, B_TREE). IN_MEMORY is excluded from any restart-dependent
+# assertions by the nature of the engine.
+ENGINE="${ENGINE:-FILE}"
 BASE="http://127.0.0.1:${PORT}"
 JAR="target/junify-db-core-1.0.0.jar"
-DATA_DIR="target/contract-gate-data"
-LOG="target/contract-gate-server.log"
+DATA_DIR="target/contract-gate-data-${ENGINE}"
+LOG="target/contract-gate-server-${ENGINE}.log"
 
 FAILURES=0
 SERVER_PID=""
@@ -75,8 +79,17 @@ trap cleanup EXIT
 [ -f "$JAR" ] || { echo "FAIL: $JAR missing — run: mvn -DskipTests package"; exit 2; }
 rm -rf "$DATA_DIR"
 
-echo "== booting server on :$PORT =="
-java -jar "$JAR" --port "$PORT" --data-dir "$DATA_DIR" --engine FILE --sync >"$LOG" 2>&1 &
+# A stale server already bound to $PORT would masquerade as the freshly built
+# jar and silently invalidate every check below (this actually happened: an
+# IN_MEMORY probe server on :8097 made the vector-persistence check fail
+# against a server that by design never persists). Fail fast instead.
+if curl -s -m 2 -o /dev/null "$BASE/api/health" 2>/dev/null; then
+  echo "FAIL: something is already listening on :$PORT — kill it before running the gate"
+  exit 2
+fi
+
+echo "== booting server on :$PORT ($ENGINE) =="
+java -jar "$JAR" --port "$PORT" --data-dir "$DATA_DIR" --engine "$ENGINE" --sync >"$LOG" 2>&1 &
 SERVER_PID=$!
 
 for i in $(seq 1 30); do

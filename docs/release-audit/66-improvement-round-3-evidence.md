@@ -17,14 +17,14 @@ final decision in `63-final-go-no-go-decision.md`.
 ## Clean build + full regression
 
 - `mvn clean verify -Pcoverage-check` → **BUILD SUCCESS**.
-- Final suite: **781/781 tests, 0 failures/errors/skipped** with the coverage gate met
+- Final suite: **785/785 tests, 0 failures/errors/skipped** with the coverage gate met
   (`mvn clean verify -Pcoverage-check`, re-run after each fix cluster: 715 → 733 with
   +8 `BackupIntegrityTest`, +8 `ConsoleBackupEndpointTest`, +2 `CdcStatusAccuracyTest`;
   then → 741 with +8 `ConsoleIndexAndCdcEndpointTest`; then → 749 with
   +8 `ConsoleTransactionAndBulkTest`; then → 760 with +11 `ConsoleQueryEndpointTest`;
   then → 769 with +9 `SqlUnknownTableTest`; then → 778 with +5
-  `VectorSearchAndTtlReadTest`, +4 `ConsoleVectorSearchTest`; then → 781 with +3
-  `VectorPersistenceTest`).
+  `VectorSearchAndTtlReadTest`, +4 `ConsoleVectorSearchTest`;  then → 781 with +3
+  `VectorPersistenceTest`; then → 785 with +4 `EngineRestartDiscoveryTest`).
   Starting point last round was 689 (+6 `LaunchOptionValidationTest`,
   +7 `BenchmarkOptionValidationTest`, +2 `DocumentUpdateMergeTest`, +1 `SchemaNumericTypeTest`,
   +2 `DocumentTtlPersistenceTest`, +3 `KvTtlPersistenceTest`, +2 `ColumnFamilyTtlPersistenceTest`,
@@ -397,6 +397,29 @@ data directory, including deletion persistence and the corrupt-file quarantine),
 add vector → kill server → restart → index present with `size:1`, search returns
 `lv1`. Contract gate extended with a persistence-file check. Suite **781/781** + 4/4
 CLI; both gates PASS.
+
+## Engine-matrix round (R-53, 2026-09-22 latest)
+
+The gates had only ever booted FILE. Booting real servers on LSM_TREE and B_TREE and
+comparing catalogs across a restart exposed R-53: **persisted collections were
+invisible after restart** on both engines. `materializePersistedCollections()`
+enumerated `engine.collectionNames()` — an SPI method whose default returns an empty
+set and which only `FileEngine` overrides. LSM data survived on disk (WAL/SSTables),
+BTree data survived on disk (index file), but the catalog (`/api/collections`,
+backups, SQL) showed nothing until a client requested the exact collection name.
+
+Fix: discovery enumerates `collections()` — the live-and-persisted set that every
+engine implements — unioned with `collectionNames()` for engines reporting persisted
+identity only there. Covered by `EngineRestartDiscoveryTest` (4 tests: LSM/BTree/FILE
+restart cycles plus the zero-record non-case), **falsified: 2/4 fail at `db63c79`**.
+
+Process hardening that came out of this round: the contract gate is now parametrized
+by `ENGINE` and CI runs it on **FILE, LSM_TREE, and B_TREE** (all PASS locally); and
+after a leftover IN_MEMORY probe server on :8097 masqueraded as the gate's freshly
+built jar and produced a false persistence failure, the gate **fails fast if its port
+is already bound** — a green gate can no longer be silently earned against the wrong
+server. Suite **785/785** + 4/4 CLI; all gates PASS on all three engines; preview
+redeployed and re-registered.
 
 ## Repository / release mechanics state
 

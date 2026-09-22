@@ -223,7 +223,10 @@ jobs:
         run: ./mvnw -B -DskipTests package
 
       - name: Run console contract gate (unauthenticated surface)
-        run: bash scripts/console-contract-gate.sh 8097
+        run: |
+          bash scripts/console-contract-gate.sh 8097
+          ENGINE=LSM_TREE bash scripts/console-contract-gate.sh 8097
+          ENGINE=B_TREE bash scripts/console-contract-gate.sh 8097
 
       - name: Run console auth gate (enforcement + session lifecycle)
         run: bash scripts/console-auth-gate.sh 8098

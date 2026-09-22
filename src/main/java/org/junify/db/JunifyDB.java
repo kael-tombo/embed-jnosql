@@ -148,9 +148,31 @@ public class JunifyDB implements Closeable {
      * run. Without this, data persisted by an earlier process (e.g. via SQL)
      * is invisible to {@link #documentCollection(String)} callers after a
      * restart until they happen to request the collection by name.
+     *
+     * <p><b>R-53 (2026-09-22):</b> this used to enumerate
+     * {@code engine.collectionNames()} — an SPI method whose default returns an
+     * empty set and which only {@code FileEngine} overrides. On LSM_TREE and
+     * B_TREE the data survived a restart on disk (WAL/SSTables, index file) but
+     * was <b>unreachable through every listing API</b>: {@code /api/collections}
+     * showed an empty catalog, SQL and backups saw nothing, and the data came
+     * back only if a client happened to request the exact collection name.
+     * Enumerate {@code collections()} instead — the live-and-persisted set that
+     * every engine implements — with {@code collectionNames()} as a fallback
+     * union for engines that report persisted identity only there.</p>
      */
     private void materializePersistedCollections() {
-        for (String name : engine.collectionNames()) {
+        java.util.LinkedHashSet<String> names = new java.util.LinkedHashSet<>();
+        try {
+            names.addAll(engine.collections());
+        } catch (Exception e) {
+            System.err.println("[JunifyDB] collection discovery failed (continuing): " + e.getMessage());
+        }
+        try {
+            names.addAll(engine.collectionNames());
+        } catch (Exception e) {
+            // collectionNames() may be unsupported; collections() already covered it.
+        }
+        for (String name : names) {
             if (!collections.containsKey(name)) {
                 documentCollection(name);
             }
