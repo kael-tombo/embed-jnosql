@@ -248,6 +248,32 @@ The manual probing method that found R-34..R-41 is now a repeatable CI job.
 - **CI**: new `console-contract` job (needs `build`, Java 21, packages the jar, runs the
   gate on :8097, uploads the server log on failure). YAML validated.
 
+## Auth gate — the security surface gets the same treatment
+
+The unauthenticated gate proves responses are honest; it cannot prove that the security
+model *enforces* anything, because with no key configured everything is open by design.
+**`scripts/console-auth-gate.sh`** boots a second server with `--api-key` set and asserts:
+
+1. **No open path**: every console-called endpoint (13 GETs + a write) returns **401** to an
+   anonymous request — a single unprotected path would be a breach.
+2. **Wrong key rejected everywhere** (4 paths), not just on one handler.
+3. **Real key accepted everywhere** (10 GETs) — a key that authenticates nowhere is a lockout.
+4. **Session lifecycle**: `POST /api/auth/login` with the key issues a session cookie and a
+   CSRF token; the cookie authenticates a GET; logout returns 200; the same cookie afterwards
+   returns **401**.
+
+Result on the fixed tree: **PASS** (34 checks). Falsification note: the same gate run at the
+pre-fix commit `b822f9f` also **passes**, and that is the expected, honest outcome — the
+authentication enforcement code was not touched by the R-31..R-41 fixes. This gate is a
+regression tripwire for *future* changes to the auth surface, not evidence that a past defect
+was fixed; its value is that a change which accidentally opens a path, breaks key
+validation, or orphans sessions now fails CI instead of shipping.
+
+The CSRF-only configuration (`csrfEnabled` with session-cookie auth) remains covered by
+`SecurityEnforcementTest` at the unit level; the CLI surface cannot reach it because
+`--api-key` sets `authEnabled` without enabling CSRF, which is the documented behaviour the
+gate now pins down (API-key requests bypass CSRF by design; see `isCsrfValid`).
+
 ## Repository / release mechanics state
 
 - Remote CI: last runs green — `pages build and deployment` success on

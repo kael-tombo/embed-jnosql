@@ -222,12 +222,17 @@ jobs:
       - name: Package jar
         run: ./mvnw -B -DskipTests package
 
-      - name: Run console contract gate
+      - name: Run console contract gate (unauthenticated surface)
         run: bash scripts/console-contract-gate.sh 8097
+
+      - name: Run console auth gate (enforcement + session lifecycle)
+        run: bash scripts/console-auth-gate.sh 8098
 
       - name: Upload server log on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: contract-gate-server-log
-          path: target/contract-gate-server.log
+          path: |
+            target/contract-gate-server.log
+            target/contract-auth-gate-server.log
