@@ -138,6 +138,15 @@ public class MultiEngineE2EValidationTest {
                             .buildConfig()
             );
 
+            // Catalog discovery (R-53, 2026-09-22): the reopened catalog must list
+            // every persisted collection WITHOUT a client asking for it by name —
+            // this is what /api/collections, backups, and SQL all read.
+            assertTrue(reopenedDb.getCollectionNames().contains("products"),
+                    "catalog must rediscover 'products' after restart on " + engineType
+                            + ": " + reopenedDb.getCollectionNames());
+            assertTrue(reopenedDb.getCollectionNames().contains("orders"),
+                    "catalog must rediscover 'orders' after restart on " + engineType);
+
             DocumentCollection reopenedProducts = reopenedDb.documentCollection("products");
             DocumentCollection reopenedOrders = reopenedDb.documentCollection("orders");
             ColumnFamily reopenedInventory = reopenedDb.columnFamily("inventory");

@@ -45,6 +45,19 @@ Prior-session evidence: demo tree, older run records, `MultiEngineE2EValidationT
 ## Improvement Plan
 `demo/README.md` with exact per-demo commands + expected output; root script `scripts/run-all-demos` for CI.
 
+## Update (2026-09-22, engine-matrix round)
+`end-to-end-validation` strengthened with **catalog-discovery assertions** (R-53): the
+cold-restart phase now requires `getCollectionNames()` to list `products` and `orders`
+without being asked, on every persistent engine — the exact assertion that failed for
+LSM_TREE/B_TREE before the R-53 fix, and which this demo (claiming a "multi-engine
+durability matrix") had been silently missing. 4/4 green after reinstalling the core
+artifact (`mvn install` — the demo resolves `junify-db-core` from the local repo, so a
+demo run against a stale install silently tests old behavior; that prerequisite is now
+ Load-bearing and documented here). Durability facts re-verified live: LSM_TREE recovers
+a document across a hard kill (taskkill) via its WAL; B_TREE losing writes since the
+last flush on a hard kill is the documented D-02 limitation (snapshot-on-flush, no WAL),
+not a regression.
+
 ## Acceptance Criteria
 Per-demo commands documented (follow-up); no hidden env vars found in demo sources (checked — none).
 
