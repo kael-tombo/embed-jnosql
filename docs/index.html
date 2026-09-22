@@ -978,9 +978,6 @@
     </div>
   </div>
 
-    </div>
-  </div>
-
   <h1>
     <span class="text-white">Two Engines. One JAR.</span><br />
     <span class="text-gradient">Zero Infrastructure.</span>
@@ -1479,7 +1476,15 @@ db.<span class="fn">kv</span>().<span class="fn">set</span>(<span class="str">"a
     <div style="text-align: center;">
       <span class="section-label">Quick Integration</span>
       <h2 class="section-title">Ready in <span class="text-gradient">Under 60 Seconds</span></h2>
-      <p class="section-desc" style="margin: 0 auto;">Add a single dependency to your build file and start immediately.</p>
+      <p class="section-desc" style="margin: 0 auto;">Clone, install, then add a single dependency to your build file.</p>
+      <!-- Explicit dark ink on a light surface: this section sits on the dark hero background,
+           so inherited text colour renders unreadable on a pale notice (caught in browser review). -->
+      <div style="max-width: 860px; margin: 0 auto 18px; padding: 12px 16px; border-radius: 10px; background: #FFF8E1; border: 1px solid #E8B923; font-size: 14px; line-height: 1.6; text-align: left; color: #1A1A1A;">
+        <strong style="color: #1A1A1A;">Not on Maven Central yet.</strong> These coordinates do not
+        resolve from any public repository. Install into your local repository first, then the
+        snippets below work as-is:
+        <br><code style="color: #7A4E00; background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 4px;">git clone &lt;repository-url&gt; &amp;&amp; cd JNoSQL-EMBED &amp;&amp; ./mvnw -DskipTests install</code>
+      </div>
     </div>
 
     <div class="install-box">

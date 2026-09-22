@@ -138,7 +138,23 @@ JunifyDB occupies the **upper-right quadrant**: embedded and multi-model. A nich
 
 ## Installation
 
-### Core (zero dependencies beyond Java 17)
+> **Not on Maven Central (yet).** JunifyDB is distributed from **GitHub Releases**; no artifact
+> is published to a public repository, so the coordinates below do **not** resolve on their own.
+> Install locally first — then they work exactly as written.
+
+```bash
+git clone <repository-url> && cd JNoSQL-EMBED
+./mvnw -DskipTests install     # installs junify-db-core and the starters into your local repo
+```
+
+Alternatively, download the shaded jar from the GitHub Release and put it on your classpath.
+
+### Core (Java 17+, three runtime dependencies)
+
+Maven pulls these in automatically; they are the only mandatory runtime dependencies:
+`jackson-databind`, `jackson-datatype-jsr310`, and `slf4j-api`. Everything else — Spring,
+Quarkus, Micronaut, Jakarta CDI, Hibernate, Micrometer — is optional (`provided` or `optional`
+scope) and absent unless you add it. The shaded jar is **3.11 MB** (core + those three).
 
 ```xml
 <dependency>

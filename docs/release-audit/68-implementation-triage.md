@@ -20,7 +20,7 @@ changes. These may be done without further architectural agreement.
 | A-1 | Correct public claims that the code contradicts (R-54 DDL, R-55 collection resolution, R-56 corpus claims) | Wording only, verified against the parser and endpoint behaviour | **DONE** |
 | A-2 | Extend the contract gate for each fixed surface (SQL, vectors, TTL, persistence, collection resolution) | Gates are additive and falsified before trust | **DONE** |
 | A-3 | Reproducible builds | Originally planned as "add the `outputTimestamp` property" on doc 46's claim that it was missing — **the property was already there and the build was already reproducible** (doc 46 was stale, R-57). The real gap was that **nothing measured it**, so it could silently regress. Now enforced: `scripts/reproducibility-check.sh` (PASS on the real tree with identical hashes; falsified to FAIL when the property is removed) plus the CI `reproducibility` job | **DONE** |
-| A-4 | README install snippet + explicit "not on Maven Central" note | Documentation; the release path is already decided (ADR-007) | OPEN — do with the tag |
+| A-4 | Install instructions must work | Turned out to be a real defect rather than a note: the documented coordinates resolve **nowhere** (nothing is published) and the core was labelled "zero dependencies" while having three (R-58). Fixed on README **and** the website, browser-verified, plus two stray `</div>`s removed | **DONE** |
 | A-5 | Playwright UI flow suite (was P1-5) | Purely additive test coverage over the Console | **OPEN** |
 | A-6 | README screenshots (was 39-WS-03) | Assets only | **OPEN** |
 | A-7 | Re-run all demos and record output before the tag | Verification, not code | OPEN — pre-tag |
