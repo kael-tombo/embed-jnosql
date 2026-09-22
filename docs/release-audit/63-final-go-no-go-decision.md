@@ -233,6 +233,15 @@ This round's sweep found no placeholder/framework branding on either surface.
 > auto-create. 9 new tests (falsified: 4/9 fail at `80efbea`), live before/after
 > evidence, contract gate extended. Totals move to **769/769** core + 4/4 CLI.
 >
+> **Addendum (vectors/TTL sweep, same day)**: two more silent-wrong-behavior defects —
+> R-50 (vector search on an unknown index **silently created an empty index** and
+> answered `results:[]`; missing vector / bad `k` / dimension mismatch surfaced as raw
+> 500s or fake empties) and R-51 (expired TTL documents were returned by reads with
+> only an `expired:true` hint — console, SQL, and adapters all read logically-deleted
+> data). Reads now hide expired documents; the sweeper was fixed to scan raw storage
+> after the regression tests caught that it iterated the now-filtered view. 9 new
+> tests, falsified 9/9 at `6d47a4c`. Totals move to **778/778** core + 4/4 CLI.
+>
 > The verdict is unchanged — all eight were fixable within the round and each now has a
 > regression test that fails on the old code. But the episode is the strongest evidence yet
 > that green suites are not proof: R-33 was a "PASS" feature that did not work, R-35 was a
@@ -276,7 +285,7 @@ live-site redeploy, deployment-origin mismatch, CI demos job — docs 53/62).
 ## Evidence Summary
 
 - Clean build: `mvn clean verify -Pcoverage-check` → SUCCESS,
-  **769/769 tests green** (+4/4 in `cli/`), coverage gate met (Java 23 / Maven 3.9.15,
+  **778/778 tests green** (+4/4 in `cli/`), coverage gate met (Java 23 / Maven 3.9.15,
   Windows Server 2022) — `66-improvement-round-3-evidence.md`.
 - Endpoint-integrity sweep (R-39..R-41): every console-called path probed live — index route
   data loss reproduced (4 → 0 documents) and fixed, starved CDC connectors wired and verified
@@ -319,7 +328,7 @@ live-site redeploy, deployment-origin mismatch, CI demos job — docs 53/62).
 - [x] Security risks are addressed (doc 22; deps-scan green run #34)
 - [x] Maven Central readiness is verified (metadata + dry-run; staging needs credentials)
 - [x] All critical blockers are resolved
-- [x] The complete regression suite passes (769/769 core + 4/4 CLI today)
+- [x] The complete regression suite passes (778/778 core + 4/4 CLI today)
 - [x] Destructive endpoints are safe: index maintenance cannot delete documents (R-41), and no endpoint reports success for work it did not do (R-34..R-40) — and this is no longer a one-time manual claim: the `console-contract` CI job re-probes every console-called path on every push (`scripts/console-contract-gate.sh`), and the gate itself was falsified against the pre-fix commit (10 failures incl. the data-loss check) before being trusted
 - [x] Backups capture real data, refuse to report success when empty, and restore round-trips (R-35/R-36 — added this round, since the previous answer was "no")
 

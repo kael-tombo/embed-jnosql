@@ -2515,6 +2515,14 @@ public class JunifyDBServer {
                     sendJson(exchange, 404, Map.of("error", "Vector index not found", "index", indexName));
                     return;
                 }
+                // R-50: a search against an unknown index used to silently create
+                // an empty index dimensioned from the query vector and answer
+                // 200 results:[] — a success signal for a typo'd index name.
+                // Only add/insert (POST to /{index}/{id}) may create-on-first-use.
+                if ("search".equals(id)) {
+                    sendJson(exchange, 404, Map.of("error", "Vector index not found", "index", indexName));
+                    return;
+                }
                 int dims = bodyData.containsKey("dims") ? ((Number) bodyData.get("dims")).intValue()
                         : (bodyData.get("vector") instanceof java.util.List<?> v ? v.size() : 0);
                 if (dims <= 0) {
@@ -2528,10 +2536,26 @@ public class JunifyDBServer {
             // /api/vectors/{index}/search — POST search
             if ("search".equals(id) && "POST".equals(exchange.getRequestMethod())) {
                 try {
-                    var vector = parseVector((java.util.List<?>) bodyData.get("vector"));
+                    if (!(bodyData.get("vector") instanceof java.util.List<?> rawVector)) {
+                        // R-50: a missing "vector" used to reach parseVector(null)
+                        // and surface as an NPE 500.
+                        sendJson(exchange, 400, Map.of("error",
+                                "Search requires a \"vector\" array field"));
+                        return;
+                    }
+                    var vector = parseVector(rawVector);
                     var k = bodyData.containsKey("k") ? ((Number) bodyData.get("k")).intValue() : 5;
+                    if (k <= 0) {
+                        // R-50: k=0 silently returned an empty "success" and k<0
+                        // surfaced as a bare "-5" 500 from the engine.
+                        sendJson(exchange, 400, Map.of("error", "k must be a positive integer"));
+                        return;
+                    }
                     var results = hnsw.search(vector, k);
                     sendJson(exchange, 200, Map.of("results", results, "k", k));
+                } catch (IllegalArgumentException e) {
+                    // dimension mismatch and similar caller mistakes
+                    sendJson(exchange, 400, Map.of("error", "Search failed", "message", e.getMessage()));
                 } catch (Exception e) {
                     sendJson(exchange, 500, Map.of("error", "Search failed", "message", e.getMessage()));
                 }
@@ -2561,7 +2585,6 @@ public class JunifyDBServer {
                 catch (Exception e) { sendJson(exchange, 500, Map.of("error", e.getMessage())); }
             }
         }
-        
         private float[] parseVector(java.util.List<?> list) {
             float[] vector = new float[list.size()];
             for (int i = 0; i < list.size(); i++) {

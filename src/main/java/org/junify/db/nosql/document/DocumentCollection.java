@@ -232,7 +232,15 @@ public class DocumentCollection {
     public Document findById(String id) {
         metrics.recordRead();
         var json = engine.get(name, id);
-        return json != null ? Document.fromJson(json) : null;
+        var doc = json != null ? Document.fromJson(json) : null;
+        // R-51: a document whose TTL has passed is logically deleted. Returning
+        // it with expired:true made every reader (console, adapters, SQL) see
+        // data that should be gone; only the metadata field hinted otherwise.
+        // Expiry on read is the same semantics the KV engine already applies.
+        if (doc != null && doc.isExpired()) {
+            return null;
+        }
+        return doc;
     }
 
     public List<Document> findAll() {
@@ -244,6 +252,9 @@ public class DocumentCollection {
         }
         var results = engine.scan(name).stream()
                 .map(Document::fromJson)
+                // R-51: hide expired documents from scans the same way findById
+                // now hides them from point reads.
+                .filter(d -> !d.isExpired())
                 .collect(Collectors.toList());
         if (cache != null) {
             cache.put(name + ":findAll", results);
@@ -281,6 +292,9 @@ public class DocumentCollection {
         } else {
             results = engine.scan(name).stream()
                     .map(Document::fromJson)
+                    // R-51: expired documents are logically deleted — hide them
+                    // from predicate queries too (both scan and index paths).
+                    .filter(d -> !d.isExpired())
                     .filter(query.docPredicate())
                     .collect(Collectors.toList());
         }
@@ -475,7 +489,11 @@ public class DocumentCollection {
 
     public long cleanupExpired() {
         long cleaned = 0;
-        for (var doc : findAll()) {
+        // R-51: sweep from RAW storage. findAll() now hides expired documents
+        // (they read as absent), so iterating it here would make the sweeper
+        // unable to ever see its own targets — the regression test caught
+        // exactly that interaction.
+        for (var doc : engine.scan(name).stream().map(Document::fromJson).collect(Collectors.toList())) {
             if (doc.isExpired()) {
                 deleteById(doc.id());
                 cleaned++;

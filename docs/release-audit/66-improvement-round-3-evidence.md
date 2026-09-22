@@ -17,12 +17,13 @@ final decision in `63-final-go-no-go-decision.md`.
 ## Clean build + full regression
 
 - `mvn clean verify -Pcoverage-check` → **BUILD SUCCESS**.
-- Final suite: **769/769 tests, 0 failures/errors/skipped** with the coverage gate met
+- Final suite: **778/778 tests, 0 failures/errors/skipped** with the coverage gate met
   (`mvn clean verify -Pcoverage-check`, re-run after each fix cluster: 715 → 733 with
   +8 `BackupIntegrityTest`, +8 `ConsoleBackupEndpointTest`, +2 `CdcStatusAccuracyTest`;
   then → 741 with +8 `ConsoleIndexAndCdcEndpointTest`; then → 749 with
   +8 `ConsoleTransactionAndBulkTest`; then → 760 with +11 `ConsoleQueryEndpointTest`;
-  then → 769 with +9 `SqlUnknownTableTest`).
+  then → 769 with +9 `SqlUnknownTableTest`; then → 778 with +5
+  `VectorSearchAndTtlReadTest`, +4 `ConsoleVectorSearchTest`).
   Starting point last round was 689 (+6 `LaunchOptionValidationTest`,
   +7 `BenchmarkOptionValidationTest`, +2 `DocumentUpdateMergeTest`, +1 `SchemaNumericTypeTest`,
   +2 `DocumentTtlPersistenceTest`, +3 `KvTtlPersistenceTest`, +2 `ColumnFamilyTtlPersistenceTest`,
@@ -344,6 +345,31 @@ Suite now **769/769** + 4/4 CLI; both gates PASS. Live after-states verified on 
 redeployed preview, including that the earlier probe pollution (`nope`, `no_such_table`,
 `once` collections created by probing the OLD code) demonstrates the defect is real in
 practice, not theoretical.
+
+## Vectors / TTL sweep (R-50..R-51, 2026-09-22 latest)
+
+Probed the last unprobed console surfaces: the vector endpoint and the TTL lifecycle.
+
+| # | Finding | Live evidence |
+|---|---|---|
+| R-50 | Vector **search silently created an empty index** for a typo'd name (dimensioned from the query vector) and answered `200 {"results":[]}`; missing `vector` field → NPE 500; `k=0` → fake empty success; negative `k` → bare `"-5"` 500; dimension mismatch → 500 | search typo'd index: `200 []` → **404**, no index created; missing vector / k≤0 / wrong dims → **400** |
+| R-51 | **Expired documents were returned by reads** with only an `expired:true` hint — console, SQL engine, and adapters all read logically-deleted data (the read-side counterpart of R-33's persistence fix) | TTL 1s → wait → point read `200 expired:true` → **404**; scan `[]`; SQL COUNT excludes it |
+
+R-51's fix produced a second-order defect that **the new tests caught before commit**:
+`cleanupExpired()` iterated `findAll()` — which now filters expired documents — so the
+sweeper could no longer see its own targets. It now scans raw storage. This is the test
+suite doing exactly what it exists for: `VectorSearchAndTtlReadTest.cleanupStillRemoves`
+failed, the interaction was fixed at the source, and the sweep is asserted to still
+remove what reads hide.
+
+`DocumentTtlPersistenceTest` had asserted the old behavior ("expiry is logical until
+cleaned up" — expired docs readable) and was inverted per R-51, with the storage
+round-trip assertions retained.
+
+**Falsified before trusted**: both new test classes run in a throwaway worktree at
+`6d47a4c` fail **9/9**. Contract gate extended with 6 vector checks and 3 TTL checks
+(including the sweep count). Suite now **778/778** + 4/4 CLI; both gates PASS; live
+after-states verified on the redeployed preview.
 
 ## Repository / release mechanics state
 

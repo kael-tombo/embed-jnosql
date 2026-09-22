@@ -37,12 +37,15 @@ class DocumentTtlPersistenceTest {
             var expiring = collection.findById(shortLived.id());
             assertNotNull(expiring, "document should be readable right after insert");
             assertNotNull(expiring.getExpiresAt(), "expiresAt must survive the storage round-trip");
+            assertEquals("expire", expiring.get("name"), "fields survive the round-trip too");
 
             Thread.sleep(1200);
 
-            var expired = collection.findById(shortLived.id());
-            assertNotNull(expired, "expiry is logical until cleaned up");
-            assertTrue(expired.isExpired(), "a 1s TTL must be expired after 1.2s");
+            // R-51 (2026-09-22): an expired document now reads as ABSENT — the
+            // same semantics the KV engine always had — instead of coming back
+            // with expired:true. The physical sweep still removes the row.
+            assertNull(collection.findById(shortLived.id()),
+                    "an expired document must read as absent (R-51)");
 
             assertEquals(1, collection.cleanupExpired(), "cleanupExpired should remove the expired document");
             assertNull(collection.findById(shortLived.id()), "expired document must be gone after cleanup");

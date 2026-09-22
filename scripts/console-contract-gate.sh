@@ -284,6 +284,79 @@ else
 fi
 
 echo
+echo "== vector search must not create indexes or fake success (R-50) =="
+CODE=$(curl -s -m 5 -o /dev/null -w '%{http_code}' -X POST "$BASE/api/vectors/gate_typo/search" -H 'Content-Type: application/json' -d '{"vector":[1,2,3],"k":3}')
+if [ "$CODE" = "404" ]; then
+  pass "search on unknown vector index -> 404"
+else
+  fail "search on unknown vector index returned $CODE (want 404) — silent-create is back"
+fi
+
+INFO=$(curl -s -m 5 "$BASE/api/vectors/gate_typo/_")
+case "$INFO" in
+  *"not found"*) pass "failed search left no empty index behind" ;;
+  *) fail "gate_typo now exists — search created it: $INFO" ;;
+esac
+
+CODE=$(curl -s -m 5 -o /dev/null -w '%{http_code}' -X POST "$BASE/api/vectors/gate_typo/search" -H 'Content-Type: application/json' -d '{"k":3}')
+if [ "$CODE" = "404" ]; then
+  pass "unknown-index search 404s before input validation"
+else
+  fail "unknown-index search with bad body returned $CODE (want 404)"
+fi
+
+curl -s -m 5 -X POST "$BASE/api/vectors/gate_vec/v1" -H 'Content-Type: application/json' -d '{"vector":[1,2,3]}' >/dev/null
+CODE=$(curl -s -m 5 -o /dev/null -w '%{http_code}' -X POST "$BASE/api/vectors/gate_vec/search" -H 'Content-Type: application/json' -d '{"k":3}')
+if [ "$CODE" = "400" ]; then
+  pass "missing vector field -> 400 (was NPE 500)"
+else
+  fail "missing vector field returned $CODE (want 400)"
+fi
+
+CODE=$(curl -s -m 5 -o /dev/null -w '%{http_code}' -X POST "$BASE/api/vectors/gate_vec/search" -H 'Content-Type: application/json' -d '{"vector":[1,2,3],"k":-5}')
+if [ "$CODE" = "400" ]; then
+  pass "negative k -> 400 (was bare-number 500)"
+else
+  fail "negative k returned $CODE (want 400)"
+fi
+
+CODE=$(curl -s -m 5 -o /dev/null -w '%{http_code}' -X POST "$BASE/api/vectors/gate_vec/search" -H 'Content-Type: application/json' -d '{"vector":[1,2],"k":3}')
+if [ "$CODE" = "400" ]; then
+  pass "dimension mismatch -> 400 (was 500)"
+else
+  fail "dimension mismatch returned $CODE (want 400)"
+fi
+
+R=$(curl -s -m 5 -X POST "$BASE/api/vectors/gate_vec/search" -H 'Content-Type: application/json' -d '{"vector":[1,2,3],"k":3}')
+case "$R" in
+  *'"results"'*) pass "real search on a real index works" ;;
+  *) fail "real search broken: $R" ;;
+esac
+
+echo
+echo "== ttl: expired documents read as absent (R-51) =="
+curl -s -m 5 -X POST "$BASE/api/collections/gate_ttl" -H 'Content-Type: application/json' -d '{"id":"shortlived","v":1}' >/dev/null
+curl -s -m 5 -X POST "$BASE/api/collections/gate_ttl/set-ttl" -H 'Content-Type: application/json' -d '{"documentId":"shortlived","ttlSeconds":1}' >/dev/null
+sleep 2
+
+CODE=$(curl -s -m 5 -o /dev/null -w '%{http_code}' "$BASE/api/collections/gate_ttl/shortlived")
+if [ "$CODE" = "404" ]; then
+  pass "expired document point-read -> 404"
+else
+  fail "expired document point-read returned $CODE (want 404) — fake-expired:true body is back"
+fi
+
+N=$(curl -s -m 5 "$BASE/api/collections/gate_ttl" | grep -o '"id":"shortlived"' | wc -l)
+if [ "$N" = "0" ]; then
+  pass "expired document hidden from collection scans"
+else
+  fail "expired document still visible in scans ($N hits)"
+fi
+
+D=$(curl -s -m 5 -X POST "$BASE/api/collections/gate_ttl/cleanup")
+expect_contains "cleanup sweep reports the physical delete" "$D" '"deleted":1'
+
+echo
 echo "== a body-less POST must never drop the connection =="
 CODE=$(curl -s -m 10 -o /tmp/contract-gate-body.json -w '%{http_code}' -X POST "$BASE/api/backup")
 CURL_EXIT=$?
