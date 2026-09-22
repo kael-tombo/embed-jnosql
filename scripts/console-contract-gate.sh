@@ -156,6 +156,45 @@ BODY=$(curl -s -m 5 -X DELETE "$BASE/api/cdc/connectors/never-existed")
 expect_contains "unknown connector delete" "$BODY" 'No connector named'
 
 echo
+echo "== transactions must not report success for nothing (R-42) =="
+BODY=$(curl -s -m 5 -X POST "$BASE/api/transactions" -H 'Content-Type: application/json' -d '{"action":"commit","transactionId":999999}')
+CODE=$(curl -s -m 5 -o /dev/null -w '%{http_code}' -X POST "$BASE/api/transactions" -H 'Content-Type: application/json' -d '{"action":"commit","transactionId":999999}')
+if [ "$CODE" = "404" ]; then
+  pass "commit of unknown txId -> 404"
+else
+  fail "commit of unknown txId returned $CODE (a no-op commit must not say committed)"
+fi
+TX=$(curl -s -m 5 -X POST "$BASE/api/transactions" -H 'Content-Type: application/json' -d '{}')
+TXID=$(echo "$TX" | tr ',' '\n' | grep transactionId | cut -d: -f2)
+curl -s -m 5 -X POST "$BASE/api/transactions" -H 'Content-Type: application/json' -d "{\"action\":\"commit\",\"transactionId\":$TXID}" >/dev/null
+CODE=$(curl -s -m 5 -o /dev/null -w '%{http_code}' -X POST "$BASE/api/transactions" -H 'Content-Type: application/json' -d "{\"action\":\"commit\",\"transactionId\":$TXID}")
+if [ "$CODE" = "404" ]; then
+  pass "double commit -> 404 (no second fake success)"
+else
+  fail "double commit returned $CODE"
+fi
+ROLL=$(curl -s -m 5 -X POST "$BASE/api/transactions" -H 'Content-Type: application/json' -d "{}" )
+TXID2=$(echo "$ROLL" | tr ',' '\n' | grep transactionId | cut -d: -f2)
+BODY=$(curl -s -m 5 -X POST "$BASE/api/transactions" -H 'Content-Type: application/json' -d "{\"action\":\"rollback\",\"transactionId\":$TXID2}")
+expect_contains "rollback status" "$BODY" 'rolled_back'
+case "$BODY" in
+  *rollbackted*) fail "the 'rollbackted' typo is back" ;;
+  *) pass "no 'rollbackted' typo" ;;
+esac
+
+echo
+echo "== bulk inserts must honour client ids (R-44) =="
+BODY=$(curl -s -m 5 -X POST "$BASE/api/bulk/gatebulk" -H 'Content-Type: application/json' -d '[{"id":"k1","name":"One"},{"id":"k2","name":"Two"}]')
+expect_contains "bulk insert" "$BODY" '"inserted":2'
+CODE=$(curl -s -m 5 -o /tmp/contract-gate-body.json -w '%{http_code}' "$BASE/api/bulk/gatebulk")
+CODE=$(curl -s -m 5 -o /tmp/contract-gate-body.json -w '%{http_code}' "$BASE/api/collections/gatebulk/k1")
+if [ "$CODE" = "200" ]; then
+  pass "bulk-inserted id k1 is addressable"
+else
+  fail "GET /gatebulk/k1 returned $CODE — bulk must honour client ids like the single-doc POST"
+fi
+
+echo
 echo "== a body-less POST must never drop the connection =="
 CODE=$(curl -s -m 10 -o /tmp/contract-gate-body.json -w '%{http_code}' -X POST "$BASE/api/backup")
 CURL_EXIT=$?

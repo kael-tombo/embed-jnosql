@@ -2285,8 +2285,34 @@ public class JunifyDBServer {
                 if ("commit".equals(action) || "rollback".equals(action)) {
                     var txId = data.containsKey("transactionId") ? ((Number) data.get("transactionId")).intValue() : -1;
                     var tx = activeTransactions.remove(txId);
-                    if (tx != null) { if ("commit".equals(action)) tx.commit(); else tx.rollback(); }
-                    sendJson(exchange, 200, Map.of("status", action + "ted", "transactionId", txId));
+                    // R-42: an unknown or already-finished transactionId used to return
+                    // 200 "committed"/"rollbackted" without doing anything — a commit
+                    // that cannot fail tells the client nothing about their data.
+                    if (tx == null) {
+                        sendJson(exchange, 404, Map.of(
+                            "error", "Unknown transaction",
+                            "message", "No active transaction with id " + txId + ". It may have already been committed, rolled back, or never existed.",
+                            "transactionId", txId,
+                            "activeTransactions", activeTransactions.keySet()
+                        ));
+                        return;
+                    }
+                    try {
+                        if ("commit".equals(action)) tx.commit(); else tx.rollback();
+                    } catch (IllegalStateException e) {
+                        // e.g. double commit: Transaction.commit throws once the tx is
+                        // already finished. Report it instead of a blanket 200.
+                        sendJson(exchange, 409, Map.of(
+                            "error", "Transaction already finished",
+                            "message", e.getMessage(),
+                            "transactionId", txId
+                        ));
+                        return;
+                    }
+                    sendJson(exchange, 200, Map.of(
+                        "status", "commit".equals(action) ? "committed" : "rolled_back",
+                        "transactionId", txId
+                    ));
                 } else {
                     var tx = db.beginTransaction();
                     var txId = tx.hashCode();
@@ -2677,28 +2703,47 @@ public class JunifyDBServer {
             
             if ("POST".equals(exchange.getRequestMethod())) {
                 var body = readBody(exchange);
-                var docs = JsonSerde.fromJson(body, java.util.List.class);
+                java.util.List<?> docs;
+                try {
+                    docs = JsonSerde.fromJson(body, java.util.List.class);
+                } catch (Exception e) {
+                    sendJson(exchange, 400, Map.of("error", "Invalid JSON body: expected an array of documents"));
+                    return;
+                }
                 var count = 0;
+                var skipped = 0;
                 if (docs instanceof java.util.List) {
                     for (Object doc : (java.util.List<?>) docs) {
                         if (doc instanceof java.util.Map) {
                             var docMap = (java.util.Map<?, ?>) doc;
                             var docEntity = new org.junify.db.nosql.document.Document();
-                            docEntity.id(java.util.UUID.randomUUID().toString());
-                            var fields = new java.util.HashMap<String, Object>();
+                            // R-44: honour a client-supplied id, matching the single-document
+                            // POST. The old code always generated a UUID, silently demoting the
+                            // caller's "id" to an ordinary field — so a bulk insert followed by
+                            // a GET-by-id returned 404 for every id the client had just sent.
+                            var idValue = docMap.get("id");
+                            docEntity.id(idValue != null ? idValue.toString() : java.util.UUID.randomUUID().toString());
+                            var fields = new java.util.LinkedHashMap<String, Object>();
                             for (var entry : docMap.entrySet()) {
-                                fields.put(String.valueOf(entry.getKey()), entry.getValue());
+                                var key = String.valueOf(entry.getKey());
+                                if ("id".equals(key) && idValue != null) {
+                                    continue; // id is the identity, not a duplicated field
+                                }
+                                fields.put(key, entry.getValue());
                             }
                             docEntity.getFields().putAll(fields);
                             collection.insert(docEntity);
                             count++;
+                        } else {
+                            skipped++;
                         }
                     }
                 }
                 sendJson(exchange, 201, Map.of(
                     "status", "success",
                     "collection", collectionName,
-                    "inserted", count
+                    "inserted", count,
+                    "skipped", skipped
                 ));
             } else if ("DELETE".equals(exchange.getRequestMethod())) {
                 var count = 0;

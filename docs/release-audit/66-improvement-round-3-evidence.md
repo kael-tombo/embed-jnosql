@@ -17,10 +17,11 @@ final decision in `63-final-go-no-go-decision.md`.
 ## Clean build + full regression
 
 - `mvn clean verify -Pcoverage-check` → **BUILD SUCCESS**.
-- Final suite: **741/741 tests, 0 failures/errors/skipped** with the coverage gate met
+- Final suite: **749/749 tests, 0 failures/errors/skipped** with the coverage gate met
   (`mvn clean verify -Pcoverage-check`, re-run after each fix cluster: 715 → 733 with
   +8 `BackupIntegrityTest`, +8 `ConsoleBackupEndpointTest`, +2 `CdcStatusAccuracyTest`;
-  then → 741 with +8 `ConsoleIndexAndCdcEndpointTest`).
+  then → 741 with +8 `ConsoleIndexAndCdcEndpointTest`; then → 749 with
+  +8 `ConsoleTransactionAndBulkTest`).
   Starting point last round was 689 (+6 `LaunchOptionValidationTest`,
   +7 `BenchmarkOptionValidationTest`, +2 `DocumentUpdateMergeTest`, +1 `SchemaNumericTypeTest`,
   +2 `DocumentTtlPersistenceTest`, +3 `KvTtlPersistenceTest`, +2 `ColumnFamilyTtlPersistenceTest`,
@@ -273,6 +274,25 @@ The CSRF-only configuration (`csrfEnabled` with session-cookie auth) remains cov
 `SecurityEnforcementTest` at the unit level; the CLI surface cannot reach it because
 `--api-key` sets `authEnabled` without enabling CSRF, which is the documented behaviour the
 gate now pins down (API-key requests bypass CSRF by design; see `isCsrfValid`).
+
+## Final sweep — transactions and bulk (R-42..R-44)
+
+Probed the remaining console surfaces not yet covered: transactions lifecycle, SSE stream,
+cleanup routes, bulk insert.
+
+| # | Finding | Live evidence |
+|---|---|---|
+| R-42 | Commit/rollback of an **unknown** txId returned `200 {"status":"committed"}` (no-op), double commit "succeeded" twice, rollback answered the malformed `"rollbackted"` | before: `200 committed` for txId 424242 → after: **404** with the active list; `rolled_back` correct |
+| R-43 | Suspected fake metric: `transactions` grows on begin. **Probing acquitted it** — begin→`transactions`, commit→`transactionCommits`, rollback→`transactionRollbacks` all move correctly; semantics are "begun", documented here | counters verified before/after live calls; recorded as not-a-defect |
+| R-44 | **Bulk inserts discarded client ids** (always UUID), so `GET /{collection}/k1` 404'd after bulk-inserting `k1`; the client's id was demoted to a duplicate field inside the document | before: bulk `k1` → GET **404** → after: **200** `{"id":"k1","fields":{"name":"A"}}`; junk entries now counted (`"skipped":1`) |
+
+Verified honest, no fix needed: SSE `/api/metrics/stream` (first event immediate, concurrent
+clients each served), collection/column cleanup routes (real counts), bulk DELETE (honest
+deleted count for a whole-collection truncate — dangerous but truthful, and unreachable from
+the console UI).
+
+Contract gate extended with the R-42/R-44 blocks (unknown-tx commit → 404, double commit →
+404, `rolled_back` string, bulk id addressability); suite **749/749** + 4/4 CLI.
 
 ## Repository / release mechanics state
 
