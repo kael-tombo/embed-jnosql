@@ -1,0 +1,4 @@
+Command: mvn test
+Result: Tests run: 785, Failures: 0, Errors: 0, Skipped: 0
+cli/: 4/4 | demo end-to-end-validation: 4/4
+Gates: console-contract PASS (FILE, LSM_TREE, B_TREE); console-auth PASS

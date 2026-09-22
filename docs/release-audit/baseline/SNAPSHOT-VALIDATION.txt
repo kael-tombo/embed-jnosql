@@ -1,0 +1,53 @@
+# Baseline Snapshot — Validation Record
+
+Snapshot: `junifydb-baseline-before-public-release-audit-20260922` @ `b10b6cd` (branch `main`)
+Validated: 2026-09-22 (same day, after snapshot creation)
+
+## Validation results
+
+| Check | Result |
+|---|---|
+| All required files present | **PASS** — manifest, repo status, checksums, build, test, restore instructions, archive, patch, untracked list |
+| Tracked-source archive created and listable | **PASS** — `source-snapshot.tar.gz`, 991 entries, 221 `.java` files, `tar -tzf` exits 0 |
+| Archive is extractable (restore dry-run) | **PASS** — extracted into a scratch directory; root files present (`README.md`, `pom.xml`, `LICENSE`, …) |
+| Repository remains buildable after snapshot | **PASS** — `mvn -DskipTests clean package` → BUILD SUCCESS, shaded jar **3,113,904 bytes** |
+| Tests reproduce the baseline result | **PASS** — `mvn test` → **785/785**, 0 failures/errors/skipped |
+| Baseline comparable with later changes | **PASS** — `git diff junifydb-baseline-before-public-release-audit-20260922..HEAD --stat` works (branch pointer, not a detached state) |
+| No secrets copied into the snapshot | **PASS** — pattern scan of packaged resources and the baseline directory is clean; no `.env`, keystore, `.pem`, or credentials file is tracked in the repository |
+| User changes preserved | **PASS** — the 29 modified-but-uncommitted files were **not** touched; patch captured; `git status` still reports 29 `M` |
+
+## Checksum verification — and one honest complication
+
+`sha1sum -c FILE-CHECKSUMS.txt` → **635 OK / 28 FAILED** (663 recorded entries).
+
+The 28 mismatches are **not corruption**. They are the browser-testing evidence files
+(`docs/browser-testing/evidence/network/trace-*.json`) that belong to the *other
+concurrent session*, which kept rewriting those exact files with new browser runs after
+this snapshot's checksum capture. Timeline evidence:
+
+- at capture: `trace-GET-api_health.json` hashed to `d2a28505…`
+- hours later: the same file hashes to `7a85b4da…`, while `git status` still shows it as
+  modified-but-uncommitted (i.e. its content changed, its commit state did not)
+- the captured patch records `index 75fafb5..1f2858f` for that file — a third value,
+  because Git blob hashes are not SHA-1-of-content
+
+**Conclusion, stated plainly:** a live working tree under concurrent editing cannot be
+pinned by working-tree checksums. The durable baseline is therefore anchored to what is
+immutable and provable:
+
+1. **the committed revision** `b10b6cd` (branch pointer + archive) — immutable;
+2. **the patch** of the 29 uncommitted files as of capture — a best-effort record of a
+   moving target, explicitly labelled as such;
+3. **the files themselves**, preserved in place and never touched by this audit.
+
+Per-file checksums remain useful for the 635 committed-and-untouched files (and for
+detecting tampering of the committed baseline via the archive).
+
+## Recovery confidence
+
+**HIGH.** Either of two independent paths restores the baseline:
+
+- `git worktree add ../restore junifydb-baseline-before-public-release-audit-20260922`
+- `tar -xzf source-snapshot.tar.gz -C <dir>`
+
+Both were exercised (dry-run extraction, branch listing, diff against the branch).

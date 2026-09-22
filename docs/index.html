@@ -1308,7 +1308,8 @@ db.<span class="fn">kv</span>().<span class="fn">set</span>(<span class="str">"a
           A built-in SQL dialect over collections: <code>SELECT</code> with <code>JOIN</code>, <code>GROUP BY</code>, <code>WHERE</code>, <code>ORDER BY</code>, <code>LIMIT</code>, plus <code>INSERT</code> / <code>UPDATE</code> / <code>DELETE</code> with parameter binding and typed result sets.
         </div>
         <div class="engine-use">Best for: <strong>reporting, aggregation, teams that think in tables</strong></div>
-        <div class="engine-use" style="color: var(--text-muted);">Not included: <strong>DDL, views, sequences, stored procedures, JDBC driver</strong></div>
+        <div class="engine-use">DDL support: <code>CREATE TABLE</code> and <code>DROP TABLE</code> only — no <code>ALTER</code>, no <code>CREATE INDEX</code></div>
+        <div class="engine-use" style="color: var(--text-muted);">Not included: <strong>constraints (PK/FK/unique/check), views, sequences, stored procedures, JDBC driver</strong></div>
       </div>
 
       <div class="engine-card">

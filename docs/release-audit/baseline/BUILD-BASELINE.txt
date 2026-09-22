@@ -1,0 +1,5 @@
+Command: mvn -DskipTests clean package
+Result: BUILD SUCCESS (shaded jar replaces original)
+Artifact: target/junify-db-core-1.0.0.jar = 3,113,904 bytes (3.11 MB < 5 MB requirement)
+Java: 23.0.1 / Maven: 3.9.15 / OS: Windows Server 2022
+Dependencies (compile): jackson-databind 2.17.0, jackson-datatype-jsr310 2.17.0, slf4j-api 2.0.12; provided-optional: jakarta.enterprise.cdi-api 4.0.1
