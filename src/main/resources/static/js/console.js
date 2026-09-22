@@ -11,6 +11,8 @@ const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 const esc = (v) => String(v ?? '').replace(/[&<>"']/g,
   (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
+let authRedirecting = false;
+
 async function api(path, opts = {}) {
   const res = await fetch('/api' + path, {
     headers: { 'Content-Type': 'application/json' },
@@ -25,6 +27,16 @@ async function api(path, opts = {}) {
     const err = new Error(msg);
     err.status = res.status;
     err.data = data;
+    // Session expired / not signed in: send the user to the login page
+    // once, instead of spraying "Unauthorized" toasts on every poll.
+    if (res.status === 401 && !path.startsWith('/auth') && !authRedirecting) {
+      authRedirecting = true;
+      toast('Session expired — redirecting to sign-in…', 'err', 5000);
+      setTimeout(() => {
+        const next = encodeURIComponent(location.pathname + location.hash);
+        window.location.href = '/login.html?next=' + next;
+      }, 700);
+    }
     throw err;
   }
   return data;
@@ -72,7 +84,7 @@ function fmtUptime(ms) {
 }
 
 function tbl(headers, rows) {
-  if (!rows.length) return `<div class="empty">No data</div>`;
+  if (!rows.length) return `<div class="empty"><svg class="empty-logo" aria-hidden="true"><use href="#brand-mark"/></svg><br>No data.</div>`;
   return `<table class="tbl"><thead><tr>${headers.map((h) => `<th>${esc(h)}</th>`).join('')}</tr></thead>
     <tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
 }
@@ -98,13 +110,13 @@ const ICONS = {
 
 const PANELS = [
   { id: 'overview',    label: 'Overview',     sub: 'Database at a glance',                    key: '1' },
-  { id: 'sql',         label: 'SQL Studio',   sub: 'ANSI-style SQL over collections',          key: '2' },
+  { id: 'sql',         label: 'SQL Studio',   sub: 'Relational SQL Engine — built-in dialect', key: '2' },
   { id: 'collections', label: 'Collections',  sub: 'Documents — inspect, edit, TTL, schema',   key: '3' },
   { id: 'kv',          label: 'Key-Value',    sub: 'KV, lists, sets, hashes',                  key: '4' },
   { id: 'columns',     label: 'Column Family',sub: 'Wide-column rows and ranges',              key: '5' },
-  { id: 'vectors',     label: 'Vectors',      sub: 'HNSW k-NN search',                         key: '6' },
+  { id: 'vectors',     label: 'Vectors',      sub: 'HNSW k-NN search (experimental)',          key: '6' },
   { id: 'schema',      label: 'Schema',       sub: 'Insert-time validation rules',             key: '7' },
-  { id: 'tx',          label: 'Transactions', sub: 'Begin, commit, roll back',                 key: '8' },
+  { id: 'tx',          label: 'Transactions', sub: 'Begin, commit, roll back (MVCC)',          key: '8' },
   { id: 'indexes',     label: 'Indexes',      sub: 'Secondary field indexes',                  key: '9' },
   { id: 'backup',      label: 'Backup',       sub: 'Snapshot and restore',                     key: '0' },
   { id: 'cdc',         label: 'CDC / Events', sub: 'Change data capture stream' },
@@ -112,10 +124,14 @@ const PANELS = [
   { id: 'server',      label: 'Server',       sub: 'Health and JVM telemetry' },
 ];
 
+/* Sidebar groups make the engine split explicit: relational vs
+   non-relational capabilities, then shared engine-wide surfaces. */
 const GROUPS = [
-  { name: 'Core Engine', items: ['overview', 'sql', 'collections', 'kv', 'columns'] },
-  { name: 'Data & AI',   items: ['vectors', 'schema', 'tx', 'indexes'] },
-  { name: 'Operations',  items: ['backup', 'cdc', 'audit', 'server'] },
+  { name: 'General',                 items: ['overview'] },
+  { name: 'Relational SQL Engine',   items: ['sql'] },
+  { name: 'Non-Relational NoSQL Engine', items: ['collections', 'kv', 'columns', 'vectors'] },
+  { name: 'Data Model',              items: ['schema', 'tx', 'indexes'] },
+  { name: 'Both Engines',            items: ['backup', 'cdc', 'audit', 'server'] },
 ];
 
 let activePanel = 'overview';
@@ -134,6 +150,8 @@ function buildNav() {
       b.className = 'nav-item';
       b.dataset.panel = p.id;
       b.innerHTML = `${ICONS[p.id]}<span class="nav-label">${esc(p.label)}</span>${p.key ? `<span class="nav-key">${p.key}</span>` : ''}`;
+      b.title = p.sub; // tooltip in rail / collapsed mode where the label is hidden
+      b.setAttribute('aria-label', p.label);
       b.onclick = () => goto(p.id);
       nav.appendChild(b);
     }
@@ -194,18 +212,19 @@ async function refreshOverview() {
       ${setKpi('Threads', health.threads?.active ?? '—')}
       ${setKpi('Heap used', fmtBytes(mem.used))}
       ${setKpi('Heap max', fmtBytes(mem.max))}
-    </div>`;
+    </div>
+    <div class="empty" style="padding:10px 0 0">Relational SQL and Non-Relational NoSQL queries both run against this engine.</div>`;
 
   const list = cols.collections ?? [];
   $('#ovCollections').innerHTML = list.length
     ? tbl(['Collection', 'Docs'], list.map((c) => [`<td>${esc(c.name)}</td>`, `<td class="num">${c.count}</td>`]))
-    : '<div class="empty">No collections yet — create one in SQL Studio</div>';
+    : '<div class="empty"><svg class="empty-logo" aria-hidden="true"><use href="#brand-mark"/></svg><br>No collections yet — insert a document on the Collections panel.</div>';
 
   const events = (await api('/audit/logs').catch(() => ({ events: [] }))).events ?? [];
   $('#ovAudit').innerHTML = events.length
     ? tbl(['Time', 'Op', 'Resource'], events.slice(0, 8).map((e) => [
         new Date(e.timestamp).toLocaleTimeString(), esc(e.operation), esc(e.resource ?? '')]))
-    : '<div class="empty">No mutations recorded yet</div>';
+    : '<div class="empty">No mutations recorded yet.</div>';
 }
 
 /* ============================================================
@@ -234,9 +253,10 @@ async function runSql() {
   } catch (e) {
     status.textContent = 'error'; status.className = 'badge err';
     $('#sqlMeta').textContent = '';
-    $('#sqlOut').innerHTML = `<div class="card card-pad" style="border-color:var(--err-dim)">
-      <strong style="color:var(--err)">${esc(e.message)}</strong>
+    $('#sqlOut').innerHTML = `<div class="card card-pad" style="border-color:var(--err-dim)" role="alert">
+      <strong style="color:var(--err)">✖ SQL error — ${esc(e.message)}</strong>
       ${e.data && e.data.message ? `<div style="margin-top:6px;color:var(--text-1)">${esc(e.data.message)}</div>` : ''}
+      <div style="margin-top:8px;font-size:12px;color:var(--text-2)">The Relational SQL Engine runs a built-in dialect (SELECT · INSERT · UPDATE · DELETE · JOIN · GROUP BY). DDL, views, and sequences are not supported.</div>
     </div>`;
   }
 }
@@ -286,6 +306,18 @@ async function loadCollection() {
     e.preventDefault();
     showDoc(colDocs.find((d) => d.id === a.dataset.doc));
   });
+}
+
+/* Auto-refresh entry point: unlike loadCollection(), it must not bark
+   at the user when the name box is still empty — show a hint instead. */
+async function refreshCollections() {
+  const name = $('#colSel').value.trim();
+  if (!name) {
+    $('#colCount').textContent = '';
+    $('#colTable').innerHTML = '<div class="empty"><svg class="empty-logo" aria-hidden="true"><use href="#brand-mark"/></svg><br>No collection loaded.<br>Type a name above (e.g. <b>users</b>) and press <b>Load</b>.</div>';
+    return;
+  }
+  await loadCollection();
 }
 
 function collectFields(docs) {
@@ -482,7 +514,7 @@ async function cfPut() {
 async function vecInfo() {
   // GET /api/vectors/{index}/{id} returns index-level stats for any id value
   const r = await api(`/vectors/${encodeURIComponent($('#vecIdx').value.trim())}/_`);
-  $('#vecStatus').textContent = `${r.size ?? 0} vecs · ${r.dimensions ?? '?'}d`;
+  $('#vecStatus').textContent = `${r.size ?? 0} vecs · ${r.dimensions ?? '?'}d (experimental)`;
 }
 async function vecSearch() {
   let vector;
@@ -497,7 +529,7 @@ async function vecSearch() {
       : [`<td><code>${esc(x.id ?? '')}</code></td>`, `<td class="num">${(+x.distance ?? 0).toFixed(4)}</td>`]);
     $('#vecOut').innerHTML = rows.length
       ? tbl(['id', 'distance'], rows)
-      : '<div class="empty">No results — index is empty or no match</div>';
+      : '<div class="empty">No results — index is empty or no match.</div>';
   } catch (e) {
     $('#vecOut').innerHTML = `<div class="empty">${esc(e.message)}</div>`;
   }
@@ -515,7 +547,7 @@ async function schRefresh() {
   }));
   $('#schList').innerHTML = details.length
     ? tbl(['Collection', 'Fields'], details)
-    : '<div class="empty">No schemas registered</div>';
+    : '<div class="empty">No schemas registered — collections accept any valid document.</div>';
 }
 async function schSave() {
   let fields;
@@ -559,7 +591,7 @@ async function idxList() {
   $('#idxOut').innerHTML = entries.length
     ? tbl(['Field', 'Type', 'Unique values', 'Entries'],
         entries.map(([f, i]) => [esc(f), esc(i.type ?? 'secondary'), i.uniqueValues ?? 0, i.totalIndexed ?? 0]))
-    : '<div class="empty">No indexes on this collection</div>';
+    : '<div class="empty">No indexes on this collection.</div>';
 }
 async function idxCreate() {
   const col = $('#idxCol').value.trim(), field = $('#idxField').value.trim();
@@ -619,7 +651,7 @@ async function cdcRefresh() {
   $('#cdcConnectors').innerHTML = conns.length
     ? tbl(['Name', 'Type', ''], conns.map((c) => [...c,
         `<button class="btn sm danger" data-cdc="${c[0]}">Remove</button>`]))
-    : '<div class="empty">No connectors</div>';
+    : '<div class="empty">No connectors configured.</div>';
   $$('#cdcConnectors [data-cdc]').forEach((b) => b.onclick = async () => {
     await api(`/cdc/connectors/${encodeURIComponent(b.dataset.cdc)}`, { method: 'DELETE' });
     cdcRefresh();
@@ -683,10 +715,10 @@ async function pollHealth() {
     $('#chipHealthText').textContent = h.status === 'ok' ? 'Healthy' : 'Degraded';
     $('#chipEngine').textContent = h.engine ?? '—';
     $('#chipUptime').textContent = 'up ' + fmtUptime(h.uptime ?? 0);
-  } catch {
+  } catch (e) {
     const chip = $('#chipHealth');
     chip.className = 'topbar-chip err';
-    $('#chipHealthText').textContent = 'Unreachable';
+    $('#chipHealthText').textContent = e?.status === 401 ? 'Sign-in required' : 'Unreachable';
   }
 }
 
@@ -695,7 +727,7 @@ async function pollHealth() {
    ============================================================ */
 const REFRESH = {
   overview: refreshOverview,
-  collections: loadCollection,
+  collections: refreshCollections,
   tx: txRefresh,
   schema: schRefresh,
   backup: bkRefresh,
@@ -716,6 +748,12 @@ function bind() {
   // topbar
   $('#btnTheme').onclick = () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
   $('#btnRefreshAll').onclick = () => { refreshPanel(activePanel); pollHealth(); };
+  $('#btnLogout').onclick = async () => {
+    try { await api('/auth/logout', { method: 'POST' }); } catch { /* best-effort */ }
+    try { localStorage.removeItem('apiKey'); sessionStorage.clear(); } catch { /* ignore */ }
+    const next = encodeURIComponent('/#');
+    window.location.href = '/login.html?next=' + next;
+  };
 
   // SQL
   $('#sqlRun').onclick = runSql;
@@ -797,8 +835,14 @@ function boot() {
   bind();
   bindKvTab();
   renderHistory();
+  // Deep-link support: honor #panel on load and keep browser
+  // back/forward navigation in sync with the active panel.
   const hash = location.hash.slice(1);
   goto(PANELS.some((p) => p.id === hash) ? hash : 'overview');
+  window.addEventListener('hashchange', () => {
+    const id = location.hash.slice(1);
+    if (PANELS.some((p) => p.id === id) && id !== activePanel) goto(id);
+  });
   pollHealth();
   setInterval(pollHealth, 10000);
   setInterval(() => { if (activePanel === 'overview') refreshOverview().catch(() => {}); }, 5000);

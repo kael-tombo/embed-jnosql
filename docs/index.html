@@ -4,15 +4,19 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>JunifyDB — The Embedded Dual-Engine Database for Java</title>
-  <meta name="description" content="JunifyDB is the embedded multi-model database for Java. NoSQL + built-in SQL in a single JAR. Zero Docker. Zero daemon. Zero infrastructure. Spring Boot, Quarkus, Micronaut ready." />
-  <meta name="keywords" content="JunifyDB, embedded database, Java, NoSQL, SQL, Spring Boot, Quarkus, Micronaut, JNoSQL, JPA, H2 alternative" />
+  <meta name="description" content="JunifyDB is the embedded dual-engine database for Java: a Relational SQL Engine and a Non-Relational NoSQL Engine (documents, key-value, Redis-style structures, wide-column) in a single JAR. Zero Docker. Zero daemon. Spring Boot, Quarkus, Micronaut ready." />
+  <meta name="keywords" content="JunifyDB, embedded database, Java, NoSQL, SQL, relational, multi-model, Spring Boot, Quarkus, Micronaut, JNoSQL, JPA" />
   <meta property="og:title" content="JunifyDB — The Embedded Dual-Engine Database for Java" />
-  <meta property="og:description" content="NoSQL + built-in SQL in a single JAR. Documents, Key-Value, Redis structures, Wide-Column — zero Docker, zero daemon." />
+  <meta property="og:description" content="Relational SQL Engine + Non-Relational NoSQL Engine in a single JAR. Documents, Key-Value, Redis-style structures, Wide-Column — zero Docker, zero daemon." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://armand-ratombotiana.github.io/JunifyDB/" />
+  <meta property="og:image" content="https://armand-ratombotiana.github.io/JunifyDB/assets/junifydb-banner.png" />
+  <meta property="og:image:width" content="2172" />
+  <meta property="og:image:height" content="724" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="JunifyDB — Embedded Dual-Engine Java Database" />
-  <meta name="twitter:description" content="Blazing 85k+ ops/sec embedded NoSQL + SQL for JVM applications." />
+  <meta name="twitter:title" content="JunifyDB — The Embedded Dual-Engine Database for Java" />
+  <meta name="twitter:description" content="Embedded multi-model NoSQL + built-in SQL in a single pure-Java JAR. Zero Docker, zero daemon, zero infrastructure." />
+  <meta name="twitter:image" content="https://armand-ratombotiana.github.io/JunifyDB/assets/junifydb-banner.png" />
 
   <!-- Canonical brand favicons (owner-supplied mark, 2026-09-21) -->
   <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png" />
@@ -67,6 +71,13 @@
 
       /* Glow & Shadows */
       --shadow-glow:  0 0 50px rgba(251, 191, 36, 0.16), 0 0 100px rgba(245, 158, 11, 0.08);
+
+      /* Z-index scale (single source for the site) */
+      --z-bg: 0;          /* grid + radial glow backdrops   */
+      --z-content: 1;     /* sections                        */
+      --z-drawer: 99;     /* mobile nav drawer               */
+      --z-nav: 100;       /* fixed top navigation            */
+      --z-tooltip: 200;
       --shadow-card:  0 8px 32px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(251, 191, 36, 0.1) inset;
       --shadow-btn:   0 8px 28px rgba(251, 191, 36, 0.35);
     }
@@ -76,6 +87,16 @@
     ═══════════════════════════════════════════════ */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
+
+    /* A11y: honor the OS reduced-motion preference (mascot float, grid pulse, glows) */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+      html { scroll-behavior: auto; }
+    }
     body {
       font-family: var(--font-sans);
       background: var(--c-bg);
@@ -94,7 +115,7 @@
 
     /* Animated Grid Background with Warm Amber Photons */
     .bg-grid {
-      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      position: fixed; inset: 0; z-index: var(--z-bg); pointer-events: none;
       background-image:
         linear-gradient(rgba(251, 191, 36, 0.04) 1px, transparent 1px),
         linear-gradient(90deg, rgba(251, 191, 36, 0.04) 1px, transparent 1px);
@@ -102,7 +123,7 @@
       animation: gridPulse 9s ease-in-out infinite;
     }
     .bg-radial-glow {
-      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      position: fixed; inset: 0; z-index: var(--z-bg); pointer-events: none;
       background: radial-gradient(circle at 50% 15%, rgba(251, 191, 36, 0.09) 0%, transparent 60%),
                   radial-gradient(circle at 85% 70%, rgba(245, 158, 11, 0.05) 0%, transparent 50%);
     }
@@ -115,12 +136,12 @@
        NAVIGATION
     ═══════════════════════════════════════════════ */
     nav {
-      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      position: fixed; top: 0; left: 0; right: 0; z-index: var(--z-nav);
       background: rgba(8, 9, 13, 0.88);
       backdrop-filter: blur(20px);
       border-bottom: 1px solid var(--c-border);
       padding: 0 2rem;
-      height: 104px;
+      height: 88px;
       display: flex; align-items: center; justify-content: space-between;
       transition: background 0.3s;
     }
@@ -129,9 +150,9 @@
       text-decoration: none;
     }
     .nav-logo-icon {
-      width: 96px; height: 88px;
+      width: 60px; height: 60px;
       display: flex; align-items: center; justify-content: center;
-      border-radius: 16px;
+      border-radius: 14px;
       transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
     .nav-logo:hover .nav-logo-icon { transform: scale(1.08) rotate(4deg); }
@@ -156,6 +177,7 @@
     }
     .nav-links a {
       color: var(--text-secondary); text-decoration: none; font-size: 14px; font-weight: 500;
+      padding: 10px 2px; /* comfortable touch/click target (44px+ with line box) */
       transition: color 0.2s, transform 0.2s;
     }
     .nav-links a:hover { color: var(--c-yellow); }
@@ -183,7 +205,7 @@
       padding: 1.5rem 2rem;
       flex-direction: column; gap: 1.2rem;
       backdrop-filter: blur(25px);
-      z-index: 99;
+      z-index: var(--z-drawer);
       transform: translateY(-10px); opacity: 0;
       transition: transform 0.3s ease, opacity 0.3s ease;
     }
@@ -199,7 +221,7 @@
        HERO SECTION — DYNAMIC MASCOT & VALUE PROPOSITION
     ═══════════════════════════════════════════════ */
     .hero {
-      position: relative; z-index: 1;
+      position: relative; z-index: var(--z-content);
       min-height: 94vh;
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
@@ -234,7 +256,7 @@
     }
     .mascot-avatar-wrap {
       position: relative;
-      width: 350px; height: 350px;
+      width: 252px; height: 252px;
       display: flex; align-items: center; justify-content: center;
       animation: floatMascot 4.5s ease-in-out infinite;
     }
@@ -243,7 +265,7 @@
       50% { transform: translateY(-8px) rotate(1.5deg); }
     }
     .mascot-aura {
-      position: absolute; inset: -10px;
+      position: absolute; inset: -15px;
       background: radial-gradient(circle, rgba(251, 191, 36, 0.35) 0%, rgba(245, 158, 11, 0.1) 50%, transparent 70%);
       border-radius: 50%; z-index: 0;
       animation: auraPulse 3s ease-in-out infinite;
@@ -254,7 +276,6 @@
     }
     .mascot-svg {
       position: relative; z-index: 1;
-      width: 100%; height: 100%;
       object-fit: contain;
       filter: drop-shadow(0 16px 32px rgba(0, 0, 0, 0.65));
     }
@@ -266,8 +287,10 @@
       max-width: 320px;
       text-align: left;
       position: relative;
+      z-index: var(--z-content); /* keep the bubble above the mascot aura glow */
       box-shadow: 0 10px 30px rgba(0,0,0,0.4), 0 0 20px rgba(251, 191, 36, 0.1);
     }
+    .hero-mascot-row { z-index: var(--z-content); }
     .mascot-speech-bubble::before {
       content: '';
       position: absolute; left: -10px; top: 50%; transform: translateY(-50%);
@@ -863,7 +886,7 @@
     }
     .footer-tagline { color: var(--text-muted); font-size: 13.5px; margin-bottom: 1.8rem; }
     .footer-links { display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap; margin-bottom: 2rem; }
-    .footer-links a { color: var(--text-secondary); text-decoration: none; font-size: 13.5px; font-weight: 600; transition: color 0.2s; }
+    .footer-links a { color: var(--text-secondary); text-decoration: none; font-size: 13.5px; font-weight: 600; padding: 8px 2px; transition: color 0.2s; }
     .footer-links a:hover { color: var(--c-yellow); }
     .footer-bottom { color: var(--text-muted); font-size: 12px; }
 
@@ -878,8 +901,7 @@
     @media (max-width: 768px) {
       .nav-links { display: none; }
       .mobile-menu-btn { display: block; }
-      .mascot-avatar-wrap { width: 240px; height: 240px; }
-      .nav-logo-icon img { width: 68px; height: 62px; }
+      .mascot-avatar-wrap { width: 190px; height: 190px; }
       .hero-mascot-row { flex-direction: column; gap: 1.2rem; }
       .mascot-speech-bubble::before { display: none; }
       .hero-stats { gap: 1.5rem; padding: 1rem 1.5rem; }
@@ -898,7 +920,7 @@
   <a href="#" class="nav-logo">
     <div class="nav-logo-icon">
       <!-- Canonical JunifyDB logo (2026-09-21, owner-supplied mark) -->
-      <img src="assets/junifydb-mark-512.png" alt="JunifyDB logo" width="90" height="82" style="filter: drop-shadow(0 2px 8px rgba(0,0,0,0.45));" />
+      <img src="assets/junifydb-logo-512-transparent.png" alt="JunifyDB logo" width="54" height="54" style="border-radius:12px;" />
     </div>
     <span class="nav-logo-text">Junify<span>DB</span></span>
   </a>
@@ -944,7 +966,7 @@
   <div class="hero-mascot-row">
     <div class="mascot-avatar-wrap" title="JunifyDB — the embedded dual-engine database for Java">
       <div class="mascot-aura"></div>
-      <img class="mascot-svg" src="assets/junifydb-mark-512.png" alt="JunifyDB logo" width="350" height="350" />
+      <img class="mascot-svg" src="assets/junifydb-logo-512-transparent.png" alt="JunifyDB logo" width="252" height="252" />
     </div>
 
     <!-- Brand Dialogue Bubble -->
@@ -960,13 +982,14 @@
   </div>
 
   <h1>
-    <span class="text-white">The Embedded Database</span><br />
-    <span class="text-gradient">Java Deserved All Along</span>
+    <span class="text-white">Two Engines. One JAR.</span><br />
+    <span class="text-gradient">Zero Infrastructure.</span>
   </h1>
 
   <p class="hero-sub">
-    NoSQL + built-in SQL in a single JAR. Documents, Key-Value, Redis structures,
-    Wide-Column — all in-process, zero infrastructure, zero Docker.
+    A <strong>Relational SQL Engine</strong> and a <strong>Non-Relational NoSQL Engine</strong> —
+    documents, key-value, Redis-style structures, and wide-column — embedded in your JVM,
+    in a single pure-Java JAR. No Docker, no daemon, no infrastructure.
   </p>
 
   <p class="hero-tagline">
@@ -977,6 +1000,7 @@
     <a href="#install" class="btn-primary">⚡ Get Started</a>
     <a href="https://github.com/armand-ratombotiana/JunifyDB" class="btn-secondary" target="_blank" rel="noopener">★ View on GitHub</a>
     <a href="#playground" class="btn-secondary">🧪 Live Playground</a>
+    <a href="https://github.com/armand-ratombotiana/JunifyDB#developer-console" class="btn-secondary">🖥️ Console</a>
   </div>
 
   <div class="hero-stats">
@@ -1047,17 +1071,16 @@ db.<span class="fn">kv</span>().<span class="fn">set</span>(<span class="str">"a
 <!-- ═══════════════════════════ PLAYGROUND SECTION (NEW) ═══════════════════════════ -->
 <section class="playground-section" id="playground">
   <div class="container">
-    <div style="text-align: center;">
-      <span class="section-label">Interactive Playground</span>
-      <h2 class="section-title">Test Dual-Engine Queries <span class="text-gradient">In Real Time</span></h2>
-      <p class="section-desc" style="margin: 0 auto;">Experience how JunifyDB seamlessly bridges NoSQL document criteria and built-in SQL against the same underlying in-process engine.</p>
+    <div style="text-align: center;">        <span class="section-label">Interactive Playground</span>
+      <h2 class="section-title">One Dataset, <span class="text-gradient">Two Engines</span></h2>
+      <p class="section-desc" style="margin: 0 auto;">Switch between the Non-Relational NoSQL Engine (fluent document criteria) and the Relational SQL Engine (built-in SQL dialect) — both against the same underlying collection.</p>
     </div>
 
     <div class="playground-box">
       <div class="playground-nav">
         <div class="playground-tabs">
-          <button class="pg-tab active" onclick="switchPlaygroundTab('nosql')">📄 NoSQL Document API</button>
-          <button class="pg-tab" onclick="switchPlaygroundTab('sql')">⚡ built-in SQL Engine</button>
+          <button class="pg-tab active" onclick="switchPlaygroundTab('nosql', this)">📄 NoSQL Document Query</button>
+          <button class="pg-tab" onclick="switchPlaygroundTab('sql', this)">🗄️ SQL Query</button>
         </div>
         <button class="pg-run-btn" onclick="executePlaygroundQuery()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
@@ -1077,7 +1100,7 @@ db.<span class="fn">kv</span>().<span class="fn">set</span>(<span class="str">"a
 
         <div class="pg-result-panel">
           <div class="pg-result-header">
-            <span>JVM In-Memory Result</span>
+            <span>JVM In-Memory Result <em id="pgEngineNote" style="font-style: normal; color: var(--c-yellow); font-size: 11px;">— via NoSQL Document API</em></span>
             <span class="pg-latency-badge" id="pgLatency">⚡ in-process</span>
           </div>
           <pre class="pg-output-json" id="pgOutput"><code>[
@@ -1109,7 +1132,7 @@ db.<span class="fn">kv</span>().<span class="fn">set</span>(<span class="str">"a
   <div class="container">
     <span class="section-label">Core Philosophy</span>
     <h2 class="section-title">Built on <span class="text-gradient">Five Invariant Pillars</span></h2>
-    <p class="section-desc">These are architectural constraints enforced across every storage engine and framework starter.</p>
+    <p class="section-desc">These are architectural constraints enforced across every storage engine and framework starter. A sixth card states the honest boundaries we do not claim.</p>
 
     <div class="pillars-grid">
       <div class="pillar-card">
@@ -1134,7 +1157,7 @@ db.<span class="fn">kv</span>().<span class="fn">set</span>(<span class="str">"a
         <div class="pillar-icon-box">🔀</div>
         <div class="pillar-title">Dual-Engine: NoSQL + SQL</div>
         <div class="pillar-desc">
-          Access your documents via fluent NoSQL queries or standard built-in SQL simultaneously. Both paradigms run against the exact same underlying storage substrate.
+          Access your data via the fluent NoSQL API or the built-in SQL engine simultaneously. Both engines run against the exact same underlying storage substrate — same data, two query paradigms.
         </div>
         <div class="pillar-code">db.sql("SELECT * FROM orders")</div>
       </div>
@@ -1155,6 +1178,15 @@ db.<span class="fn">kv</span>().<span class="fn">set</span>(<span class="str">"a
           Every mutation emits a lifecycle event. Built-in atomic metrics counters, Change Data Capture (CDC), and a bounded audit trail (in-memory view with a durable JSONL copy) are active out of the box.
         </div>
         <div class="pillar-code">db.events().subscribe(EventType.INSERT)</div>
+      </div>
+
+      <div class="pillar-card">
+        <div class="pillar-icon-box">🧾</div>
+        <div class="pillar-title">Honest Capability Boundaries</div>
+        <div class="pillar-desc">
+          The SQL surface is a built-in dialect — not a full ANSI grammar: no DDL, no views, no sequences, no stored procedures. Vectors and the Kafka CDC connector ship as clearly-labeled experimental features.
+        </div>
+        <div class="pillar-code">SELECT · INSERT · UPDATE · DELETE · JOIN · GROUP BY</div>
       </div>
 
       <div class="pillar-card">
@@ -1195,8 +1227,8 @@ db.<span class="fn">kv</span>().<span class="fn">set</span>(<span class="str">"a
         <div class="quad-cell highlight">
           <div class="quad-cell-label">⚡ Embedded · Multi-Model</div>
           <div class="quad-cell-name">JunifyDB</div>
-          <div class="quad-cell-desc">Documents, Key-Value, Redis structures, Wide-Column, HNSW Vectors + built-in SQL.</div>
-          <span class="quad-badge gold">The Golden Standard</span>
+          <div class="quad-cell-desc">Documents, Key-Value, Redis-style structures, Wide-Column + a built-in Relational SQL Engine.</div>
+          <span class="quad-badge gold">Embedded · Both Engines</span>
         </div>
 
         <div class="quad-cell">
@@ -1261,12 +1293,48 @@ db.<span class="fn">kv</span>().<span class="fn">set</span>(<span class="str">"a
   </div>
 </section>
 
+<!-- ═══════════════════════════ QUERY ENGINES (SQL vs NoSQL) ═══════════════════════════ -->
+<section id="query-engines">
+  <div class="container">
+    <span class="section-label">Two Query Engines</span>
+    <h2 class="section-title">One Relational SQL Engine, <span class="text-gradient">One Non-Relational NoSQL Engine</span></h2>
+    <p class="section-desc">JunifyDB is not “a NoSQL database with a query bolted on”. Both engines are first-class, share the same storage substrate, and have deliberately different semantics.</p>
+
+    <div class="engines-grid">
+      <div class="engine-card">
+        <span class="engine-badge amber">Relational · SQL</span>
+        <div class="engine-name">Relational SQL Engine</div>
+        <div class="engine-desc">
+          A built-in SQL dialect over collections: <code>SELECT</code> with <code>JOIN</code>, <code>GROUP BY</code>, <code>WHERE</code>, <code>ORDER BY</code>, <code>LIMIT</code>, plus <code>INSERT</code> / <code>UPDATE</code> / <code>DELETE</code> with parameter binding and typed result sets.
+        </div>
+        <div class="engine-use">Best for: <strong>reporting, aggregation, teams that think in tables</strong></div>
+        <div class="engine-use" style="color: var(--text-muted);">Not included: <strong>DDL, views, sequences, stored procedures, JDBC driver</strong></div>
+      </div>
+
+      <div class="engine-card">
+        <span class="engine-badge gold">Non-Relational · NoSQL</span>
+        <div class="engine-name">Non-Relational NoSQL Engine</div>
+        <div class="engine-desc">
+          Document collections with fluent criteria queries, key-value buckets with TTL, Redis-style lists / sets / hashes, wide-column families, and secondary + text indexes.
+        </div>
+        <div class="engine-use">Best for: <strong>flexible schemas, caches, queues, session state</strong></div>
+        <div class="engine-use" style="color: var(--text-muted);">Experimental: <strong>HNSW vector search (fixed 128 dimensions), Kafka CDC connector</strong></div>
+      </div>
+    </div>
+
+    <p class="section-desc" style="margin-top: 1.5rem; font-size: 0.85rem;">
+      <strong>Shared by both engines:</strong> the four storage engines below, MVCC transactions, WAL-based recovery, the metrics and event bus, and the embedded Console.
+      <strong>Experimental (not production features):</strong> HNSW vector search and the Kafka CDC connector — the file CDC connector is fully supported.
+    </p>
+  </div>
+</section>
+
 <!-- ═══════════════════════════ STORAGE ENGINES ═══════════════════════════ -->
 <section id="engines" style="background: rgba(14, 16, 23, 0.4); border-top: 1px solid var(--c-border); border-bottom: 1px solid var(--c-border);">
   <div class="container">
     <span class="section-label">Pluggable Core</span>
     <h2 class="section-title">Four Storage Engines, <span class="text-gradient">One Unified API</span></h2>
-    <p class="section-desc">Pick the ideal performance and durability characteristics for your workload with a single configuration flag.</p>
+    <p class="section-desc">Underneath both query engines, pick the durability and access-pattern characteristics for your workload with a single configuration flag. The SQL and NoSQL APIs stay identical across all four.</p>
 
     <div class="engines-grid">
       <div class="engine-card">
@@ -1277,9 +1345,9 @@ db.<span class="fn">kv</span>().<span class="fn">set</span>(<span class="str">"a
       </div>
 
       <div class="engine-card">
-        <span class="engine-badge white">Crash-Safe WAL</span>
+        <span class="engine-badge white">WAL + Checkpoints</span>
         <div class="engine-name">File-Based Engine</div>
-        <div class="engine-desc">Binary append-only log with background checkpointing and zero-loss crash recovery.</div>
+        <div class="engine-desc">Binary append-only write-ahead log with background checkpointing; writes replay from the WAL after a crash or unclean shutdown.</div>
         <div class="engine-use">Best for: <strong>Desktop apps, developer tools</strong></div>
       </div>
 
@@ -1497,7 +1565,7 @@ db.<span class="fn">kv</span>().<span class="fn">set</span>(<span class="str">"a
         <div class="uc-icon">📡</div>
         <div>
           <div class="uc-title">Edge & Desktop JVM Apps</div>
-          <div class="uc-desc">JavaFX apps, POS systems, IoT gateways. Single JAR, zero native C-libraries, crash-safe WAL, pure Java portability across x86 and ARM.</div>
+          <div class="uc-desc">JavaFX apps, POS systems, IoT gateways. Single JAR, zero native C-libraries, WAL-based recovery, pure Java portability across x86 and ARM.</div>
           <div class="uc-highlight">⚡ Single JAR, 0 native dependencies</div>
         </div>
       </div>
@@ -1532,9 +1600,9 @@ db.<span class="fn">kv</span>().<span class="fn">set</span>(<span class="str">"a
       <div class="uc-card">
         <div class="uc-icon">🔍</div>
         <div>
-          <div class="uc-title">In-Process Vector & Full-Text Search</div>
-          <div class="uc-desc">Built-in HNSW index for high-dimensional semantic embeddings alongside BM25 full-text indexing with zero external search clusters.</div>
-          <div class="uc-highlight">⚡ Native HNSW vector search in JVM</div>
+          <div class="uc-title">In-Process Search</div>
+          <div class="uc-desc">Built-in inverted text indexes for token search, plus an experimental HNSW vector index for k-NN over 128-dimension embeddings — no external search cluster.</div>
+          <div class="uc-highlight">⚡ In-JVM text search · HNSW vectors (experimental)</div>
         </div>
       </div>
     </div>
@@ -1544,7 +1612,7 @@ db.<span class="fn">kv</span>().<span class="fn">set</span>(<span class="str">"a
 <!-- ═══════════════════════════ CTA BAND ═══════════════════════════ -->
 <div class="cta-band">
   <div class="cta-band-mascot">
-    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
       <circle cx="50" cy="50" r="46" fill="#0f1117" stroke="#fbbf24" stroke-width="3"/>
       <path d="M50 16 L28 48 L46 48 L38 82 L72 44 L54 44 Z" fill="#fbbf24"/>
     </svg>
@@ -1560,13 +1628,14 @@ db.<span class="fn">kv</span>().<span class="fn">set</span>(<span class="str">"a
 <!-- ═══════════════════════════ FOOTER ═══════════════════════════ -->
 <footer>
   <div class="footer-logo">
-    <img src="assets/junifydb-mark-512.png" alt="JunifyDB logo" width="60" height="55" style="filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));" />
+    <img src="assets/junifydb-logo-512-transparent.png" alt="JunifyDB logo" width="44" height="44" style="border-radius:10px;" />
     Junify<span>DB</span>
   </div>
-  <div class="footer-tagline">The embedded dual-engine database for Java — NoSQL + built-in SQL, zero infrastructure.</div>
+  <div class="footer-tagline">The embedded dual-engine database for Java — Relational SQL + Non-Relational NoSQL, zero infrastructure.</div>
   <div class="footer-links">
     <a href="https://github.com/armand-ratombotiana/JunifyDB" target="_blank" rel="noopener">GitHub</a>
     <a href="https://github.com/armand-ratombotiana/JunifyDB/blob/main/README.md" target="_blank" rel="noopener">Documentation</a>
+    <a href="https://github.com/armand-ratombotiana/JunifyDB#developer-console" target="_blank" rel="noopener">Console</a>
     <a href="https://github.com/armand-ratombotiana/JunifyDB/blob/main/demo/VALIDATION-MATRIX.md" target="_blank" rel="noopener">Validation Matrix</a>
     <a href="https://github.com/armand-ratombotiana/JunifyDB/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Changelog</a>
     <a href="https://github.com/armand-ratombotiana/JunifyDB/blob/main/LICENSE" target="_blank" rel="noopener">Apache 2.0</a>
@@ -1606,16 +1675,19 @@ db.<span class="fn">kv</span>().<span class="fn">set</span>(<span class="str">"a
 
   /* ── Query Playground Controller ── */
   let currentPgTab = 'nosql';
-  function switchPlaygroundTab(tab) {
+  function switchPlaygroundTab(tab, btn) {
     currentPgTab = tab;
     const tabs = document.querySelectorAll('.pg-tab');
     tabs.forEach(t => t.classList.remove('active'));
-    event.currentTarget.classList.add('active');
+    const active = btn || [...tabs].find(t => t.textContent.includes(tab === 'nosql' ? 'NoSQL' : 'SQL'));
+    if (active) active.classList.add('active');
 
     const editor = document.getElementById('pgEditor');
     const output = document.getElementById('pgOutput');
+    const note = document.getElementById('pgEngineNote');
 
     if (tab === 'nosql') {
+      if (note) note.textContent = '— via the Non-Relational NoSQL Engine (Document API)';
       editor.innerHTML = `
         <div style="color: #64748b; margin-bottom: 8px;">// Fluent Document Query (Type-safe)</div>
         <div style="color: #fbbf24;">db.collection(<span style="color: #86efac;">"orders"</span>)</div>
@@ -1643,8 +1715,9 @@ db.<span class="fn">kv</span>().<span class="fn">set</span>(<span class="str">"a
   }
 ]</code>`;
     } else {
+      if (note) note.textContent = '— via the Relational SQL Engine (built-in dialect)';
       editor.innerHTML = `
-        <div style="color: #64748b; margin-bottom: 8px;">-- built-in SQL Engine execution in same JVM</div>
+        <div style="color: #64748b; margin-bottom: 8px;">-- Relational SQL Engine (built-in dialect) — same collection</div>
         <div style="color: #fbbf24;">SELECT</div>
         <div style="padding-left: 20px; color: #ffffff;">customer,</div>
         <div style="padding-left: 20px; color: #ffffff;">COUNT(*) <span style="color: #fbbf24;">AS</span> order_count,</div>
@@ -1673,14 +1746,11 @@ db.<span class="fn">kv</span>().<span class="fn">set</span>(<span class="str">"a
 
   function executePlaygroundQuery() {
     const lat = document.getElementById('pgLatency');
-    const out = document.getElementById('pgOutput');
-    lat.innerHTML = 'Executing...';
+    /* Simulated, clearly labeled: the figures shown are illustrative
+       placeholders, not measurements from this browser. */
+    const ms = (0.05 + Math.random() * 0.08).toFixed(2);
+    lat.innerHTML = `⚡ ~${ms} ms (illustrative)`;
     lat.style.color = '#fbbf24';
-    setTimeout(() => {
-      const ms = (0.05 + Math.random() * 0.08).toFixed(2);
-      lat.innerHTML = `⚡ ${ms} ms`;
-      lat.style.color = '#34d399';
-    }, 180);
   }
 </script>
 </body>

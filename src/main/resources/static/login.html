@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JunifyDB — Sign In</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="stylesheet" href="/css/enhancements.css">
     <style>
         :root {
@@ -22,7 +21,7 @@
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            background: radial-gradient(circle at 50% 20%, rgba(99, 102, 241, 0.12) 0%, transparent 60%), #090914;
+            background: radial-gradient(circle at 50% 20%, rgba(245, 158, 11, 0.10) 0%, transparent 60%), #090914;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             color: var(--text-main);
             margin: 0;
@@ -49,11 +48,8 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 22px;
-            background: #0b2a52;
-            border-radius: 22px;
-            padding: 14px;
-            box-shadow: 0 8px 28px rgba(2, 8, 20, 0.55), 0 0 0 1px rgba(251, 191, 36, 0.18);
+            margin-bottom: 18px;
+            filter: drop-shadow(0 8px 24px var(--accent-glow));
         }
         .login-title {
             font-size: 1.6rem;
@@ -74,9 +70,9 @@
             border-radius: 50px;
             font-size: 0.72rem;
             font-weight: 600;
-            background: rgba(99, 102, 241, 0.15);
-            color: #a5b4fc;
-            border: 1px solid rgba(99, 102, 241, 0.3);
+            background: rgba(245, 158, 11, 0.12);
+            color: #fcd34d;
+            border: 1px solid rgba(245, 158, 11, 0.35);
         }
         .form-group {
             margin-bottom: 18px;
@@ -125,7 +121,11 @@
         .btn-submit:hover:not(:disabled) {
             opacity: 0.94;
             transform: translateY(-1px);
-            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.35);
+        }
+        .btn-submit:focus-visible {
+            outline: 2px solid #f59e0b;
+            outline-offset: 2px;
         }
         .btn-submit:disabled {
             opacity: 0.6;
@@ -150,46 +150,66 @@
             border-top: 1px solid rgba(255, 255, 255, 0.06);
             padding-top: 16px;
         }
+        /* Small screens: keep the card comfortable and touch-friendly */
+        @media (max-width: 480px) {
+            .login-card { padding: 28px 20px; }
+        }
+        /* Honor the OS reduced-motion preference (card transition, button lift) */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                transition-duration: 0.01ms !important;
+                animation-duration: 0.01ms !important;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="login-card">
         <div class="login-header">
             <div class="login-logo-wrap">
-                <img src="/logo.svg" alt="JunifyDB logo" width="135" height="124" />
+                <img src="/logo.svg" alt="JunifyDB logo" width="88" height="88" />
             </div>
             <h1 class="login-title">JunifyDB Console</h1>
             <p class="login-subtitle">Sign in to manage your embedded database</p>
-            <span class="login-badge">Dual-Engine &bull; NoSQL + ANSI SQL</span>
+            <span class="login-badge">Dual-Engine &bull; Relational SQL + Non-Relational NoSQL</span>
         </div>
 
         <div id="errorMessage" class="error-message" role="alert"></div>
 
-        <form id="loginForm" onsubmit="handleLogin(event)">
+        <form id="loginForm" novalidate>
             <div class="form-group">
                 <label class="form-label" for="username">Username</label>
-                <input class="form-input" type="text" id="username" name="username" value="admin" autocomplete="username" placeholder="e.g. admin">
+                <input class="form-input" type="text" id="username" name="username" value="admin" autocomplete="username" aria-label="Username" placeholder="e.g. admin">
             </div>
 
             <div class="form-group">
                 <label class="form-label" for="password">Password</label>
-                <input class="form-input" type="password" id="password" name="password" autocomplete="current-password" placeholder="••••••••">
+                <input class="form-input" type="password" id="password" name="password" autocomplete="current-password" aria-label="Password" placeholder="••••••••">
             </div>
 
             <div class="form-group">
                 <label class="form-label" for="apiKey">API Key (Optional)</label>
-                <input class="form-input" type="password" id="apiKey" name="apiKey" placeholder="Leave blank if disabled">
+                <input class="form-input" type="password" id="apiKey" name="apiKey" aria-label="API key, optional" placeholder="Leave blank if disabled">
             </div>
 
             <button type="submit" class="btn-submit" id="submitBtn">Sign In</button>
         </form>
 
         <div class="login-footer">
-            JunifyDB Embedded Multi-Model Database &bull; Secure Console
+            JunifyDB Embedded Dual-Engine Database &bull; Secure Console
         </div>
     </div>
 
     <script>
+        // Hide the stale error banner when the page loads (e.g. back-navigation
+        // from the console keeps it in the DOM via bfcache otherwise).
+        window.addEventListener('pageshow', () => {
+            const errorEl = document.getElementById('errorMessage');
+            if (errorEl) { errorEl.style.display = 'none'; errorEl.textContent = ''; }
+            const btn = document.getElementById('submitBtn');
+            if (btn) { btn.disabled = false; btn.textContent = 'Sign In'; }
+        });
+
         const getBasePath = () => {
             let p = window.location.pathname;
             if (p.endsWith('.html')) p = p.substring(0, p.lastIndexOf('/'));
@@ -198,6 +218,21 @@
         };
         const BASE_PATH = getBasePath();
         const API_LOGIN = BASE_PATH ? (BASE_PATH + '/api/auth/login') : '/api/auth/login';
+
+        function showError(msg) {
+            const errorEl = document.getElementById('errorMessage');
+            errorEl.textContent = msg;
+            errorEl.style.display = 'block';
+        }
+        function clearError() {
+            const errorEl = document.getElementById('errorMessage');
+            errorEl.textContent = '';
+            errorEl.style.display = 'none';
+        }
+        // Clear the banner as soon as the user edits any field.
+        ['username', 'password', 'apiKey'].forEach((id) =>
+            document.getElementById(id).addEventListener('input', clearError));
+        document.getElementById('loginForm').addEventListener('submit', handleLogin);
 
         async function handleLogin(e) {
             e.preventDefault();
@@ -210,6 +245,16 @@
             errorEl.style.display = 'none';
             submitBtn.disabled = true;
             submitBtn.textContent = 'Signing in...';
+
+            // Client-side guard: an empty submit is a mistake, not an attack —
+            // catch it here so it never burns a server-side brute-force strike.
+            if (!password && !apiKey) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Sign In';
+                showError('Enter your password — or an API key — to sign in.');
+                document.getElementById('password').focus();
+                return;
+            }
 
             try {
                 const res = await fetch(API_LOGIN, {
@@ -231,20 +276,62 @@
                     if (apiKey) {
                         localStorage.setItem('apiKey', apiKey);
                     }
-                    window.location.href = BASE_PATH ? (BASE_PATH + '/index.html') : 'index.html';
+                    // Return the user to the deep-linked console view if ?next= is present
+                    const next = new URLSearchParams(location.search).get('next');
+                    const safeNext = (next && next.startsWith('/') && !next.startsWith('//')) ? next : null;
+                    window.location.href = safeNext || (BASE_PATH ? (BASE_PATH + '/index.html') : 'index.html');
                 } else {
                     const err = await res.json().catch(() => ({ message: 'Sign in failed' }));
-                    errorEl.textContent = err.message || 'Invalid credentials or API key';
-                    errorEl.style.display = 'block';
+                    if (res.status === 429) {
+                        // Brute-force lockout: disable the form and count down
+                        // using the server's Retry-After header (seconds).
+                        const retryAfter = parseInt(res.headers.get('Retry-After'), 10);
+                        startLockoutCountdown(Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : err.message);
+                    } else {
+                        showError(err.message || 'Invalid username or password. Check your credentials or API key.');
+                    }
                 }
             } catch (err) {
-                // If auth is not enabled on server, direct redirect
-                if (apiKey) localStorage.setItem('apiKey', apiKey);
-                window.location.href = BASE_PATH ? (BASE_PATH + '/index.html') : 'index.html';
+                // Network failure is NOT an auth result — never fake a redirect.
+                console.error('Login request failed:', err);
+                showError('Cannot reach the server. Check that JunifyDB is running and try again.');
             } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Sign In';
+                if (!lockoutTimer) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Sign In';
+                }
             }
+        }
+
+        /* ---------------- lockout countdown ---------------- */
+        let lockoutTimer = null;
+
+        function startLockoutCountdown(secondsOrMessage) {
+            const submitBtn = document.getElementById('submitBtn');
+            // Server did not send a numeric Retry-After: show a static message.
+            if (typeof secondsOrMessage === 'string') {
+                showError(secondsOrMessage);
+                return;
+            }
+            let remaining = secondsOrMessage;
+            const tick = () => {
+                if (remaining <= 0) {
+                    clearInterval(lockoutTimer);
+                    lockoutTimer = null;
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Sign In';
+                    clearError();
+                    document.getElementById('password').focus();
+                    return;
+                }
+                submitBtn.disabled = true;
+                submitBtn.textContent = `Locked — retry in ${remaining}s`;
+                showError(`Too many failed attempts. You can try again in ${remaining} second${remaining === 1 ? '' : 's'}.`);
+                remaining--;
+            };
+            clearError();
+            tick();
+            lockoutTimer = setInterval(tick, 1000);
         }
     </script>
 </body>

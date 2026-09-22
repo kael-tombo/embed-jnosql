@@ -3,15 +3,28 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>JunifyDB Console</title>
-  <link rel="icon" href="/logo.svg" type="image/svg+xml">
+  <title>JunifyDB Console — Embedded Admin UI</title>
+  <meta name="description" content="JunifyDB embedded Console: manage collections, key-value data, and run Relational SQL queries against the embedded database.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/console.css">
 </head>
 <body>
+  <!-- Shared brand glyph: reused by empty states (aria-hidden). -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <g id="brand-mark">
+        <rect x="4" y="4" width="40" height="40" rx="12" fill="#0b2a52"/>
+        <rect x="4" y="4" width="40" height="40" rx="12" fill="none" stroke="#1d4ed8" stroke-width="1.5"/>
+        <path d="M24 12l-8 12h5l-2 12 11-15h-6z" fill="#fbbf24"/>
+      </g>
+    </defs>
+  </svg>
   <div id="app">
     <!-- ================= Brand ================= -->
     <header class="brand">
-      <img src="/logo.svg" alt="">
+      <span class="brand-tile" aria-hidden="true">
+        <img src="/logo.svg" alt="">
+      </span>
       <div>
         <div class="brand-name">Junify<em>DB</em></div>
         <div class="brand-sub">Console</div>
@@ -30,6 +43,7 @@
       <span class="topbar-chip"><span id="chipUptime">—</span></span>
       <button class="icon-btn" id="btnTheme" title="Toggle theme">◐</button>
       <button class="icon-btn" id="btnRefreshAll" title="Refresh data (R)">⟳</button>
+      <button class="btn sm" id="btnLogout" title="End session and return to sign-in">Sign out</button>
     </div>
 
     <!-- ================= Sidebar ================= -->
@@ -38,10 +52,10 @@
     <!-- ================= Main ================= -->
     <main id="main">
 
-      <!-- ========== OVERVIEW ========== -->
+      <!-- ========== OVERVIEW (shared) ========== -->
       <section class="panel" id="panel-overview">
         <div class="panel-head">
-          <h1>Overview</h1>
+          <h1>Overview <span class="engine-tag shared" title="Shared capability — both engines">Both Engines</span></h1>
           <span class="hint">Live counters, health, and engine info</span>
         </div>
         <div class="grid kpi" id="kpiRow"></div>
@@ -53,27 +67,27 @@
           </div>
           <div class="card">
             <div class="card-head"><h2>Engine</h2></div>
-            <div class="card-pad" id="engineInfo">Loading…</div>
+            <div class="card-pad" id="engineInfo"><div class="loading-row"><span class="spinner"></span>Loading engine info…</div></div>
           </div>
         </div>
 
         <div class="grid cols-2" style="margin-top:16px">
           <div class="card">
             <div class="card-head"><h2>Collections</h2><div class="spacer"></div><button class="btn sm" data-goto="collections">Open</button></div>
-            <div class="card-pad" id="ovCollections">Loading…</div>
+            <div class="card-pad" id="ovCollections"><div class="loading-row"><span class="spinner"></span>Loading collections…</div></div>
           </div>
           <div class="card">
             <div class="card-head"><h2>Recent audit events</h2><div class="spacer"></div><button class="btn sm" data-goto="audit">Open</button></div>
-            <div class="card-pad" id="ovAudit">Loading…</div>
+            <div class="card-pad" id="ovAudit"><div class="loading-row"><span class="spinner"></span>Loading audit events…</div></div>
           </div>
         </div>
       </section>
 
-      <!-- ========== SQL STUDIO ========== -->
+      <!-- ========== SQL STUDIO (Relational SQL Engine) ========== -->
       <section class="panel" id="panel-sql">
         <div class="panel-head">
-          <h1>SQL Studio</h1>
-          <span class="hint">SELECT · INSERT · UPDATE · DELETE · JOIN · GROUP BY — <kbd>Ctrl</kbd>+<kbd>Enter</kbd> to run</span>
+          <h1>SQL Studio <span class="engine-tag sql" title="Relational SQL Engine — built-in SQL dialect">Relational SQL Engine</span></h1>
+          <span class="hint">Built-in dialect (SELECT · INSERT · UPDATE · DELETE · JOIN · GROUP BY) — <kbd>Ctrl</kbd>+<kbd>Enter</kbd> to run</span>
         </div>
         <div class="card">
           <div class="card-head">
@@ -94,14 +108,14 @@
             <span class="badge" id="sqlMeta"></span>
             <button class="btn sm" id="sqlCopy">Copy JSON</button>
           </div>
-          <div class="card-pad" style="padding-top:0"><div id="sqlOut"></div></div>
+          <div class="card-pad" style="padding-top:0"><div id="sqlOut"><div class="empty"><svg class="empty-logo" aria-hidden="true"><use href="#brand-mark"/></svg><br>No query run yet — write SQL above and press <kbd>Ctrl</kbd>+<kbd>Enter</kbd>.</div></div></div>
         </div>
       </section>
 
-      <!-- ========== COLLECTIONS ========== -->
+      <!-- ========== COLLECTIONS (Non-Relational NoSQL Engine) ========== -->
       <section class="panel" id="panel-collections">
         <div class="panel-head">
-          <h1>Collections</h1>
+          <h1>Collections <span class="engine-tag nosql" title="Non-Relational NoSQL Engine — document model">Non-Relational NoSQL Engine</span></h1>
           <span class="hint">Documents — create, inspect, edit, TTL, and schema</span>
         </div>
         <div class="card">
@@ -137,15 +151,15 @@
           </div>
           <div class="card">
             <div class="card-head"><h2>Document detail</h2></div>
-            <div class="card-pad" id="docDetail"><span class="empty" style="padding:12px">Click a row above to inspect the full document.</span></div>
+            <div class="card-pad" id="docDetail"><span class="empty" style="padding:12px"><svg class="empty-logo" aria-hidden="true"><use href="#brand-mark"/></svg><br>No document selected — click a row in the table to inspect it.</span></div>
           </div>
           </div>
       </section>
 
-      <!-- ========== KV & REDIS STRUCTURES ========== -->
+      <!-- ========== KV & REDIS STRUCTURES (Non-Relational NoSQL Engine) ========== -->
       <section class="panel" id="panel-kv">
         <div class="panel-head">
-          <h1>Key-Value &amp; Redis Structures</h1>
+          <h1>Key-Value &amp; Redis Structures <span class="engine-tag nosql" title="Non-Relational NoSQL Engine — key-value model">Non-Relational NoSQL Engine</span></h1>
           <span class="hint">Simple KV, lists, sets, and hashes</span>
         </div>
         <div class="tabs" id="kvTabs">
@@ -160,10 +174,10 @@
         </div>
       </section>
 
-      <!-- ========== COLUMN FAMILIES ========== -->
+      <!-- ========== COLUMN FAMILIES (Non-Relational NoSQL Engine) ========== -->
       <section class="panel" id="panel-columns">
         <div class="panel-head">
-          <h1>Wide-Column Families</h1>
+          <h1>Wide-Column Families <span class="engine-tag nosql" title="Non-Relational NoSQL Engine — wide-column model">Non-Relational NoSQL Engine</span></h1>
           <span class="hint">Row → column matrix with per-cell TTL</span>
         </div>
         <div class="card">
@@ -189,11 +203,11 @@
         </div>
       </section>
 
-      <!-- ========== VECTORS ========== -->
+      <!-- ========== VECTORS (Non-Relational NoSQL Engine · EXPERIMENTAL) ========== -->
       <section class="panel" id="panel-vectors">
         <div class="panel-head">
-          <h1>Vector Index (HNSW)</h1>
-          <span class="hint">Add vectors, run k-NN search</span>
+          <h1>Vector Index (HNSW) <span class="engine-tag nosql" title="Non-Relational NoSQL Engine — vector model">Non-Relational NoSQL Engine</span></h1>
+          <span class="hint experimental" title="Experimental feature: excluded from coverage gates; API may change">⚠ Experimental — fixed 128 dimensions, API may change</span>
         </div>
         <div class="grid cols-2">
           <div class="card">
@@ -217,22 +231,22 @@
                 <input type="number" id="vecK" value="5" min="1" style="width:70px">
                 <button class="btn primary sm" id="vecSearch">Search</button>
               </div>
-              <div style="margin-top:12px"><div id="vecOut"></div></div>
+              <div style="margin-top:12px"><div id="vecOut"><div class="empty"><svg class="empty-logo" aria-hidden="true"><use href="#brand-mark"/></svg><br>No search yet — add vectors, then run a k-NN query.</div></div></div>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- ========== SCHEMA ========== -->
+      <!-- ========== SCHEMA (Non-Relational NoSQL Engine) ========== -->
       <section class="panel" id="panel-schema">
         <div class="panel-head">
-          <h1>Schema Validation</h1>
+          <h1>Schema Validation <span class="engine-tag nosql" title="Non-Relational NoSQL Engine — document validation">Non-Relational NoSQL Engine</span></h1>
           <span class="hint">Per-collection field schemas enforced on insert</span>
         </div>
         <div class="grid cols-2">
           <div class="card">
             <div class="card-head"><h2>Registered schemas</h2><div class="spacer"></div><button class="btn sm" id="schRefresh">Refresh</button></div>
-            <div class="card-pad" id="schList">Loading…</div>
+            <div class="card-pad" id="schList"><div class="loading-row"><span class="spinner"></span>Loading schemas…</div></div>
           </div>
           <div class="card">
             <div class="card-head"><h2>Define schema</h2></div>
@@ -252,11 +266,11 @@
         </div>
       </section>
 
-      <!-- ========== TRANSACTIONS ========== -->
+      <!-- ========== TRANSACTIONS (shared) ========== -->
       <section class="panel" id="panel-tx">
         <div class="panel-head">
-          <h1>Transactions</h1>
-          <span class="hint">Begin, inspect, commit, or roll back active transactions</span>
+          <h1>Transactions <span class="engine-tag shared" title="Shared capability — both engines">Both Engines</span></h1>
+          <span class="hint">Begin, inspect, commit, or roll back active transactions (MVCC)</span>
         </div>
         <div class="card">
           <div class="card-head">
@@ -269,10 +283,10 @@
         </div>
       </section>
 
-      <!-- ========== INDEXES ========== -->
+      <!-- ========== INDEXES (Non-Relational NoSQL Engine) ========== -->
       <section class="panel" id="panel-indexes">
         <div class="panel-head">
-          <h1>Secondary Indexes</h1>
+          <h1>Secondary Indexes <span class="engine-tag nosql" title="Non-Relational NoSQL Engine — document indexes">Non-Relational NoSQL Engine</span></h1>
           <span class="hint">Per-collection field indexes</span>
         </div>
         <div class="card">
@@ -291,16 +305,16 @@
         </div>
       </section>
 
-      <!-- ========== BACKUP ========== -->
+      <!-- ========== BACKUP (shared) ========== -->
       <section class="panel" id="panel-backup">
         <div class="panel-head">
-          <h1>Backup &amp; Restore</h1>
+          <h1>Backup &amp; Restore <span class="engine-tag shared" title="Shared capability — both engines">Both Engines</span></h1>
           <span class="hint">Snapshot the data directory or restore from a backup file</span>
         </div>
         <div class="grid cols-2">
           <div class="card">
             <div class="card-head"><h2>Status</h2><div class="spacer"></div><button class="btn sm" id="bkRefresh">Refresh</button></div>
-            <div class="card-pad" id="bkInfo">Loading…</div>
+            <div class="card-pad" id="bkInfo"><div class="loading-row"><span class="spinner"></span>Loading backup status…</div></div>
           </div>
           <div class="card">
             <div class="card-head"><h2>Actions</h2></div>
@@ -317,10 +331,10 @@
         </div>
       </section>
 
-      <!-- ========== CDC & EVENTS ========== -->
+      <!-- ========== CDC & EVENTS (shared) ========== -->
       <section class="panel" id="panel-cdc">
         <div class="panel-head">
-          <h1>Change Data Capture</h1>
+          <h1>Change Data Capture <span class="engine-tag shared" title="Shared capability — both engines">Both Engines</span></h1>
           <span class="hint">Event log, connectors, and enable/disable</span>
         </div>
         <div class="grid cols-2">
@@ -330,7 +344,7 @@
               <span class="badge" id="cdcState"></span>
               <button class="btn sm" id="cdcToggle">Toggle</button>
             </div>
-            <div class="card-pad" id="cdcStatus">Loading…</div>
+            <div class="card-pad" id="cdcStatus"><div class="loading-row"><span class="spinner"></span>Loading CDC status…</div></div>
           </div>
           <div class="card">
             <div class="card-head"><h2>Connectors</h2><div class="spacer"></div><button class="btn sm" id="cdcRefresh">Refresh</button></div>
@@ -343,7 +357,7 @@
                 <div><label class="fld">Param (dir / servers)</label><input type="text" id="cdcParam" placeholder="target/cdc-out" style="width:200px"></div>
                 <button class="btn sm" id="cdcAdd">Connect</button>
               </div>
-              <div style="margin-top:12px"><div id="cdcConnectors">—</div></div>
+              <div style="margin-top:12px"><div id="cdcConnectors"><div class="empty">No connectors configured.</div></div></div>
             </div>
           </div>
         </div>
@@ -353,10 +367,10 @@
         </div>
       </section>
 
-      <!-- ========== AUDIT ========== -->
+      <!-- ========== AUDIT (shared) ========== -->
       <section class="panel" id="panel-audit">
         <div class="panel-head">
-          <h1>Audit Trail</h1>
+          <h1>Audit Trail <span class="engine-tag shared" title="Shared capability — both engines">Both Engines</span></h1>
           <span class="hint">Recent mutating operations (bounded in-memory log)</span>
         </div>
         <div class="card">
@@ -368,7 +382,7 @@
       <!-- ========== SERVER (CLI / legacy) ========== -->
       <section class="panel" id="panel-server">
         <div class="panel-head">
-          <h1>Server</h1>
+          <h1>Server <span class="engine-tag shared" title="Shared capability — both engines">Both Engines</span></h1>
           <span class="hint">Health details, JVM metrics, and connection info</span>
         </div>
         <div class="grid cols-2">
