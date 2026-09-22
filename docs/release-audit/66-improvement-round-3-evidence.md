@@ -17,11 +17,12 @@ final decision in `63-final-go-no-go-decision.md`.
 ## Clean build + full regression
 
 - `mvn clean verify -Pcoverage-check` → **BUILD SUCCESS**.
-- Final suite: **760/760 tests, 0 failures/errors/skipped** with the coverage gate met
+- Final suite: **769/769 tests, 0 failures/errors/skipped** with the coverage gate met
   (`mvn clean verify -Pcoverage-check`, re-run after each fix cluster: 715 → 733 with
   +8 `BackupIntegrityTest`, +8 `ConsoleBackupEndpointTest`, +2 `CdcStatusAccuracyTest`;
   then → 741 with +8 `ConsoleIndexAndCdcEndpointTest`; then → 749 with
-  +8 `ConsoleTransactionAndBulkTest`; then → 760 with +11 `ConsoleQueryEndpointTest`).
+  +8 `ConsoleTransactionAndBulkTest`; then → 760 with +11 `ConsoleQueryEndpointTest`;
+  then → 769 with +9 `SqlUnknownTableTest`).
   Starting point last round was 689 (+6 `LaunchOptionValidationTest`,
   +7 `BenchmarkOptionValidationTest`, +2 `DocumentUpdateMergeTest`, +1 `SchemaNumericTypeTest`,
   +2 `DocumentTtlPersistenceTest`, +3 `KvTtlPersistenceTest`, +2 `ColumnFamilyTtlPersistenceTest`,
@@ -318,6 +319,31 @@ ignore-unknown-operators behavior and was inverted to
 `queryParser_unknownOperatorRefused`. Contract gate extended with regex/`$and`/`$or`
 match-count blocks and 400 assertions. Suite now **760/760** + 4/4 CLI; both gates PASS.
 Live after-states verified on the redeployed preview (regex=1, `$and`=1, typo=400).
+
+## SQL-engine sweep (R-48..R-49, 2026-09-22 latest)
+
+Probed the console's SQL Studio endpoint (`POST /api/sql`) for the same
+fake-success class. Two defects, both catalog-mutating or success-lying:
+
+| # | Finding | Live evidence |
+|---|---|---|
+| R-48 | Every SQL statement resolved its table through the auto-creating `documentCollection()` — **`SELECT * FROM no_such_table` created an empty collection as a side effect of reading** and returned `rowCount:0, status:success`; the collection then polluted the console list permanently. JOINs, UPDATE, DELETE inherited it | before: 200 + new empty collection in `/api/collections` → after: **404** `Table does not exist`, catalog byte-identical before/after |
+| R-49 | `DROP TABLE no_such_table` deleted nothing, hit no error path, returned `status:success` | before: 200 success → after: **404** |
+
+Fix: a new `existingCollection()` resolution path in `SqlEngine` (SELECT/FROM, JOIN
+targets, UPDATE, DELETE, DROP) that throws the new `SqlUnknownTableException`; the SQL
+endpoint maps it to **404** (distinguishing state errors from 400 syntax errors).
+INSERT and CREATE TABLE keep auto-create — the documented schemaless workflow, relied
+on by backup/restore, migrations, repositories, and the demo app.
+
+**Falsified before trusted**: `SqlUnknownTableTest` (9 tests) in a throwaway worktree at
+`80efbea` fails **4/9** (the four defect assertions); on the fixed tree 9/9. Contract gate
+extended with a 5-check SQL block: 404 on SELECT/DROP of unknown tables, catalog-count
+immutability across a failed SELECT, no leftover collection, existing-table sanity.
+Suite now **769/769** + 4/4 CLI; both gates PASS. Live after-states verified on the
+redeployed preview, including that the earlier probe pollution (`nope`, `no_such_table`,
+`once` collections created by probing the OLD code) demonstrates the defect is real in
+practice, not theoretical.
 
 ## Repository / release mechanics state
 

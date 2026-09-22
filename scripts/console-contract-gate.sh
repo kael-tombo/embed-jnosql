@@ -244,6 +244,46 @@ else
 fi
 
 echo
+echo "== sql reads must not create tables or fake success (R-48, R-49) =="
+COLS_BEFORE=$(curl -s -m 5 "$BASE/api/collections" | grep -o '"name"' | wc -l)
+
+BODY=$(curl -s -m 5 -X POST "$BASE/api/sql" -H 'Content-Type: application/json' -d '{"query":"SELECT * FROM gate_missing_t"}')
+CODE=$(curl -s -m 5 -o /dev/null -w '%{http_code}' -X POST "$BASE/api/sql" -H 'Content-Type: application/json' -d '{"query":"SELECT * FROM gate_missing_t"}')
+if [ "$CODE" = "404" ]; then
+  pass "SELECT from unknown table -> 404"
+else
+  fail "SELECT from unknown table returned $CODE: $(echo "$BODY" | head -c 100) (want 404)"
+fi
+
+COLS_AFTER=$(curl -s -m 5 "$BASE/api/collections" | grep -o '"name"' | wc -l)
+if [ "$COLS_AFTER" = "$COLS_BEFORE" ]; then
+  pass "failed SELECT created no collection"
+else
+  fail "failed SELECT mutated the catalog ($COLS_BEFORE -> $COLS_AFTER collections)"
+fi
+
+N=$(curl -s -m 5 "$BASE/api/collections" | grep -o 'gate_missing_t' | wc -l)
+if [ "$N" = "0" ]; then
+  pass "no leftover empty collection from SQL reads"
+else
+  fail "gate_missing_t exists in the catalog — read-auto-create is back"
+fi
+
+CODE=$(curl -s -m 5 -o /dev/null -w '%{http_code}' -X POST "$BASE/api/sql" -H 'Content-Type: application/json' -d '{"query":"DROP TABLE gate_missing_t"}')
+if [ "$CODE" = "404" ]; then
+  pass "DROP TABLE unknown -> 404"
+else
+  fail "DROP TABLE on unknown table returned $CODE (want 404) — fake success is back"
+fi
+
+CODE=$(curl -s -m 5 -o /dev/null -w '%{http_code}' -X POST "$BASE/api/sql" -H 'Content-Type: application/json' -d '{"query":"SELECT id FROM gateq WHERE id = ''q1''"}')
+if [ "$CODE" = "200" ]; then
+  pass "SELECT on an existing table still works"
+else
+  fail "SELECT on existing table returned $CODE (want 200)"
+fi
+
+echo
 echo "== a body-less POST must never drop the connection =="
 CODE=$(curl -s -m 10 -o /tmp/contract-gate-body.json -w '%{http_code}' -X POST "$BASE/api/backup")
 CURL_EXIT=$?

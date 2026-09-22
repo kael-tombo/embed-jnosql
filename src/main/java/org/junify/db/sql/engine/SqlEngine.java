@@ -64,7 +64,11 @@ public class SqlEngine {
 
         String primaryTableName = select.getFromTable().getTableName();
         String primaryAlias = select.getFromTable().getAlias();
-        DocumentCollection col = db.documentCollection(primaryTableName);
+        // R-48: SELECT must not create the table it reads. The previous code
+        // resolved through documentCollection(), which auto-creates — a SELECT
+        // from a typo'd/unknown table silently created an empty collection and
+        // returned rowCount:0 as "success".
+        DocumentCollection col = existingCollection(primaryTableName, null);
 
         // 1. Initial rows from FROM table
         List<Map<String, Object>> workingRows = new ArrayList<>();
@@ -85,7 +89,8 @@ public class SqlEngine {
         for (JoinClause join : select.getJoins()) {
             String joinTableName = join.getTable().getTableName();
             String joinAlias = join.getTable().getAlias();
-            DocumentCollection joinCol = db.documentCollection(joinTableName);
+            // R-48: JOIN targets are reads too — must not auto-create.
+            DocumentCollection joinCol = existingCollection(joinTableName, "JOIN " + joinTableName);
             List<Document> joinDocs = joinCol.findAll();
 
             List<Map<String, Object>> joinedRows = new ArrayList<>();
@@ -302,6 +307,21 @@ public class SqlEngine {
     // INSERT Execution
     // -------------------------------------------------------------------------
 
+    /**
+     * <p>Reads, UPDATE, DELETE and DROP resolve through here and throw
+     * {@link SqlUnknownTableException} when the table does not exist. Only
+     * INSERT (and CREATE TABLE) create tables — the documented schemaless
+     * workflow that internal callers (backup/restore, migrations, repos)
+     * rely on.</p>
+     */
+    private DocumentCollection existingCollection(String name, String context) {
+        if (!db.getCollectionNames().contains(name)) {
+            throw new org.junify.db.sql.SqlUnknownTableException(
+                "Table '" + name + "' does not exist" + (context != null && !context.isBlank() ? " (" + context + ")" : ""));
+        }
+        return db.documentCollection(name);
+    }
+
     private SqlResultSet executeInsert(InsertStatement insert, List<Object> params) {
         DocumentCollection col = db.documentCollection(insert.getTableName());
         int count = 0;
@@ -343,7 +363,10 @@ public class SqlEngine {
     // -------------------------------------------------------------------------
 
     private SqlResultSet executeUpdate(UpdateStatement update, List<Object> params) {
-        DocumentCollection col = db.documentCollection(update.getTableName());
+        // R-48: a write against a table that does not exist used to auto-create
+        // an empty collection as a side effect (updateCount 0 either way). SQL
+        // semantics: error. Only INSERT (and CREATE TABLE) create tables.
+        DocumentCollection col = existingCollection(update.getTableName(), "UPDATE");
         int count = 0;
 
         for (Document doc : col.findAll()) {
@@ -375,7 +398,9 @@ public class SqlEngine {
     // -------------------------------------------------------------------------
 
     private SqlResultSet executeDelete(DeleteStatement delete, List<Object> params) {
-        DocumentCollection col = db.documentCollection(delete.getTableName());
+        // R-48: same as UPDATE — DELETE on a missing table is an SQL error,
+        // not a silent 0 that leaves an empty collection behind.
+        DocumentCollection col = existingCollection(delete.getTableName(), "DELETE");
         int count = 0;
 
         for (Document doc : col.findAll()) {
@@ -402,7 +427,10 @@ public class SqlEngine {
     }
 
     private SqlResultSet executeDropTable(DropTableStatement drop) {
-        DocumentCollection col = db.documentCollection(drop.getTableName());
+        // R-49: DROP TABLE is DDL — dropping a table that does not exist used to
+        // delete nothing and report success. Fail loudly instead (IF EXISTS is
+        // not yet supported by the parser; tracked in the defect register).
+        DocumentCollection col = existingCollection(drop.getTableName(), "DROP TABLE");
         for (Document d : col.findAll()) {
             col.deleteById(d.getId());
         }

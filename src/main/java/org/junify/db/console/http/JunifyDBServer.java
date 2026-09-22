@@ -2927,6 +2927,15 @@ public class JunifyDBServer {
                             "executionTimeMs", duration,
                             "status", "success"
                     ));
+                } catch (org.junify.db.sql.SqlUnknownTableException e) {
+                    // R-48/R-49: a statement that referenced a table which does
+                    // not exist is a client error about state, not a syntax
+                    // problem — 404 distinguishes it from 400 parse errors and
+                    // from the old fake rowCount:0 success.
+                    sendJson(exchange, 404, Map.of(
+                            "error", "Table does not exist",
+                            "message", e.getMessage() != null ? e.getMessage() : e.toString()
+                    ));
                 } catch (Exception e) {
                     sendJson(exchange, 400, Map.of(
                             "error", "SQL Execution Error",
