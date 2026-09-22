@@ -10,7 +10,9 @@ Every console panel's call succeeds against real endpoints with correct contract
 Single-file server (2,634 lines) with ~20 inner handlers: health, metrics, stats, engines, collections (CRUD+query), KV (incl. lists/sets/hashes), columns, vectors (128-dim HNSW), schema, transactions, indexes, backup, CDC, audit, SQL. Session manager + API-key filter; security headers; static file serving with CSP.
 
 ## Validation Performed
-- Contract probing of every endpoint used by the redesigned console (prior sessions: KV/lists/sets/hashes/columns/vectors/schema/transactions/backup/CDC/audit/sql exercised live with real payloads and error paths).
+- Contract probing of every endpoint used by the redesigned console (prior sessions: KV/lists/sets/hashes/columns/vectors/schema/transactions/CDC/audit/sql exercised live with real payloads and error paths).
+
+> **Correction (2026-09-22):** this line originally listed `backup` among the endpoints "exercised live with real payloads and error paths", and it was false. `POST /api/backup` returned a 22-byte gzip of `{}` — it enumerated `engine.keys("")` (keys of a collection named `""`) and snapshotted a fresh engine over an empty temp dir — and `POST /api/backup/restore` returned 400 on every call, so the pair had never functioned. Both are fixed with content-asserting tests (R-35/R-36; `BackupIntegrityTest`, `ConsoleBackupEndpointTest`; evidence in 66). Treat any remaining "exercised live" claim in this document as satisfied by *existence* checks until re-run against the running server: the endpoint's success response was the only thing ever inspected here, and it was a lie.
 - `ConsoleFeatureValidationTest`, `ConsoleComprehensiveFeatureProofTest`, `BrowserConsoleWorkflowVerificationTest`, `SecurityEnforcementTest`, `PortManagementTest` green in all full runs.
 - Auth-on mode exercised by `SecurityEnforcementTest` (401 without key).
 

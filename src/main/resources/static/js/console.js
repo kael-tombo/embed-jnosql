@@ -606,19 +606,31 @@ async function idxCreate() {
    ============================================================ */
 async function bkRefresh() {
   const r = await api('/backup');
+  const backups = r.backups ?? [];
   $('#bkInfo').innerHTML = `
     <div class="grid kpi">
       ${setKpi('Engine', esc(r.database?.engine ?? '—'))}
       ${setKpi('Collections', Object.keys(r.collections ?? {}).length)}
       ${setKpi('Disk usage', esc(r.diskUsage?.totalMB ?? '—'))}
       ${setKpi('Files', r.diskUsage?.fileCount ?? '—')}
+    </div>
+    <div class="muted" style="margin-top:10px;font-size:12px">
+      Backup directory: <code>${esc(r.backup?.directory ?? '—')}</code> · ${backups.length} existing snapshot${backups.length === 1 ? '' : 's'}
     </div>`;
 }
 async function bkCreate() {
   const r = await api('/backup', { method: 'POST', body: {} }).catch((e) => ({ error: e.message }));
   if (r.error) { toast(r.error, 'err'); return; }
-  $('#bkStatus').textContent = `backup → ${r.backupFile ?? r.file ?? 'ok'}`;
-  toast('Backup created', 'ok');
+  const docs = r.documents ?? 0;
+  const cols = Object.entries(r.collections ?? {});
+  $('#bkStatus').textContent = `backup → ${r.file ?? 'ok'} · ${docs} document${docs === 1 ? '' : 's'}`;
+  // Report what the snapshot actually holds; a backup of zero documents is a real
+  // state (empty database) but must never look identical to a populated one.
+  if (docs === 0) {
+    toast('Backup created, but it contains 0 documents', 'warn');
+  } else {
+    toast(`Backup created · ${docs} documents in ${cols.length} collection${cols.length === 1 ? '' : 's'}`, 'ok');
+  }
   bkRefresh();
 }
 async function bkRestore() {
@@ -627,6 +639,7 @@ async function bkRestore() {
   if (r.error) { toast(r.error, 'err'); return; }
   $('#bkStatus').textContent = `restored from ${r.file ?? 'file'}`;
   toast('Restore complete', 'ok');
+  bkRefresh();
 }
 
 /* ============================================================

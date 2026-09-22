@@ -305,6 +305,14 @@ public class JunifyDBServer {
         }
     }
 
+    /** Seconds until the client's login lockout lifts (0 when not locked). */
+    private long retryAfterSeconds(String clientIp) {
+        if (securityConfig == null || !securityConfig.bruteForceProtectionEnabled()) return 0;
+        FailedLoginTracker tracker = failedLogins.get(clientIp);
+        if (tracker == null || tracker.lockoutUntil <= 0) return 0;
+        return Math.max(1, (tracker.lockoutUntil - System.currentTimeMillis() + 999) / 1000);
+    }
+
     private void recordSuccessfulLogin(String clientIp) {
         failedLogins.remove(clientIp);
     }
@@ -802,11 +810,13 @@ public class JunifyDBServer {
             try {
                 String clientIp = getClientIp(exchange);
                 if (isIpLockedOut(clientIp)) {
-                    logAuditEvent("LOGIN", "auth", null, "LOCKED_OUT", clientIp, "Client IP temporarily locked out");
+                    long retryAfterSec = retryAfterSeconds(clientIp);
+                    logAuditEvent("LOGIN", "auth", null, "LOCKED_OUT", clientIp,
+                            "Client IP temporarily locked out (" + retryAfterSec + "s remaining)");
+                    exchange.getResponseHeaders().set("Retry-After", String.valueOf(retryAfterSec));
                     sendJson(exchange, 429, Map.of(
                             "error", "Too Many Requests",
-                            "message", "Client IP is temporarily locked out due to excessive failed attempts. Please try again later."
-                    ));
+                            "message", "Too many failed attempts. Try again in " + retryAfterSec + " seconds."));
                     return;
                 }
 
@@ -836,9 +846,20 @@ public class JunifyDBServer {
                         }
                     }
                     if (!authenticated) {
+                        // Missing credentials are a client error, not an attack:
+                        // reject them WITHOUT burning a brute-force strike.
+                        boolean missingCredentials =
+                                (pass == null || pass.isEmpty()) && (key == null || key.isEmpty());
+                        if (missingCredentials) {
+                            logAuditEvent("LOGIN", "auth", null, "REJECTED", clientIp, "Missing credentials");
+                            sendJson(exchange, 400, Map.of(
+                                    "error", "Bad Request",
+                                    "message", "Enter your password or API key to sign in."));
+                            return;
+                        }
                         recordFailedLogin(clientIp);
-                        logAuditEvent("LOGIN", "auth", null, "FAILED", clientIp, "Invalid credentials or API key");
-                        sendJson(exchange, 401, Map.of("error", "Unauthorized", "message", "Invalid credentials or API key"));
+                        logAuditEvent("LOGIN", "auth", null, "FAILED", clientIp, "Invalid username or password");
+                        sendJson(exchange, 401, Map.of("error", "Unauthorized", "message", "Invalid username or password"));
                         return;
                     }
                 }
@@ -1129,7 +1150,13 @@ public class JunifyDBServer {
                     try {
                         var body = readBody(exchange);
                         var data = JsonSerde.fromJson(body, Map.class);
-                        var doc = Document.of("name", "temp");
+                        // R-31: update-by-id must merge onto the stored document. Building
+                        // from an empty Document silently dropped every field the body
+                        // omitted and wrote a synthetic "name":"temp" into each row.
+                        var existingDoc = collection.findById(id);
+                        var doc = existingDoc != null
+                                ? Document.fromMap(id, new java.util.LinkedHashMap<>(existingDoc.getFields()))
+                                : new Document();
                         doc.id(id);
                         for (var entry : data.entrySet()) {
                             var e = (java.util.Map.Entry<?, ?>) entry;
@@ -2043,34 +2070,77 @@ public class JunifyDBServer {
                 sendJson(exchange, 200, Map.of(
                     "backup", Map.of(
                         "description", "Use POST /api/backup to create backup",
-                        "restore", "Use POST /api/backup/restore with JSON body containing 'backupFile' path"
+                        "restore", "Use POST /api/backup/restore with JSON body containing 'backupFile' path",
+                        "directory", backupDir().toString()
                     ),
+                    "database", Map.of("engine", db.storageEngine().name()),
                     "diskUsage", getDiskUsage(),
-                    "collections", collections
+                    "collections", collections,
+                    "backups", listBackups()
                 ));
                 return;
             }
             
-            if ("POST".equals(exchange.getRequestMethod()) && parts.length == 3) {
+            // Both POST /api/backup and POST /api/backup/restore are supported: the console
+            // UI and the GET self-description above both advertise the /restore form.
+            var restorePath = parts.length == 4 && "restore".equals(parts[3]);
+            if ("POST".equals(exchange.getRequestMethod()) && (parts.length == 3 || restorePath)) {
                 var body = readBody(exchange);
-                var data = JsonSerde.fromJson(body, Map.class);
+                Map<String, Object> data;
+                if (body == null || body.isBlank()) {
+                    data = Map.of();
+                } else {
+                    try {
+                        data = JsonSerde.fromJson(body, Map.class);
+                    } catch (Exception e) {
+                        // Without this the exception escaped the handler and the server dropped
+                        // the connection with no response at all, which a client cannot diagnose.
+                        sendJson(exchange, 400, Map.of("error", "Invalid JSON body: " + e.getMessage()));
+                        return;
+                    }
+                }
+
+                if (restorePath && !data.containsKey("backupFile")) {
+                    sendJson(exchange, 400, Map.of("error", "backupFile is required, e.g. {\"backupFile\":\"<path to .json.gz>\"}"));
+                    return;
+                }
                 
                 if (data.containsKey("backupFile")) {
-                    var backupManager = new org.junify.db.core.backup.BackupManager(db.config().storageEngine().create(
-                        db.config().dataDir(), true, 1000));
                     var backupFile = java.nio.file.Paths.get(data.get("backupFile").toString());
-                    backupManager.restore(backupFile);
-                    sendJson(exchange, 200, Map.of("status", "restored", "file", backupFile.toString()));
+                    if (!java.nio.file.Files.exists(backupFile)) {
+                        sendJson(exchange, 404, Map.of("error", "Backup file not found: " + backupFile));
+                        return;
+                    }
+                    try {
+                        var restoreManager = new org.junify.db.core.backup.BackupManager(db.storageEngine());
+                        restoreManager.restore(backupFile);
+                        sendJson(exchange, 200, Map.of(
+                            "status", "restored",
+                            "file", backupFile.toString(),
+                            "note", "Restored into the live engine; panels that cache data (Collections, SQL Studio) may need a reload"
+                        ));
+                    } catch (Exception e) {
+                        sendJson(exchange, 500, Map.of("error", "Restore failed: " + e.getMessage()));
+                    }
                 } else {
-                    var backupDir = java.nio.file.Files.createTempDirectory("junify-backup");
-                    var backupManager = new org.junify.db.core.backup.BackupManager(
-                        new org.junify.db.storage.spi.FileEngine(backupDir, 1000, false));
-                    var backupFile = backupManager.backup(backupDir);
-                    sendJson(exchange, 200, Map.of(
-                        "status", "backup created",
-                        "file", backupFile.toString(),
-                        "size", java.nio.file.Files.size(backupFile)
-                    ));
+                    // Back up the LIVE engine, not a fresh one: a new engine over an empty
+                    // directory reports no collections and would write an empty snapshot.
+                    try {
+                        var targetDir = data.containsKey("targetDir")
+                            ? java.nio.file.Files.createDirectories(java.nio.file.Paths.get(data.get("targetDir").toString()))
+                            : java.nio.file.Files.createDirectories(backupDir());
+                        var backupManager = new org.junify.db.core.backup.BackupManager(db.storageEngine());
+                        var backupFile = backupManager.backup(targetDir);
+                        sendJson(exchange, 200, Map.of(
+                            "status", "backup created",
+                            "file", backupFile.toString(),
+                            "size", java.nio.file.Files.size(backupFile),
+                            "documents", backupManager.lastBackupCounts().values().stream().mapToInt(Integer::intValue).sum(),
+                            "collections", backupManager.lastBackupCounts()
+                        ));
+                    } catch (Exception e) {
+                        sendJson(exchange, 500, Map.of("error", "Backup failed: " + e.getMessage()));
+                    }
                 }
                 return;
             }
@@ -2102,6 +2172,42 @@ public class JunifyDBServer {
                 );
             } catch (IOException e) {
                 return Map.of("error", e.getMessage());
+            }
+        }
+
+        /**
+         * Durable location for console-created backups. Deliberately inside the data
+         * directory rather than a temp dir: an OS cleanup of the temp dir would destroy
+         * the only copy of a user's data.
+         */
+        private java.nio.file.Path backupDir() {
+            return db.config().dataDir().resolve("backups").toAbsolutePath();
+        }
+
+        private java.util.List<Map<String, Object>> listBackups() {
+            var dir = backupDir();
+            if (!java.nio.file.Files.exists(dir)) {
+                return java.util.List.of();
+            }
+            try (var stream = java.nio.file.Files.list(dir)) {
+                return stream.filter(p -> p.toString().endsWith(".json.gz"))
+                    .sorted(java.util.Comparator.comparing((java.nio.file.Path p) -> p.getFileName().toString()).reversed())
+                    .limit(10)
+                    .map(p -> {
+                        try {
+                            return Map.<String, Object>of(
+                                "file", p.toAbsolutePath().toString(),
+                                "name", p.getFileName().toString(),
+                                "size", java.nio.file.Files.size(p),
+                                "modified", java.nio.file.Files.getLastModifiedTime(p).toMillis()
+                            );
+                        } catch (IOException e) {
+                            return Map.<String, Object>of("file", p.toString(), "error", String.valueOf(e.getMessage()));
+                        }
+                    })
+                    .toList();
+            } catch (IOException e) {
+                return java.util.List.of();
             }
         }
     }
@@ -2139,8 +2245,30 @@ public class JunifyDBServer {
                     "field", field
                 ));
             } else if ("DELETE".equals(exchange.getRequestMethod())) {
-                collection.clear();
-                sendJson(exchange, 200, Map.of("status", "indexes cleared"));
+                // Drop one index. This previously called collection.clear(), which deletes
+                // every document in the collection while reporting "indexes cleared" — a
+                // data-loss trap for any client hitting the documented index route.
+                var params = parseQueryParams(exchange.getRequestURI().getQuery());
+                var field = params.get("field");
+                if (field == null || field.isBlank()) {
+                    sendJson(exchange, 400, Map.of(
+                        "error", "Specify the index to drop: DELETE /api/indexes/" + collectionName + "?field=<field>",
+                        "indexes", collection.getIndexes().keySet()
+                    ));
+                    return;
+                }
+                if (!collection.dropIndex(field)) {
+                    sendJson(exchange, 404, Map.of(
+                        "error", "No index on field '" + field + "'",
+                        "indexes", collection.getIndexes().keySet()
+                    ));
+                    return;
+                }
+                sendJson(exchange, 200, Map.of(
+                    "status", "index dropped",
+                    "collection", collectionName,
+                    "field", field
+                ));
             }
         }
     }
@@ -2613,23 +2741,62 @@ public class JunifyDBServer {
                     
                     if ("POST".equals(exchange.getRequestMethod())) {
                         var body = readBody(exchange);
-                        var data = JsonSerde.fromJson(body, Map.class);
-                        var type = data.get("type").toString();
-                        
-                        if ("file".equals(type)) {
-                            var outputDir = java.nio.file.Paths.get(data.get("outputDir").toString());
-                            db.cdcManager().addFileConnector(connectorName, outputDir);
-                            sendJson(exchange, 201, Map.of("status", "connected", "type", "file", "name", connectorName));
-                        } else if ("kafka".equals(type)) {
-                            var bootstrapServers = data.get("bootstrapServers").toString();
-                            var topic = data.get("topic").toString();
-                            db.cdcManager().addKafkaConnector(connectorName, bootstrapServers, topic);
-                            sendJson(exchange, 201, Map.of("status", "connected", "type", "kafka", "name", connectorName));
+                        Map<String, Object> data;
+                        try {
+                            data = body == null || body.isBlank() ? Map.of() : JsonSerde.fromJson(body, Map.class);
+                        } catch (Exception e) {
+                            sendJson(exchange, 400, Map.of("error", "Invalid JSON body: " + e.getMessage()));
+                            return;
+                        }
+                        var type = data.get("type");
+                        // Validate before dereferencing: missing fields used to throw out of the
+                        // handler, which dropped the connection instead of explaining the problem.
+                        if (type == null) {
+                            sendJson(exchange, 400, Map.of(
+                                "error", "'type' is required",
+                                "file", Map.of("type", "file", "outputDir", "<directory>"),
+                                "kafka", Map.of("type", "kafka", "bootstrapServers", "host:9092", "topic", "<topic>")
+                            ));
+                            return;
+                        }
+                        if ("file".equals(type.toString())) {
+                            var outputDirValue = data.get("outputDir");
+                            if (outputDirValue == null) {
+                                sendJson(exchange, 400, Map.of("error", "'outputDir' is required for a file connector"));
+                                return;
+                            }
+                            try {
+                                var outputDir = java.nio.file.Paths.get(outputDirValue.toString());
+                                db.cdcManager().addFileConnector(connectorName, outputDir);
+                                sendJson(exchange, 201, Map.of("status", "connected", "type", "file", "name", connectorName));
+                            } catch (Exception e) {
+                                sendJson(exchange, 400, Map.of("error", "Could not create file connector: " + e.getMessage()));
+                            }
+                        } else if ("kafka".equals(type.toString())) {
+                            var bootstrapServers = data.get("bootstrapServers");
+                            var topic = data.get("topic");
+                            if (bootstrapServers == null || topic == null) {
+                                sendJson(exchange, 400, Map.of("error", "'bootstrapServers' and 'topic' are required for a kafka connector"));
+                                return;
+                            }
+                            db.cdcManager().addKafkaConnector(connectorName, bootstrapServers.toString(), topic.toString());
+                            sendJson(exchange, 201, Map.of(
+                                "status", "connected",
+                                "type", "kafka",
+                                "name", connectorName,
+                                "note", "delivery requires a Kafka client on the classpath; without one this connector only queues events in memory"
+                            ));
                         } else {
-                            sendJson(exchange, 400, Map.of("error", "Unknown connector type"));
+                            sendJson(exchange, 400, Map.of("error", "Unknown connector type: " + type));
                         }
                         return;
                     } else if ("DELETE".equals(exchange.getRequestMethod())) {
+                        // Only report a disconnect for a connector that actually exists; the
+                        // old response said "disconnected" for any name at all.
+                        if (!db.cdcManager().hasConnector(connectorName)) {
+                            sendJson(exchange, 404, Map.of("error", "No connector named '" + connectorName + "'"));
+                            return;
+                        }
                         db.cdcManager().removeFileConnector(connectorName);
                         db.cdcManager().removeKafkaConnector(connectorName);
                         sendJson(exchange, 200, Map.of("status", "disconnected", "name", connectorName));

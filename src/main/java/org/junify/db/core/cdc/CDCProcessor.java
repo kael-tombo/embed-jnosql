@@ -47,6 +47,16 @@ public class CDCProcessor {
         subscribers.remove(consumer);
     }
 
+    /**
+     * Number of currently registered subscribers (connectors, SSE clients).
+     *
+     * <p>R-34: the admin console reported this KPI as the event-log size, so a
+     * dashboard with no subscribers displayed a non-zero "Subscribers" count.</p>
+     */
+    public int subscriberCount() {
+        return subscribers.size();
+    }
+
     public List<CDCEvent> getEventLog() {
         return List.copyOf(eventLog);
     }

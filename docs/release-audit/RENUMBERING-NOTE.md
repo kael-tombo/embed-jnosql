@@ -21,3 +21,7 @@ old 05–09 ≙ new 05–09 (SQL/NoSQL/multi-model), old 43 ≙ new 24/43 (perfo
 old 44 ≙ new 43 (build/CI), old 45 ≙ new 44/45 (dependencies/Central),
 old 48–51 ≙ new 48–51 (comparisons, unchanged), old 53/54 ≙ new 54/55
 (defect/blocker registers).
+
+Round 3 (2026-09-22): evidence added as `66-improvement-round-3-evidence.md`;
+the current final decision lives in `63-final-go-no-go-decision.md`
+(supersedes 61/62 as the operative verdict).

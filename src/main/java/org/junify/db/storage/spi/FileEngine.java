@@ -330,6 +330,16 @@ public class FileEngine implements StorageEngine {
     }
 
     /**
+     * Live collection set (includes collections written since the last flush), so a
+     * backup taken between flushes still captures every collection rather than only the
+     * ones already snapshotted to disk.
+     */
+    @Override
+    public java.util.Set<String> collections() {
+        return java.util.Set.copyOf(store.keySet());
+    }
+
+    /**
      * Records the set of collections found on disk so the facade can re-expose
      * previously persisted collections after a restart.
      */

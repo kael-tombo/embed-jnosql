@@ -100,7 +100,7 @@ class SecurityEnforcementTest {
         // Attempt 4 -> 429 Too Many Requests (Account / IP locked out)
         Response lockedResp = execute("POST", "/api/auth/login", badCreds, null, null, null);
         assertEquals(429, lockedResp.code, "4th attempt must be blocked with 429 Too Many Requests");
-        assertTrue(lockedResp.body.contains("locked out"), "Response body must explain lockout");
+        assertTrue(lockedResp.body.contains("Too many failed attempts"), "Response body must explain lockout");
     }
 
     @Test

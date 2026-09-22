@@ -247,6 +247,41 @@ public class LSMTreeEngine implements StorageEngine {
         return keys;
     }
 
+    /**
+     * Collection names across both the memtable and every SSTable. Reading only the
+     * memtable would miss collections whose entries were already compacted to disk.
+     */
+    @Override
+    public Set<String> collections() {
+        checkOpen();
+        Set<String> collections = new HashSet<>();
+
+        memtableLock.readLock().lock();
+        try {
+            for (var entry : memtable.entrySet()) {
+                if (!isTombstone(entry.getValue())) {
+                    collections.add(collectionOf(entry.getKey()));
+                }
+            }
+        } finally {
+            memtableLock.readLock().unlock();
+        }
+
+        for (SSTable sstable : sstables) {
+            for (String composite : sstable.keys("")) {
+                collections.add(collectionOf(composite));
+            }
+        }
+
+        return collections;
+    }
+
+    /** Inverse of {@link #compositeKey(String, String)}: the part before the first ':'. */
+    private String collectionOf(String compositeKey) {
+        int idx = compositeKey.indexOf(':');
+        return idx > 0 ? compositeKey.substring(0, idx) : compositeKey;
+    }
+
     @Override
     public void flush() {
         memtableLock.writeLock().lock();

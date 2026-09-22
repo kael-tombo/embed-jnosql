@@ -41,4 +41,4 @@ Objective, checkboxed verification for the public GitHub release of 1.0.0.
 - [ ] README screenshots (39-WS-03)
 
 ## Final Status
-**PASS** — all P0 pre-tag items closed. The remaining open boxes (Playwright UI suite, README screenshots, GitHub Release mechanics, Maven Central staging) are P1/P2 post-release items per `59-prioritized-fix-roadmap.md` and do not gate tagging `v1.0.0`. Improvement rounds 1–2 closed every engine/CI/docs item; see 62 and 63 for evidence.
+**PASS** — all P0 pre-tag items closed. The remaining open boxes (Playwright UI suite, README screenshots, GitHub Release mechanics, Maven Central staging) are P1/P2 post-release items per `59-prioritized-fix-roadmap.md` and do not gate tagging `v1.0.0`. Improvement rounds 1–2 closed every engine/CI/docs item; see 64 and 65 (rounds 1–2, renumbered) and 66 / 63 (round 3 + current final decision) for evidence.

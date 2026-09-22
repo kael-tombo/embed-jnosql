@@ -140,8 +140,49 @@ public class JunifyDBShell {
         }
     }
 
+    private static void printUsage() {
+        System.out.println("Usage: java -jar junify-db-cli.jar [data-dir]");
+        System.out.println("  data-dir    Directory of the local JunifyDB instance (default: data)");
+        System.out.println("  --help      Show this help");
+    }
+
+    /**
+     * Resolves the data directory from the command line. Unsupported options are
+     * rejected instead of silently ignored, so a mistyped flag cannot quietly
+     * start the shell against the default directory.
+     *
+     * @throws IllegalArgumentException when an unknown option or extra argument is given
+     */
+    static String parseDataDir(String[] args) {
+        String dataDir = null;
+        for (String arg : args) {
+            if (arg.startsWith("--")) {
+                throw new IllegalArgumentException("Unknown option: " + arg);
+            }
+            if (dataDir != null) {
+                throw new IllegalArgumentException("Unexpected extra argument: " + arg);
+            }
+            dataDir = arg;
+        }
+        return dataDir == null ? "data" : dataDir;
+    }
+
     public static void main(String[] args) throws IOException {
-        var dataDir = args.length > 0 ? args[0] : "data";
+        for (String arg : args) {
+            if ("--help".equals(arg)) {
+                printUsage();
+                return;
+            }
+        }
+        String dataDir;
+        try {
+            dataDir = parseDataDir(args);
+        } catch (IllegalArgumentException e) {
+            System.err.println("Error: " + e.getMessage());
+            printUsage();
+            System.exit(2);
+            return;
+        }
         var db = JunifyDB.create(JunifyDBConfig.builder()
                 .persistTo(dataDir)
                 .buildConfig());

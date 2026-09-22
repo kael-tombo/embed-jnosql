@@ -5,7 +5,7 @@ import java.nio.file.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class FileCDCConnector implements AutoCloseable {
+public class FileCDCConnector implements AutoCloseable, java.util.function.Consumer<CDCEvent> {
 
     private final Path outputDir;
     private final CDCProcessor processor;
@@ -83,6 +83,19 @@ public class FileCDCConnector implements AutoCloseable {
         try {
             if (writer != null) writer.close();
         } catch (IOException ignored) {}
+    }
+
+    /**
+     * Receives events pushed by the {@link CDCProcessor}.
+     *
+     * <p>Implementing {@link java.util.function.Consumer} is what lets a connector be
+     * subscribed to and unsubscribed from the processor by object identity. Without that
+     * subscription a connector was registered and listed in the console but never received
+     * a single event, because its queue had no producer.</p>
+     */
+    @Override
+    public void accept(CDCEvent event) {
+        queue.offer(event);
     }
 
     public boolean offer(CDCEvent event) {

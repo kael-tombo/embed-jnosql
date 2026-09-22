@@ -509,6 +509,7 @@ pre.code {
 }
 .toast.ok { border-left: 3px solid var(--ok); }
 .toast.err { border-left: 3px solid var(--err); }
+.toast.warn { border-left: 3px solid var(--warn); }
 .toast.info { border-left: 3px solid var(--accent); }
 @keyframes toastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 .toast .x { margin-left: auto; cursor: pointer; color: var(--text-2); border: 0; background: none; font-size: 15px; }

@@ -23,7 +23,7 @@ Every advertised feature mapped to the tests and evidence proving it.
 | Console REST API | `ConsoleFeatureValidationTest`, `ConsoleComprehensiveFeatureProofTest`, `BrowserConsoleWorkflowVerificationTest` | full panel sweep | CONFIRMED |
 | Console auth | `SecurityEnforcementTest`, `AdminConsoleConfigTest` | 401 paths | CONFIRMED |
 | Ports/health | `PortManagementTest`, health endpoints | live /api/health | CONFIRMED |
-| Backup/restore | console integration tests | backup panel | PARTIALLY VERIFIED (restore path UI-only) |
+| Backup/restore | `BackupIntegrityTest` (8), `ConsoleBackupEndpointTest` (8), `FullIntegrationTest.endToEndBackupRestore` (content-asserting) | backup panel + HTTP | **VERIFIED** (2026-09-22) — snapshot content, counts, and a restore round-trip through HTTP. Previously PARTIALLY VERIFIED on a false premise: backups were empty (`keys("")` + fresh engine over a temp dir) and the restore route had never worked (always 400); the old round-trip test passed only because the data was still on disk. R-35/R-36 |
 | Vectors (HNSW 128-dim) | — (excluded from coverage as experimental) | live add/search | PARTIALLY VERIFIED |
 | CDC events | — | — | NOT IMPLEMENTED (no producer; status-only UI) |
 | Framework starters | module unit tests (not run in this env) | prior demo runs | PARTIALLY VERIFIED |

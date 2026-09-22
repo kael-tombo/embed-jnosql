@@ -52,6 +52,23 @@ public interface StorageEngine {
         return java.util.Collections.emptySet();
     }
 
+    /**
+     * Every collection currently held by this engine, including collections created
+     * in this session that have not been flushed yet.
+     *
+     * <p>This differs from {@link #collectionNames()}, which only reports collections
+     * that can be rediscovered after a restart. Backup and admin surfaces need the live
+     * set: enumerating the wrong set silently produces an empty or partial backup, which
+     * is worse than an error because the user is told the backup succeeded.
+     *
+     * <p>Default: {@link #collectionNames()}. Engines that keep collections only in
+     * memory must override this, otherwise callers see an empty set for a populated
+     * engine (detectable via {@link #size()} being non-zero).
+     */
+    default java.util.Set<String> collections() {
+        return collectionNames();
+    }
+
     Set<String> keys(String collection);
 
     int size();

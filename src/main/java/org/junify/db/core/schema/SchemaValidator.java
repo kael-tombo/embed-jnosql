@@ -85,7 +85,7 @@ public class SchemaValidator {
                     continue;
                 }
 
-                if (value != null && !field.type.isInstance(value)) {
+                if (value != null && !isTypeCompatible(field.type, value)) {
                     errors.add("Field '" + field.name + "' must be of type " + field.type.getSimpleName() + 
                             ", got " + value.getClass().getSimpleName());
                 }
@@ -100,6 +100,19 @@ public class SchemaValidator {
             }
 
             return errors.isEmpty() ? ValidationResult.valid() : ValidationResult.invalid(errors);
+        }
+
+        /**
+         * JSON has a single number type, so any {@link Number} satisfies a numeric field
+         * type. Before this check, a field registered as {@code number} (mapped to
+         * {@code Double}) rejected integral values such as {@code 99} with
+         * "must be of type Double, got Integer" (audit R-32).
+         */
+        private static boolean isTypeCompatible(Class<?> declared, Object value) {
+            if (declared.isInstance(value)) {
+                return true;
+            }
+            return Number.class.isAssignableFrom(declared) && value instanceof Number;
         }
 
         private static class FieldDefinition {

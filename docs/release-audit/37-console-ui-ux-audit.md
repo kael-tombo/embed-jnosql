@@ -11,7 +11,9 @@ Complete feature panels wired to real endpoints; all UI states (loading/empty/er
 - Total ~1.7k lines vs 15.7k-line monolith previously.
 
 ## Validation Performed (prior session, live)
-- Full round-trips: SQL SELECT/INSERT; document CRUD + delete; KV/list/set/hash ops; column families; vector add/search; schema registration; transaction begin/commit/rollback (active count 1→0); index creation; backup; CDC status; audit view; server/JVM stats.
+- Full round-trips: SQL SELECT/INSERT; document CRUD + delete; KV/list/set/hash ops; column families; vector add/search; schema registration; transaction begin/commit/rollback (active count 1→0); index creation; CDC status; audit view; server/JVM stats.
+
+> **Correction (2026-09-22):** `backup` was removed from this list because the claim did not hold. Re-driving the panel in a real browser showed the Create button produced a 22-byte `{}` (the server snapshotted a fresh engine over an empty temp dir) while toasting "Backup created", the Restore button's endpoint returned 400 on every call, and the panel's Engine KPI always rendered `—`. All three are fixed and browser-re-verified (toast now reads "Backup created · 13 documents in 7 collections"; ENGINE shows `FILE`); evidence in 66, defects R-35..R-38. The lesson recorded against this document: a green toast is not a round-trip.
 - Zero browser console errors at final state; `ConsoleFeatureValidationTest` + `SecurityEnforcementTest` green post-rewrite.
 - Fixed during verification: `v()` selector helper double-prefix bug, sets payload (`members`), transaction id type, vector search result shape + 128-dim labeling.
 

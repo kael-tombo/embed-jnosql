@@ -302,6 +302,22 @@ public class BTreeEngine implements StorageEngine {
         return collection + ":" + key;
     }
 
+    @Override
+    public Set<String> collections() {
+        checkOpen();
+        Set<String> collections = new HashSet<>();
+        indexLock.readLock().lock();
+        try {
+            for (String composite : ramIndex.keySet()) {
+                int idx = composite.indexOf(':');
+                collections.add(idx > 0 ? composite.substring(0, idx) : composite);
+            }
+        } finally {
+            indexLock.readLock().unlock();
+        }
+        return collections;
+    }
+
     private String extractKey(String compositeKey) {
         int idx = compositeKey.indexOf(':');
         return idx > 0 ? compositeKey.substring(idx + 1) : compositeKey;

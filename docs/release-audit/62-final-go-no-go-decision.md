@@ -1,5 +1,7 @@
 # Final Public Release Decision
 
+> **Superseded 2026-09-22** by `63-final-go-no-go-decision.md` (round 3). Verdict unchanged: GO.
+
 ## Decision
 
 **GO** (2026-09-21, final update: run #34 completed **success** — build+coverage gate,

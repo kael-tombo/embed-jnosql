@@ -79,6 +79,10 @@ public class CDCManager {
     public FileCDCConnector addFileConnector(String name, java.nio.file.Path outputDir) {
         var connector = new FileCDCConnector(processor, outputDir, name);
         connector.start();
+        // Subscribe the connector to the event stream. Without this the connector was
+        // live but starved: its queue had no producer, so a configured connector wrote
+        // no events while the console reported it as connected.
+        processor.subscribe(connector);
         fileConnectors.put(name, connector);
         return connector;
     }
@@ -86,8 +90,14 @@ public class CDCManager {
     public void removeFileConnector(String name) {
         var connector = fileConnectors.remove(name);
         if (connector != null) {
+            processor.unsubscribe(connector);
             connector.close();
         }
+    }
+
+    /** Whether a connector with this name is currently registered (file or kafka). */
+    public boolean hasConnector(String name) {
+        return fileConnectors.containsKey(name) || kafkaConnectors.containsKey(name);
     }
 
     public KafkaCDCConnector addKafkaConnector(String name, String bootstrapServers, String topic) {
@@ -108,7 +118,7 @@ public class CDCManager {
         return Map.of(
             "enabled", processor.isEnabled(),
             "eventsInLog", processor.getEventLog().size(),
-            "subscribers", processor.getEventLog().size(),
+            "subscribers", processor.subscriberCount(),
             "fileConnectors", fileConnectors.keySet(),
             "kafkaConnectors", kafkaConnectors.keySet()
         );

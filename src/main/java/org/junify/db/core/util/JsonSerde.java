@@ -51,6 +51,12 @@ public final class JsonSerde {
                     }
                     doc.setFields(fields);
                 }
+                // R-33: the custom Document path rebuilt only id + fields, so a persisted
+                // TTL was silently dropped on every read (isExpired() stayed false and
+                // documents never expired). Serialization already wrote expiresAt.
+                if (node.has("expiresAt") && !node.get("expiresAt").isNull()) {
+                    doc.setExpiresAt(node.get("expiresAt").asLong());
+                }
                 return (T) doc;
             }
             return MAPPER.readValue(json, type);

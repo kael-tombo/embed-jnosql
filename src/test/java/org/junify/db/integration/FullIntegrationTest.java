@@ -155,7 +155,14 @@ class FullIntegrationTest {
         var backupFile = backupManager.backup(backupDir);
 
         assertTrue(Files.exists(backupFile));
-        assertTrue(Files.size(backupFile) > 0);
+        // Assert on content, not just existence: an empty snapshot is 2 bytes of "{}",
+        // so a size check alone passed while backups captured nothing at all.
+        assertTrue(Files.size(backupFile) > 2, "snapshot must contain documents, not an empty JSON object");
+        try (var in = new java.util.zip.GZIPInputStream(Files.newInputStream(backupFile))) {
+            var snapshot = new String(in.readAllBytes());
+            assertTrue(snapshot.contains("Alice") && snapshot.contains("Bob"),
+                    "snapshot must hold the seeded documents, got: " + snapshot);
+        }
 
         db.close();
         db = JunifyDB.embed()

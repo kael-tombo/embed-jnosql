@@ -14,7 +14,19 @@ import java.util.concurrent.atomic.AtomicLong;
 public class BenchmarkRunner {
 
     public static void main(String[] args) throws Exception {
-        var options = parseArgs(args);
+        Options options;
+        try {
+            options = parseArgs(args);
+        } catch (IllegalArgumentException e) {
+            System.err.println("Error: " + e.getMessage());
+            System.err.println("Run with --help to list supported options.");
+            System.exit(2);
+            return;
+        }
+        if (options.helpRequested) {
+            printUsage();
+            return;
+        }
         
         System.out.println("=".repeat(60));
         System.out.println("JunifyDB Benchmark Runner");
@@ -171,20 +183,69 @@ public class BenchmarkRunner {
         return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
     }
 
-    private static Options parseArgs(String[] args) {
+    /** Reads the value following {@code option}, failing fast when it is absent. */
+    static String value(String option, String[] args, int index) {
+        if (index >= args.length) {
+            throw new IllegalArgumentException("Missing value for " + option);
+        }
+        return args[index];
+    }
+
+    /** Reads a numeric value following {@code option}, failing fast when it is not a number. */
+    static int intValue(String option, String[] args, int index) {
+        String raw = value(option, args, index);
+        try {
+            return Integer.parseInt(raw);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid number for " + option + ": " + raw);
+        }
+    }
+
+    /**
+     * Validates a {@code --workload} value. Before this guard a typo silently
+     * matched no workload and the runner exited reporting zero benchmarks.
+     *
+     * @throws IllegalArgumentException when any token is not a known workload
+     */
+    static String workloadValue(String raw) {
+        for (String token : raw.split(",")) {
+            String normalized = token.trim().toLowerCase();
+            if (!Set.of("all", "document", "kv", "mixed").contains(normalized)) {
+                throw new IllegalArgumentException("Unknown workload: " + token.trim()
+                        + " (expected all, document, kv or mixed)");
+            }
+        }
+        return raw.toLowerCase();
+    }
+
+    static void printUsage() {
+        System.out.println("Usage: junify-db-benchmark [options]");
+        System.out.println("Options:");
+        System.out.println("  --ops <n>            Operations per workload (default: 10000)");
+        System.out.println("  --engine <type>      FILE, IN_MEMORY, LSM_TREE, B_TREE (default: IN_MEMORY)");
+        System.out.println("  --threads <n>        Concurrent threads (default: 1)");
+        System.out.println("  --workload <name>    all, document, kv, mixed (default: all)");
+        System.out.println("  --help               Show this help");
+    }
+
+    static Options parseArgs(String[] args) {
         var options = new Options();
         
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
-                case "--ops" -> options.ops = Integer.parseInt(args[++i]);
+                case "--ops" -> options.ops = intValue("--ops", args, ++i);
                 case "--engine" -> options.engine = switch (args[++i].toUpperCase()) {
                     case "FILE" -> StorageEngineType.FILE;
                     case "LSM_TREE" -> StorageEngineType.LSM_TREE;
                     case "B_TREE" -> StorageEngineType.B_TREE;
-                    default -> StorageEngineType.IN_MEMORY;
+                    case "IN_MEMORY" -> StorageEngineType.IN_MEMORY;
+                    default -> throw new IllegalArgumentException("Unsupported engine: " + args[i]
+                            + " (expected FILE, IN_MEMORY, LSM_TREE or B_TREE)");
                 };
-                case "--threads" -> options.threads = Integer.parseInt(args[++i]);
-                case "--workload" -> options.workload = args[++i];
+                case "--threads" -> options.threads = intValue("--threads", args, ++i);
+                case "--workload" -> options.workload = workloadValue(value("--workload", args, ++i));
+                case "--help" -> options.helpRequested = true;
+                default -> throw new IllegalArgumentException("Unknown option: " + args[i]);
             }
         }
         
@@ -196,6 +257,7 @@ public class BenchmarkRunner {
         StorageEngineType engine = StorageEngineType.IN_MEMORY;
         int threads = 1;
         String workload = "all";
+        boolean helpRequested = false;
     }
 
     static class BenchmarkResults {

@@ -158,7 +158,7 @@ public class JunifyDB implements Closeable {
     }
 
     /**
-     * Executes an ANSI SQL statement against JunifyDB's collections/tables.
+     * Executes an SQL statement (JunifyDB's built-in SQL dialect) against the relational engine.
      */
     public org.junify.db.sql.SqlResultSet sql(String sql, Object... params) {
         checkOpen();
@@ -166,7 +166,7 @@ public class JunifyDB implements Closeable {
     }
 
     /**
-     * Executes an ANSI SQL query and maps the result rows to an entity class.
+     * Executes an SQL query (built-in dialect) and maps the result rows to an entity class.
      */
     public <T> java.util.List<T> sql(String sql, Class<T> entityClass, Object... params) {
         checkOpen();
@@ -203,6 +203,15 @@ public class JunifyDB implements Closeable {
 
     public org.junify.db.sql.engine.SqlEngine sqlEngine() {
         return sqlEngine;
+    }
+
+    /**
+     * The live storage engine backing this database. Admin surfaces (backup, diagnostics)
+     * must use this instance rather than constructing a new engine: a fresh engine reports
+     * none of the live collections, which silently turns a backup into an empty file.
+     */
+    public StorageEngine storageEngine() {
+        return engine;
     }
 
     public KeyValueBucket keyValueBucket(String name) {
@@ -339,6 +348,64 @@ public class JunifyDB implements Closeable {
     }
 
     public static void main(String[] args) {
+        try {
+            launch(args);
+        } catch (IllegalArgumentException e) {
+            System.err.println("Error: " + e.getMessage());
+            System.err.println("Run with --help to list supported options.");
+            System.exit(2);
+        }
+    }
+
+    /**
+     * Rejects an unrecognized command-line option instead of silently ignoring it.
+     * A silently dropped flag (for example {@code --storage} or {@code --password})
+     * would leave the server running with defaults the operator did not choose.
+     *
+     * @throws IllegalArgumentException when the option is not supported
+     */
+    static void validateOption(String option) {
+        switch (option) {
+            case "--port", "--data-dir", "--engine", "--sync", "--async", "--flush-interval",
+                 "--api-key", "--ssl-port", "--ssl-keystore", "--ssl-keypass", "--help" -> { }
+            default -> throw new IllegalArgumentException(
+                    "Unknown option: " + option);
+        }
+    }
+
+    /** Reads the value following {@code option}, failing fast when it is absent. */
+    static String value(String option, String[] args, int index) {
+        if (index >= args.length) {
+            throw new IllegalArgumentException("Missing value for " + option);
+        }
+        return args[index];
+    }
+
+    /** Reads a numeric value following {@code option}, failing fast when it is not a number. */
+    static int intValue(String option, String[] args, int index) {
+        String raw = value(option, args, index);
+        try {
+            return Integer.parseInt(raw);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid number for " + option + ": " + raw);
+        }
+    }
+
+    /** Normalizes the {@code --engine} value, rejecting unsupported engine names. */
+    static String engineValue(String option, String[] args, int index) {
+        String raw = value(option, args, index);
+        return switch (raw.toUpperCase()) {
+            case "FILE" -> "FILE";
+            case "IN_MEMORY" -> "IN_MEMORY";
+            case "LSM_TREE" -> "LSM_TREE";
+            case "B_TREE" -> "B_TREE";
+            default -> throw new IllegalArgumentException(
+                    "Unsupported engine: " + raw + " (expected FILE, IN_MEMORY, LSM_TREE or B_TREE)");
+        };
+    }
+
+    /** Standalone server entry point body. */
+    private static void launch(String[] args) {
         int port = 8080;
         String dataDir = "data";
         String engineType = "FILE";
@@ -351,18 +418,19 @@ public class JunifyDB implements Closeable {
 
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
-                case "--port" -> port = Integer.parseInt(args[++i]);
-                case "--data-dir" -> dataDir = args[++i];
-                case "--engine" -> engineType = args[++i];
+                case "--port" -> port = intValue("--port", args, ++i);
+                case "--data-dir" -> dataDir = value("--data-dir", args, ++i);
+                case "--engine" -> engineType = engineValue("--engine", args, ++i);
                 case "--sync" -> autoFlush = true;
                 case "--async" -> autoFlush = false;
-                case "--flush-interval" -> flushInterval = Integer.parseInt(args[++i]);
-                case "--api-key" -> apiKey = args[++i];
-                case "--ssl-port" -> sslPort = Integer.parseInt(args[++i]);
-                case "--ssl-keystore" -> sslKeystorePath = args[++i];
-                case "--ssl-keypass" -> sslKeystorePassword = args[++i];
+                case "--flush-interval" -> flushInterval = intValue("--flush-interval", args, ++i);
+                case "--api-key" -> apiKey = value("--api-key", args, ++i);
+                case "--ssl-port" -> sslPort = intValue("--ssl-port", args, ++i);
+                case "--ssl-keystore" -> sslKeystorePath = value("--ssl-keystore", args, ++i);
+                case "--ssl-keypass" -> sslKeystorePassword = value("--ssl-keypass", args, ++i);
+                default -> validateOption(args[i]);
                 case "--help" -> {
-                    System.out.println("Usage: java -jar junify-embed.jar [options]");
+                    System.out.println("Usage: java -jar junify-db-core.jar [options]");
                     System.out.println("Options:");
                     System.out.println("  --port <port>          Server port (default: 8080)");
                     System.out.println("  --data-dir <dir>       Data directory (default: data)");

@@ -97,6 +97,11 @@ public class InMemoryEngine implements StorageEngine {
     }
 
     @Override
+    public Set<String> collections() {
+        return Set.copyOf(store.keySet());
+    }
+
+    @Override
     public void flush() {
     }
 

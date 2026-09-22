@@ -212,7 +212,7 @@ public class BrowserConsoleWorkflowVerificationTest {
         String invalidBody = JsonSerde.toJson(Map.of("username", "admin", "password", "wrong-password"));
         HttpResponse resInvalid = sendRequest("POST", "api/auth/login", invalidBody, false, false);
         assertEquals(401, resInvalid.statusCode, "Invalid credentials must return 401 Unauthorized");
-        assertTrue(resInvalid.body.contains("Invalid credentials"));
+        assertTrue(resInvalid.body.contains("Invalid username or password"));
 
         // 3. Valid credentials login
         String validBody = JsonSerde.toJson(Map.of("username", "admin", "password", "admin-secret-pass"));

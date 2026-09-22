@@ -80,11 +80,11 @@ jobs:
       - name: Install core
         run: ./mvnw -B clean install -DskipTests
 
-      - name: Verify starter and CLI modules
-        # Note: cli/ is an unfinished orphan module (no pom, stale package path)
-        # and is deliberately NOT in CI — see release-audit 53 (R-24).
+      - name: Verify starter, extension and CLI modules
+        # cli/ was repaired in R-25 (pom added, package path corrected) and is
+        # verified here like the other modules — see release-audit 53 (R-25).
         run: |
-          for module in spring-boot-starter quarkus-extension micronaut-integration; do
+          for module in spring-boot-starter quarkus-extension micronaut-integration cli; do
             echo "::group::Verify $module"
             (cd "$module" && mvn -B verify) || exit 1
             echo "::endgroup::"

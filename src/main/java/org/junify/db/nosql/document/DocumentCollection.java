@@ -125,6 +125,23 @@ public class DocumentCollection {
         return Map.copyOf(indexes);
     }
 
+    /**
+     * Removes a secondary index, leaving the documents untouched.
+     *
+     * <p>Dropping an index and deleting data are separate operations on purpose: the
+     * console's index endpoint used to call {@link #clear()} here, so a request that
+     * reported "indexes cleared" erased every document in the collection.</p>
+     *
+     * @return {@code true} if an index on {@code field} existed and was removed
+     */
+    public boolean dropIndex(String field) {
+        var removed = indexes.remove(field);
+        if (removed != null) {
+            saveIndexes();
+        }
+        return removed != null;
+    }
+
     public Document insert(Document doc) {
         return insert(doc, -1);
     }

@@ -13,6 +13,7 @@
     <description>Interactive developer shell for a local JunifyDB instance (recovered orphan module, audit R-25).</description>
 
     <properties>
+        <junit.version>5.10.2</junit.version>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -23,6 +24,12 @@
             <groupId>org.junify.db</groupId>
             <artifactId>junify-db-core</artifactId>
             <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
