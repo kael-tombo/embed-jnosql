@@ -1,0 +1,196 @@
+#!/usr/bin/env bash
+# Console contract gate (R-34..R-41 follow-up).
+#
+# Boots the real server from the built jar and fails on any of:
+#   - a non-2xx/3xx response from a path the console UI calls, or
+#   - a dropped connection (no HTTP status line at all), or
+#   - a response body that contradicts the documented contract.
+#
+# Rationale: three rounds of live probing found endpoints that reported success
+# while doing nothing (empty backups, starved CDC connectors, a "Subscribers"
+# KPI that mirrored the event log) or worse, destroyed data (the index route
+# that called clear()). Every one of those returned HTTP 200. A code green
+# suite does not catch that class; a contract probe does.
+#
+# Usage: scripts/console-contract-gate.sh [port]
+# Requires: target/junify-db-core-1.0.0.jar (build with: mvn -DskipTests package)
+set -u
+
+PORT="${1:-8097}"
+BASE="http://127.0.0.1:${PORT}"
+JAR="target/junify-db-core-1.0.0.jar"
+DATA_DIR="target/contract-gate-data"
+LOG="target/contract-gate-server.log"
+
+FAILURES=0
+SERVER_PID=""
+
+fail() {
+  echo "FAIL: $1"
+  FAILURES=$((FAILURES + 1))
+}
+
+pass() {
+  echo "ok:   $1"
+}
+
+# probe <label> <method> <path> [body]
+# Fails if the connection drops or the status is outside 2xx/3xx.
+probe() {
+  local label="$1" method="$2" path="$3" body="${4:-}"
+  local extra=()
+  [ -n "$body" ] && extra=(-H 'Content-Type: application/json' -d "$body")
+  local out code
+  out=$(curl -s -m 10 -o /tmp/contract-gate-body.json -w '%{http_code}' \
+    -X "$method" "$BASE$path" "${extra[@]}")
+  code=$?
+  if [ $code -ne 0 ]; then
+    fail "$label: connection dropped (curl exit $code, no status line)"
+    return
+  fi
+  if [ "$out" -ge 200 ] 2>/dev/null && [ "$out" -lt 400 ] 2>/dev/null; then
+    pass "$label -> $out"
+  else
+    fail "$label -> unexpected HTTP $out: $(head -c 120 /tmp/contract-gate-body.json)"
+  fi
+}
+
+# expect <label> <actual> <needle>
+expect_contains() {
+  local label="$1" body="$2" needle="$3"
+  case "$body" in
+    *"$needle"*) pass "$label contains '$needle'" ;;
+    *) fail "$label: expected '$needle' in: $(echo "$body" | head -c 160)" ;;
+  esac
+}
+
+cleanup() {
+  if [ -n "$SERVER_PID" ] && kill -0 "$SERVER_PID" 2>/dev/null; then
+    kill "$SERVER_PID" 2>/dev/null
+    wait "$SERVER_PID" 2>/dev/null
+  fi
+}
+trap cleanup EXIT
+
+[ -f "$JAR" ] || { echo "FAIL: $JAR missing — run: mvn -DskipTests package"; exit 2; }
+rm -rf "$DATA_DIR"
+
+echo "== booting server on :$PORT =="
+java -jar "$JAR" --port "$PORT" --data-dir "$DATA_DIR" --engine FILE --sync >"$LOG" 2>&1 &
+SERVER_PID=$!
+
+for i in $(seq 1 30); do
+  [ "$(curl -s -m 2 -o /dev/null -w '%{http_code}' "$BASE/api/health" 2>/dev/null)" = "200" ] && break
+  [ "$i" = 30 ] && { echo "FAIL: server did not come up (see $LOG)"; exit 2; }
+  sleep 1
+done
+echo "server up (pid $SERVER_PID)"
+
+echo
+echo "== seed the data the console panels read =="
+probe "POST /api/collections/products" POST /api/collections/products \
+  '{"id":"p1","name":"Keyboard","price":75.0,"stock":5}'
+BODY=$(curl -s -m 5 "$BASE/api/collections/products")
+expect_contains "collections/products" "$BODY" '"Keyboard"'
+
+# The schema and column-family panels fetch per-collection resources; a 404 for a
+# collection that has none is *honest*, so seed both before probing the GETs.
+probe "POST /api/schema/products" POST /api/schema/products \
+  '{"strict":false,"fields":[{"name":"name","type":"string","required":true}]}'
+probe "PUT /api/columns/fam/row1" PUT /api/columns/fam/row1 '{"name":"Keyboard","qty":5}'
+probe "POST /api/indexes/products" POST /api/indexes/products '{"field":"name"}'
+probe "POST /api/kv/lists/cart/q/rpush" POST /api/kv/lists/cart/q/rpush '{"value":"item-1"}'
+probe "POST /api/kv/sets/tags/t/sadd" POST /api/kv/sets/tags/t/sadd '{"members":["a"]}'
+probe "POST /api/kv/hashes/h/k/hset" POST /api/kv/hashes/h/k/hset '{"field":"email","value":"a@b.c"}'
+
+echo
+echo "== every GET the console UI makes =="
+for p in /api/health /api/metrics /api/stats /api/collections /api/schema \
+         /api/transactions /api/cdc /api/cdc/events /api/audit/logs /api/backup \
+         /api/collections/products /api/collections/products/p1 \
+         /api/indexes/products /api/schema/products \
+         /api/kv/lists/cart/q/lrange /api/kv/sets/tags/t/smembers \
+         /api/kv/hashes/h/k/hgetall /api/columns/fam/row1; do
+  probe "GET $p" GET "$p"
+done
+
+echo
+echo "== contract checks on responses that previously lied =="
+BODY=$(curl -s -m 5 "$BASE/api/cdc")
+expect_contains "cdc status" "$BODY" '"subscribers":0'
+
+BODY=$(curl -s -m 5 -X POST "$BASE/api/backup" -H 'Content-Type: application/json' -d '{}')
+expect_contains "backup create" "$BODY" '"status":"backup created"'
+DOCS=$(echo "$BODY" | grep -o '"documents":[0-9]*' | cut -d: -f2)
+if [ -n "$DOCS" ] && [ "$DOCS" -ge 1 ] 2>/dev/null; then
+  pass "backup reports $DOCS captured document(s)"
+else
+  fail "backup response must state how many documents it captured, got: $(echo "$BODY" | head -c 160)"
+fi
+SNAP=$(echo "$BODY" | grep -o '"file":"[^"]*"' | head -1 | cut -d'"' -f4)
+SIZE=$(echo "$BODY" | grep -o '"size":[0-9]*' | cut -d: -f2)
+if [ -n "$SIZE" ] && [ "$SIZE" -gt 100 ]; then
+  pass "backup size $SIZE > 100 bytes (an empty snapshot would be 22)"
+else
+  fail "backup size suspiciously small: '$SIZE'"
+fi
+if [ -n "$SNAP" ]; then
+  CONTENT=$(gzip -dc "$SNAP" 2>/dev/null | head -c 400)
+  expect_contains "snapshot content" "$CONTENT" "Keyboard"
+else
+  fail "backup response did not include a file path"
+fi
+
+echo
+echo "== destructive routes must be safe =="
+BODY=$(curl -s -m 5 -X DELETE "$BASE/api/indexes/products")
+expect_contains "index delete without field is a 400" "$BODY" 'Specify the index to drop'
+DOCS=$(curl -s -m 5 "$BASE/api/collections/products" | grep -o '"id"' | wc -l)
+if [ "$DOCS" -ge 1 ]; then
+  pass "documents survive index maintenance ($DOCS docs)"
+else
+  fail "index route deleted documents ($DOCS docs left)"
+fi
+
+BODY=$(curl -s -m 5 -X DELETE "$BASE/api/cdc/connectors/never-existed")
+expect_contains "unknown connector delete" "$BODY" 'No connector named'
+
+echo
+echo "== a body-less POST must never drop the connection =="
+CODE=$(curl -s -m 10 -o /tmp/contract-gate-body.json -w '%{http_code}' -X POST "$BASE/api/backup")
+CURL_EXIT=$?
+if [ $CURL_EXIT -ne 0 ]; then
+  fail "body-less POST /api/backup dropped the connection"
+elif [ "$CODE" -ge 200 ] && [ "$CODE" -lt 400 ]; then
+  pass "body-less POST /api/backup -> $CODE"
+else
+  fail "body-less POST /api/backup -> $CODE"
+fi
+
+echo
+echo "== restore round trip =="
+BEFORE=$(curl -s -m 5 "$BASE/api/collections/products/p1")
+curl -s -m 5 -X DELETE "$BASE/api/collections/products/p1" >/dev/null
+AFTER_DELETE=$(curl -s -m 5 "$BASE/api/collections/products/p1")
+case "$AFTER_DELETE" in
+  *Not*found*) pass "p1 deleted" ;;
+  *) fail "p1 was not deleted before restore: $(echo "$AFTER_DELETE" | head -c 120)" ;;
+esac
+if [ -n "$SNAP" ]; then
+  probe "POST /api/backup/restore" POST /api/backup/restore "{\"backupFile\":\"$(echo "$SNAP" | sed 's/\\\\/\//g')\"}"
+  AFTER_RESTORE=$(curl -s -m 5 "$BASE/api/collections/products/p1")
+  case "$AFTER_RESTORE" in
+    *Keyboard*) pass "p1 restored with payload" ;;
+    *) fail "p1 missing after restore: $(echo "$AFTER_RESTORE" | head -c 120)" ;;
+  esac
+fi
+
+echo
+echo "========================================"
+if [ "$FAILURES" -eq 0 ]; then
+  echo "CONTRACT GATE: PASS (all console-called endpoints answered honestly)"
+  exit 0
+else
+  echo "CONTRACT GATE: FAIL ($FAILURES failure(s))"
+  exit 1
+fi

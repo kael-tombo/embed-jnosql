@@ -298,7 +298,7 @@ live-site redeploy, deployment-origin mismatch, CI demos job — docs 53/62).
 - [x] Maven Central readiness is verified (metadata + dry-run; staging needs credentials)
 - [x] All critical blockers are resolved
 - [x] The complete regression suite passes (741/741 core + 4/4 CLI today)
-- [x] Destructive endpoints are safe: index maintenance cannot delete documents (R-41), and no endpoint reports success for work it did not do (R-34..R-40)
+- [x] Destructive endpoints are safe: index maintenance cannot delete documents (R-41), and no endpoint reports success for work it did not do (R-34..R-40) — and this is no longer a one-time manual claim: the `console-contract` CI job re-probes every console-called path on every push (`scripts/console-contract-gate.sh`), and the gate itself was falsified against the pre-fix commit (10 failures incl. the data-loss check) before being trusted
 - [x] Backups capture real data, refuse to report success when empty, and restore round-trips (R-35/R-36 — added this round, since the previous answer was "no")
 
 **GO.** The product is safe to release publicly as `1.0.0` once the mechanics

@@ -196,3 +196,38 @@ jobs:
         with:
           name: benchmark-results
           path: target/benchmark-results.json
+
+  # Console contract gate (R-34..R-41 follow-up): boots the real server from the
+  # built jar and fails on any non-2xx response, dropped connection, or lying
+  # response body from a path the console UI calls. Three rounds of live probing
+  # found endpoints that returned HTTP 200 while doing nothing (empty backups,
+  # starved CDC connectors, a mirrored "Subscribers" KPI) or destroyed data (an
+  # index route that called clear()); a unit suite does not catch that class,
+  # a behaviour probe does. The gate was falsified against the pre-fix commit
+  # (10 failures, incl. the data-loss check) and passes on the fixed tree.
+  console-contract:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: maven
+
+      - name: Package jar
+        run: ./mvnw -B -DskipTests package
+
+      - name: Run console contract gate
+        run: bash scripts/console-contract-gate.sh 8097
+
+      - name: Upload server log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: contract-gate-server-log
+          path: target/contract-gate-server.log

@@ -226,6 +226,28 @@ path records CDC events**; the live server returns a real event stream, so the c
 (a doc/implementation mismatch). The remaining Kafka limitation is now stated in the API response
 itself rather than implied.
 
+## Console contract gate — the sweep made permanent
+
+The manual probing method that found R-34..R-41 is now a repeatable CI job.
+
+- **`scripts/console-contract-gate.sh`** boots the real server from the built jar and fails
+  on any of: a non-2xx/3xx response from a path the console calls, a **dropped connection**
+  (no status line), or a response body that contradicts the documented contract — the
+  specific lies found this session are asserted directly:
+  - backup must report `documents` and a snapshot **size > 100 bytes** (an empty snapshot
+    is 22), and the gunzipped snapshot must contain the seeded document;
+  - CDC `subscribers` must be `0` on a fresh server;
+  - index DELETE without `?field=` must be a 400 and **documents must survive**;
+  - unknown connector DELETE must be a 404, not a fake disconnect;
+  - a body-less POST must never drop the connection;
+  - delete → **restore → payload present** round trip through HTTP.
+- **Falsified before trusting it**: the gate was run against the pre-fix commit
+  (`b822f9f`, the parent of 9d27af8) in a throwaway worktree — **10 failures**, including
+  `index route deleted documents (0 docs left)` — and against the fixed tree: **PASS**.
+  A gate that has never failed proves nothing; this one demonstrably catches the class.
+- **CI**: new `console-contract` job (needs `build`, Java 21, packages the jar, runs the
+  gate on :8097, uploads the server log on failure). YAML validated.
+
 ## Repository / release mechanics state
 
 - Remote CI: last runs green — `pages build and deployment` success on
