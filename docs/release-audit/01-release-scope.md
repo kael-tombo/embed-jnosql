@@ -42,11 +42,16 @@ What is in scope for the first public release, and what is explicitly out of sco
 Add an aggregator/flatten POM strategy in a later minor release so `mvn verify` at root covers starters; publish a SUPPORTED-MATRIX page. The `maven-central` profile already supplies the source/javadoc/GPG plugins (doc 46, MC-01 fixed); Central publication itself remains gated on credentials (R-13).
 
 ## Current verification state (2026-09-23)
-**821/821** core tests + 4/4 CLI + 43/43 across nine demos; contract gate PASS on FILE,
-LSM_TREE and B_TREE (each now including a **restart-durability block**); auth gate PASS;
+**832/832** core tests + 4/4 CLI + 43/43 across nine demos; contract gate PASS on FILE,
+LSM_TREE and B_TREE (**92 ok / 0 FAIL each**, including a **crash-durability block** that proves
+the server stopped, proves the replacement bound, and requires every acknowledged write back
+with its full body — 12 of 12 on all three engines); auth gate PASS;
 reproducibility gate PASS (`sha256 7c8b691e…`, identical across two clean builds); core jar
 **3,119,376 bytes** with three mandatory runtime dependencies — inside the <5 MB requirement.
 Baseline comparison and delta: `baseline/BASELINE-COMPARISON.md`.
+
+All three persistent engines (FILE, LSM_TREE, B_TREE) now make the same write-ahead guarantee,
+and it is measured across a real forced stop rather than inferred.
 
 ### Current verification state (2026-09-22)
 **801/801** core tests + 4/4 CLI + 43/43 across nine demos; contract gate PASS on FILE,

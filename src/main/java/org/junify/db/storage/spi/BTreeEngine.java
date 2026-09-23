@@ -34,6 +34,15 @@ public class BTreeEngine implements StorageEngine {
      */
     private final ScheduledExecutorService scheduler;
     private final long flushIntervalMs;
+    /**
+     * R-69: the write-ahead log, the same one FILE and LSM_TREE use.
+     *
+     * <p>Without it this engine acknowledged writes it had not persisted: {@code put()} only
+     * touched {@code ramIndex}, and durability came from the periodic flush, so an unclean stop
+     * lost everything since the last one. Measured by the contract gate: 12 documents accepted
+     * with HTTP 2xx, a forced stop, and <b>3</b> readable afterwards.</p>
+     */
+    private final WriteAheadLog wal;
     private volatile boolean closed;
 
     /** Default interval, matching the FILE engine's scheduler. */
@@ -67,6 +76,10 @@ public class BTreeEngine implements StorageEngine {
         try {
             Files.createDirectories(indexDir);
             loadIndex();
+            // After the index, not before: the log holds only what the index does not (records
+            // written since the last checkpoint), and it must win where they overlap.
+            this.wal = new WriteAheadLog(dataDir);
+            recoverFromWal();
         } catch (IOException e) {
             throw new org.junify.db.core.exception.StorageException("Failed to initialize B-Tree engine", e);
         }
@@ -101,9 +114,14 @@ public class BTreeEngine implements StorageEngine {
     public void put(String collection, String key, String value) {
         checkOpen();
         String compositeKey = compositeKey(collection, key);
-        
+
+        // R-69/R-70: write-ahead, then apply, both inside the same critical section the flush
+        // uses for (snapshot + checkpoint). Logging outside it let a checkpoint truncate a record
+        // whose value had not been applied yet: acknowledged, absent from the index, gone from the
+        // log. The contract gate measured 3 of 12 documents lost that way.
         indexLock.writeLock().lock();
         try {
+            wal.log("PUT", collection, key, value);
             ramIndex.put(compositeKey, value);
             dirtyKeys.add(compositeKey);
         } finally {
@@ -116,6 +134,9 @@ public class BTreeEngine implements StorageEngine {
         checkOpen();
         indexLock.writeLock().lock();
         try {
+            for (var entry : entries.entrySet()) {
+                wal.log("PUT", collection, entry.getKey(), entry.getValue());
+            }
             for (var entry : entries.entrySet()) {
                 String compositeKey = compositeKey(collection, entry.getKey());
                 ramIndex.put(compositeKey, entry.getValue());
@@ -148,9 +169,10 @@ public class BTreeEngine implements StorageEngine {
     public void delete(String collection, String key) {
         checkOpen();
         String compositeKey = compositeKey(collection, key);
-        
+
         indexLock.writeLock().lock();
         try {
+            wal.log("DELETE", collection, key, null);
             ramIndex.remove(compositeKey);
             dirtyKeys.add(compositeKey);
         } finally {
@@ -217,15 +239,30 @@ public class BTreeEngine implements StorageEngine {
 
     @Override
     public void flush() {
+        // R-70: persist and checkpoint under the same lock the write path uses for
+        // (log + apply). A checkpoint outside it can truncate a record whose value has not been
+        // applied yet, which loses an acknowledged write.
         indexLock.writeLock().lock();
         try {
+            boolean persisted = dirtyKeys.isEmpty();
             if (!dirtyKeys.isEmpty()) {
                 try {
                     persistIndex();
+                    persisted = true;
                 } catch (IOException e) {
                     System.err.println("Failed to persist B-Tree index: " + e.getMessage());
                 }
                 dirtyKeys.clear();
+            }
+
+            // Only release the log once the index really holds what the log holds: a checkpoint
+            // truncates, and a failed persist must not discard the only copy.
+            if (persisted) {
+                try {
+                    wal.checkpoint();
+                } catch (IOException e) {
+                    System.err.println("WAL checkpoint failed: " + e.getMessage());
+                }
             }
         } finally {
             indexLock.writeLock().unlock();
@@ -237,6 +274,11 @@ public class BTreeEngine implements StorageEngine {
         if (closed) return;
         flush();
         closed = true;
+        try {
+            wal.close();
+        } catch (IOException e) {
+            System.err.println("WAL close failed: " + e.getMessage());
+        }
         if (scheduler != null) {
             scheduler.shutdown();
             try {
@@ -289,67 +331,138 @@ public class BTreeEngine implements StorageEngine {
         return results;
     }
 
+    /**
+     * Writes the whole index through a temporary file and one atomic move.
+     *
+     * <p><b>R-71:</b> this used to truncate {@code btree_index.dat} and rewrite it in place. A
+     * process killed during that window left a half-written index on disk, while the WAL —
+     * truncated at the previous checkpoint — only covered writes made since then. Everything
+     * older lived solely in the file being rewritten, so it was gone. Measured live through the
+     * contract gate: 12 documents accepted, a forced stop, and 5 readable afterwards.</p>
+     *
+     * <p>On success the previous complete index is still on disk until the move succeeds, so a
+     * reader — including recovery after a crash — sees either the old index or the new one, never
+     * a partial one.</p>
+     */
     private void persistIndex() throws IOException {
         Path indexFile = indexDir.resolve("btree_index.dat");
-        
-        try (var channel = FileChannel.open(indexFile, 
+        Path tmp = indexDir.resolve("btree_index.dat.tmp");
+
+        var sortedEntries = ramIndex.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .toList();
+
+        try (var channel = FileChannel.open(tmp,
                 StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE)) {
-            
-            var sortedEntries = ramIndex.entrySet().stream()
-                    .sorted(Map.Entry.comparingByKey())
-                    .toList();
-            
-            ByteBuffer buffer = ByteBuffer.allocate(1024 * 1024);
-            
+
             for (var entry : sortedEntries) {
-                buffer.clear();
                 byte[] keyBytes = entry.getKey().getBytes(StandardCharsets.UTF_8);
                 byte[] valueBytes = entry.getValue().getBytes(StandardCharsets.UTF_8);
-                
+
+                // Sized per entry, not a fixed 1 MB buffer: a document larger than the buffer
+                // made put() throw BufferOverflowException out of a flush that had already
+                // truncated the file, and the index writer would then be dead.
+                ByteBuffer buffer = ByteBuffer.allocate(8 + keyBytes.length + valueBytes.length);
                 buffer.putInt(keyBytes.length);
                 buffer.put(keyBytes);
                 buffer.putInt(valueBytes.length);
                 buffer.put(valueBytes);
                 buffer.flip();
-                channel.write(buffer);
+                while (buffer.hasRemaining()) {
+                    channel.write(buffer);
+                }
             }
+            // The rename is what publishes the index, so the bytes must be on disk before it:
+            // otherwise a crash can publish a name whose contents did not survive.
+            channel.force(true);
+        }
+
+        try {
+            Files.move(tmp, indexFile,
+                    StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        } catch (AtomicMoveNotSupportedException unsupported) {
+            Files.move(tmp, indexFile, StandardCopyOption.REPLACE_EXISTING);
         }
     }
 
+    /**
+     * R-69: applies the records the log holds on top of the index loaded from disk, oldest first,
+     * so the newest version of each key wins.
+     */
+    private void recoverFromWal() throws IOException {
+        var lines = WriteAheadLog.readRecoverableLines(dataDir);
+        if (lines.isEmpty()) return;
+
+        int recovered = 0;
+        for (String line : lines) {
+            var entry = WriteAheadLog.LogEntry.fromString(line);
+            if (entry == null) continue;
+            String compositeKey = compositeKey(entry.collection(), entry.key());
+            if ("PUT".equals(entry.type())) {
+                ramIndex.put(compositeKey, entry.value());
+                dirtyKeys.add(compositeKey);
+                recovered++;
+            } else if ("DELETE".equals(entry.type())) {
+                ramIndex.remove(compositeKey);
+                dirtyKeys.add(compositeKey);
+                recovered++;
+            }
+        }
+        if (recovered > 0) {
+            System.out.println("BTreeEngine: recovered " + recovered + " operations from WAL");
+        }
+    }
+
+    /**
+     * Reads the index as a stream of {@code keyLen|key|valueLen|value} records.
+     *
+     * <p><b>R-72:</b> this used to fill a 1 MB {@link ByteBuffer} and parse records out of it.
+     * A record straddling the 1 MB boundary left the tail of that record unread, the loop broke,
+     * and the next buffer started in the middle of the record — the rest of the file was then
+     * parsed from misaligned bytes and silently produced a handful of arbitrary entries. With
+     * 256 KB documents that happened on the fifth record of every file: 12 documents written,
+     * 3 readable after a restart, though the file on disk held all 12.</p>
+     *
+     * <p>A stream has no boundary to straddle. It also refuses to guess: a record that cannot be
+     * read in full is reported as corruption rather than skipped, so a damaged index fails loudly
+     * instead of answering reads with a plausible-looking subset.</p>
+     */
     private void loadIndex() throws IOException {
         Path indexFile = indexDir.resolve("btree_index.dat");
         if (!Files.exists(indexFile)) return;
-        
-        try (var channel = FileChannel.open(indexFile, StandardOpenOption.READ)) {
-            ByteBuffer buffer = ByteBuffer.allocate(1024 * 1024);
-            
-            while (channel.position() < channel.size()) {
-                buffer.clear();
-                buffer.limit(Math.min(buffer.capacity(), (int)(channel.size() - channel.position())));
-                
-                int bytesRead = channel.read(buffer);
-                if (bytesRead <= 0) break;
-                
-                buffer.flip();
-                
-                while (buffer.remaining() >= 4) {
-                    int keyLen = buffer.getInt();
-                    if (buffer.remaining() < keyLen) break;
-                    
-                    byte[] keyBytes = new byte[keyLen];
-                    buffer.get(keyBytes);
-                    
-                    if (buffer.remaining() < 4) break;
-                    int valueLen = buffer.getInt();
-                    if (buffer.remaining() < valueLen) break;
-                    
-                    byte[] valueBytes = new byte[valueLen];
-                    buffer.get(valueBytes);
-                    
-                    String key = new String(keyBytes, StandardCharsets.UTF_8);
-                    String value = new String(valueBytes, StandardCharsets.UTF_8);
-                    ramIndex.put(key, value);
+
+        long records = 0;
+        try (var in = new DataInputStream(
+                new BufferedInputStream(Files.newInputStream(indexFile), 1 << 16))) {
+            while (true) {
+                int keyLen;
+                try {
+                    keyLen = in.readInt();
+                } catch (EOFException endOfIndex) {
+                    break; // clean end of file
                 }
+                if (keyLen < 0) {
+                    throw new IOException("B-Tree index is corrupt: negative key length " + keyLen
+                            + " after " + records + " records (" + indexFile + ")");
+                }
+                byte[] keyBytes = in.readNBytes(keyLen);
+                if (keyBytes.length < keyLen) {
+                    throw new IOException("B-Tree index is truncated: key of " + keyLen
+                            + " bytes after " + records + " records (" + indexFile + ")");
+                }
+                int valueLen = in.readInt();
+                if (valueLen < 0) {
+                    throw new IOException("B-Tree index is corrupt: negative value length " + valueLen
+                            + " after " + records + " records (" + indexFile + ")");
+                }
+                byte[] valueBytes = in.readNBytes(valueLen);
+                if (valueBytes.length < valueLen) {
+                    throw new IOException("B-Tree index is truncated: value of " + valueLen
+                            + " bytes after " + records + " records (" + indexFile + ")");
+                }
+                ramIndex.put(new String(keyBytes, StandardCharsets.UTF_8),
+                        new String(valueBytes, StandardCharsets.UTF_8));
+                records++;
             }
         }
     }

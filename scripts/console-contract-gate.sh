@@ -78,8 +78,87 @@ cleanup() {
     kill "$CORS_PID" 2>/dev/null
     wait "$CORS_PID" 2>/dev/null
   fi
+  # The restarted server is a new process by the time this runs; leave no orphan holding the port,
+  # or the next run fails its stale-server check and the next *engine* cannot be gated at all.
+  stop_pid "$(server_pid_for_port)"
 }
 trap cleanup EXIT
+
+# Is a server answering on $PORT? Ground truth for "the server really stopped": a pid liveness
+# check is unreliable here (Git Bash kill does not always terminate a native JVM on Windows),
+# while a health answer cannot be faked by a dead process.
+server_answers() {
+  [ "$(curl -s -m 2 -o /dev/null -w '%{http_code}' "$BASE/api/health" 2>/dev/null)" = "200" ]
+}
+
+# The pid listening on $PORT, or empty. Windows-first, with a portable fallback.
+server_pid_for_port() {
+  local pid=""
+  if command -v powershell >/dev/null 2>&1; then
+    pid=$(powershell -NoProfile -Command \
+      "(Get-NetTCPConnection -LocalPort $PORT -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty OwningProcess)" \
+      2>/dev/null | tr -d '\r' | head -1)
+  fi
+  if [ -z "$pid" ]; then
+    pid=$(netstat -ano 2>/dev/null | grep -E "[:.]$PORT[[:space:]]" | grep -i listen | awk '{print $NF}' | head -1 | tr -d '\r')
+  fi
+  printf '%s' "$pid"
+}
+
+# Stop a pid for real on this platform.
+#
+# Measured on Windows: Git Bash's `kill` cannot signal a native JVM at all — `kill -9 <pid>`
+# answers "No such process" for a pid that is demonstrably alive and serving HTTP, and the server
+# keeps answering. taskkill does terminate it. So taskkill is tried first where it exists, with
+# `kill -9` as the portable fallback (Linux CI).
+stop_pid() {
+  local pid="$1"
+  [ -n "$pid" ] || return 0
+  if command -v taskkill >/dev/null 2>&1; then
+    taskkill //F //PID "$pid" >/dev/null 2>&1 && return 0
+  fi
+  kill -9 "$pid" 2>/dev/null
+  return 0
+}
+
+# stop_server <what>: stop the server and *prove* it stopped, so a "restart" cannot be answered
+# by the process it was supposed to replace. Returns non-zero if the port is still serving.
+#
+# The pid that matters is the one listening on $PORT, not $! : the shell's idea of the job pid and
+# the OS pid do not always agree here, and only the listener can answer the checks below.
+stop_server() {
+  local what="$1"
+  stop_pid "$(server_pid_for_port)"
+  stop_pid "$SERVER_PID"
+  for i in $(seq 1 20); do
+    server_answers || { pass "$what server stopped (port $PORT released)"; return 0; }
+    stop_pid "$(server_pid_for_port)"
+    sleep 1
+  done
+  fail "$what server is still answering on :$PORT after being stopped — every restart check below would be answered by the original process, so they are not evidence"
+  return 1
+}
+
+# start_server <suffix>: boot the jar on the same data dir and prove it is the process answering.
+# A failed bind leaves the *old* server serving, which would make the checks below meaningless.
+start_server() {
+  local suffix="$1"
+  java -jar "$JAR" --port "$PORT" --data-dir "$DATA_DIR" --engine "$ENGINE" --sync >"$LOG.$suffix" 2>&1 &
+  SERVER_PID=$!
+  for i in $(seq 1 30); do
+    if server_answers; then
+      if grep -q "Address already in use" "$LOG.$suffix" 2>/dev/null; then
+        fail "server could not bind :$PORT after $suffix (see $LOG.$suffix) — the answers below came from a process that never restarted"
+        return 1
+      fi
+      pass "server restarted for $suffix (pid $SERVER_PID)"
+      return 0
+    fi
+    sleep 1
+  done
+  fail "server did not come back up after $suffix (see $LOG.$suffix)"
+  return 1
+}
 
 [ -f "$JAR" ] || { echo "FAIL: $JAR missing — run: mvn -DskipTests package"; exit 2; }
 rm -rf "$DATA_DIR"
@@ -512,6 +591,10 @@ else
       *"https://app.example"*) pass "opt-in CORS echoes the configured origin" ;;
       *) fail "opt-in CORS not applied: got '${OPTIN_ACAO:-no header}'" ;;
     esac
+  elif grep -q "Address already in use" "$LOG.cors" 2>/dev/null; then
+    # Naming the cause matters: a port already held by something else looked exactly like a
+    # broken opt-in until the log was opened (it cost a debugging cycle once).
+    fail "CORS opt-in server could not bind :$CORS_PORT — that port is already held by another process (see $LOG.cors)"
   else
     fail "CORS opt-in server did not come up (see $LOG.cors)"
   fi
@@ -523,6 +606,9 @@ fi
 
 echo
 echo "== R-62/R-65: what the server writes must survive a restart, once =="
+# The stop below is forced (no graceful shutdown available: Windows cannot signal a console JVM,
+# and taskkill is the only thing that works there), so this is a *crash* survival check — a
+# strictly harder test than a clean restart, and the reason the assertions below are meaningful.
 # Both defects live *across* a restart, so this block stops the server and starts it
 # again on the same data dir. Pre-fix on FILE, an empty `CREATE TABLE` produced no file
 # and the table was gone afterwards; pre-fix on LSM_TREE/B_TREE it had no engine-side
@@ -553,46 +639,104 @@ esac
 
 echo
 echo "== restarting the server on the same data dir =="
-if [ -n "$SERVER_PID" ] && kill -0 "$SERVER_PID" 2>/dev/null; then
-  kill "$SERVER_PID" 2>/dev/null
-  wait "$SERVER_PID" 2>/dev/null
+GRACEFUL_RESTART_OK=0
+if stop_server "graceful"; then
+  if start_server restart; then
+    GRACEFUL_RESTART_OK=1
+    CAT_AFTER=$(curl -s -m 5 "$BASE/api/collections")
+    case "$CAT_AFTER" in
+      *'"name":"gate_empty"'*) pass "the empty table is still in the catalog after a restart" ;;
+      *) fail "the empty table vanished across the restart: $CAT_AFTER" ;;
+    esac
+    EMPTY_SELECT=$(curl -s -m 10 -X POST "$BASE/api/sql" -H 'Content-Type: application/json' \
+      -d '{"query":"SELECT * FROM gate_empty"}')
+    case "$EMPTY_SELECT" in
+      *'"rowCount":0'*) pass "SELECT on the empty table answers 0 rows, not \"does not exist\"" ;;
+      *) fail "SELECT on the recreated table failed: $(echo "$EMPTY_SELECT" | head -c 160)" ;;
+    esac
+    ROWS_AFTER=$(curl -s -m 10 -X POST "$BASE/api/sql" -H 'Content-Type: application/json' \
+      -d '{"query":"SELECT * FROM products"}' | tr -d ' ' | grep -o '"rowCount":[0-9]*' | head -1)
+    if [ -n "$ROWS_BEFORE" ] && [ "$ROWS_BEFORE" = "$ROWS_AFTER" ]; then
+      pass "SELECT returns the same row count after a restart ($ROWS_AFTER)"
+    else
+      fail "SELECT returned $ROWS_AFTER after the restart but $ROWS_BEFORE before it — rows must survive exactly once"
+    fi
+    DOCS_AFTER=$(curl -s -m 5 "$BASE/api/collections/products" | tr -d ' ' | grep -o '"id":' | wc -l | tr -d ' ')
+    if [ "$DOCS_BEFORE" = "$DOCS_AFTER" ]; then
+      pass "the documents endpoint agrees with SELECT after a restart ($DOCS_AFTER documents)"
+    else
+      fail "documents endpoint returned $DOCS_AFTER documents after the restart but $DOCS_BEFORE before it"
+    fi
+  fi
 fi
-java -jar "$JAR" --port "$PORT" --data-dir "$DATA_DIR" --engine "$ENGINE" --sync >"$LOG.restart" 2>&1 &
-SERVER_PID=$!
-RESTARTED=0
-for i in $(seq 1 30); do
-  if [ "$(curl -s -m 2 -o /dev/null -w '%{http_code}' "$BASE/api/health" 2>/dev/null)" = "200" ]; then
-    RESTARTED=1
-    break
+
+echo
+echo "== R-66: a killed server still holds every write it acknowledged, even after rotation =="
+# The WAL rotates at 1 MB. Twelve ~256 KB documents push ~3 MB through it, so the log has
+# rotated before the server is killed outright (kill -9: no flush, no graceful close, nothing
+# drained). The log is then the only copy of those writes, which is exactly the state the
+# pre-fix code lost: rotation closed the writer and reopened it from a background task, so every
+# write in that window was dropped, and recovery read wal.log alone and could not see the
+# rotated segments at all.
+head -c 262144 /dev/zero | tr '\0' 'x' > /tmp/gate-wal-pad.txt
+WAL_ACKED=0
+for i in $(seq 1 12); do
+  { printf '{"id":"waldoc-%s","pad":"' "$i"; cat /tmp/gate-wal-pad.txt; printf '"}'; } > /tmp/gate-wal-doc.json
+  CODE=$(curl -s -m 30 -o /dev/null -w '%{http_code}' -X POST "$BASE/api/collections/waldocs" \
+    -H 'Content-Type: application/json' -d @/tmp/gate-wal-doc.json)
+  if [ "$CODE" -ge 200 ] 2>/dev/null && [ "$CODE" -lt 400 ] 2>/dev/null; then
+    WAL_ACKED=$((WAL_ACKED + 1))
+  else
+    fail "document waldoc-$i was not accepted -> HTTP $CODE"
   fi
-  sleep 1
 done
-if [ "$RESTARTED" != "1" ]; then
-  fail "server did not come back up on the same data dir (see $LOG.restart)"
-else
-  CAT_AFTER=$(curl -s -m 5 "$BASE/api/collections")
-  case "$CAT_AFTER" in
-    *'"name":"gate_empty"'*) pass "the empty table is still in the catalog after a restart" ;;
-    *) fail "the empty table vanished across the restart: $CAT_AFTER" ;;
-  esac
-  EMPTY_SELECT=$(curl -s -m 10 -X POST "$BASE/api/sql" -H 'Content-Type: application/json' \
-    -d '{"query":"SELECT * FROM gate_empty"}')
-  case "$EMPTY_SELECT" in
-    *'"rowCount":0'*) pass "SELECT on the empty table answers 0 rows, not \"does not exist\"" ;;
-    *) fail "SELECT on the recreated table failed: $(echo "$EMPTY_SELECT" | head -c 160)" ;;
-  esac
-  ROWS_AFTER=$(curl -s -m 10 -X POST "$BASE/api/sql" -H 'Content-Type: application/json' \
-    -d '{"query":"SELECT * FROM products"}' | tr -d ' ' | grep -o '"rowCount":[0-9]*' | head -1)
-  if [ -n "$ROWS_BEFORE" ] && [ "$ROWS_BEFORE" = "$ROWS_AFTER" ]; then
-    pass "SELECT returns the same row count after a restart ($ROWS_AFTER)"
+# Not every engine has a WAL: B_TREE persists through its own index, so there is nothing to
+# rotate and the replay assertion below cannot apply to it. Claiming a WAL check there would be
+# the same kind of false pass this gate exists to prevent, so the engine is asked first.
+WAL_USED=0
+[ -f "$DATA_DIR/.wal/wal.log" ] && WAL_USED=1
+if [ "$WAL_USED" = "1" ]; then
+  ARCHIVED=$(ls "$DATA_DIR/.wal/archive"/*.log.gz 2>/dev/null | wc -l | tr -d ' ')
+  ROTATED=$(ls "$DATA_DIR"/.wal/wal-*.log 2>/dev/null | wc -l | tr -d ' ')
+  if [ "$WAL_ACKED" -gt 0 ] && [ $((ARCHIVED + ROTATED)) -gt 0 ]; then
+    pass "the WAL rotated while writing ($ARCHIVED archived, $ROTATED awaiting compression)"
   else
-    fail "SELECT returned $ROWS_AFTER after the restart but $ROWS_BEFORE before it — rows must survive exactly once"
+    fail "the WAL never rotated ($ARCHIVED archived, $ROTATED rotated) — this check would not test R-66"
   fi
-  DOCS_AFTER=$(curl -s -m 5 "$BASE/api/collections/products" | tr -d ' ' | grep -o '"id":' | wc -l | tr -d ' ')
-  if [ "$DOCS_BEFORE" = "$DOCS_AFTER" ]; then
-    pass "the documents endpoint agrees with SELECT after a restart ($DOCS_AFTER documents)"
-  else
-    fail "documents endpoint returned $DOCS_AFTER documents after the restart but $DOCS_BEFORE before it"
+else
+  pass "$ENGINE keeps no write-ahead log, so rotation does not apply — only the survival checks below"
+fi
+
+if stop_server "kill -9"; then
+  # An unclean kill leaves the WAL as the only copy of the writes above, so this only counts as
+  # evidence if the server really is a new process reading that WAL.
+  if start_server crash; then
+    if [ "$WAL_USED" = "1" ]; then
+      RECOVERED_OPS=$(grep -o "recovered [0-9]* operations from WAL" "$LOG.crash" | head -1)
+      if [ -n "$RECOVERED_OPS" ]; then
+        pass "the restarted server replayed its WAL ($RECOVERED_OPS)"
+      else
+        fail "the restarted server reported no WAL replay — the documents below would have to come from somewhere else"
+      fi
+    fi
+    WAL_AFTER=$(curl -s -m 20 "$BASE/api/collections/waldocs" | grep -o '"id":"waldoc-[0-9]*"' | sort -u | wc -l | tr -d ' ')
+    if [ "$WAL_AFTER" = "$WAL_ACKED" ]; then
+      pass "all $WAL_AFTER acknowledged documents survived the kill"
+    else
+      fail "$WAL_ACKED documents were acknowledged but $WAL_AFTER survived the kill — the WAL dropped writes"
+    fi
+    # A count alone would not notice a document that came back with its body truncated.
+    PAD_OK=0
+    PAD_BAD=0
+    for i in $(seq 1 "$WAL_ACKED"); do
+      LEN=$(curl -s -m 20 "$BASE/api/collections/waldocs/waldoc-$i" | grep -o '"pad":"[^"]*"' | head -1 | wc -c | tr -d ' ')
+      if [ "$LEN" -gt 262000 ]; then PAD_OK=$((PAD_OK + 1)); else PAD_BAD=$((PAD_BAD + 1)); fi
+    done
+    if [ "$PAD_BAD" = "0" ]; then
+      pass "every recovered document kept its full body ($PAD_OK checked)"
+    else
+      fail "$PAD_BAD of $((PAD_OK + PAD_BAD)) recovered documents came back truncated"
+    fi
   fi
 fi
 

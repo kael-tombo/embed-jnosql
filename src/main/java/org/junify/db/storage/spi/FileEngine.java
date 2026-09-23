@@ -28,6 +28,12 @@ public class FileEngine implements StorageEngine {
     private final ScheduledExecutorService scheduler;
     private final boolean asyncEnabled;
     private final WriteAheadLog wal;
+    /**
+     * R-70: held across (store update + log record) by the write path and across
+     * (snapshot + WAL checkpoint) by {@link #flush()}, so a checkpoint can never truncate a
+     * record whose value the snapshot does not yet contain.
+     */
+    private final Object writeBarrier = new Object();
 
     public FileEngine(Path dataDir) {
         this(dataDir, 1000, true);
@@ -74,10 +80,14 @@ public class FileEngine implements StorageEngine {
 
     @Override
     public void put(String collection, String key, String value) {
-        store.computeIfAbsent(collection, k -> new ConcurrentHashMap<>()).put(key, value);
-        
-        wal.log("PUT", collection, key, value);
-        
+        // R-70: the log record and the store update share one critical section with the flush's
+        // (snapshot + checkpoint). Logged outside it, a write could be truncating away by a
+        // checkpoint that ran between the log and the apply, and then be lost on an unclean stop.
+        synchronized (writeBarrier) {
+            store.computeIfAbsent(collection, k -> new ConcurrentHashMap<>()).put(key, value);
+            wal.log("PUT", collection, key, value);
+        }
+
         if (asyncEnabled) {
             dirty.set(true);
         }
@@ -85,13 +95,15 @@ public class FileEngine implements StorageEngine {
 
     @Override
     public void putAll(String collection, Map<String, String> entries) {
-        var col = store.computeIfAbsent(collection, k -> new ConcurrentHashMap<>());
-        col.putAll(entries);
-        
-        for (var entry : entries.entrySet()) {
-            wal.log("PUT", collection, entry.getKey(), entry.getValue());
+        synchronized (writeBarrier) {
+            var col = store.computeIfAbsent(collection, k -> new ConcurrentHashMap<>());
+            col.putAll(entries);
+
+            for (var entry : entries.entrySet()) {
+                wal.log("PUT", collection, entry.getKey(), entry.getValue());
+            }
         }
-        
+
         if (asyncEnabled) {
             dirty.set(true);
         }
@@ -117,29 +129,33 @@ public class FileEngine implements StorageEngine {
 
     @Override
     public void delete(String collection, String key) {
-        var col = store.get(collection);
-        if (col != null) {
-            col.remove(key);
-            
-            wal.log("DELETE", collection, key, null);
-            
-            if (asyncEnabled) {
-                dirty.set(true);
+        synchronized (writeBarrier) {
+            var col = store.get(collection);
+            if (col != null) {
+                col.remove(key);
+                wal.log("DELETE", collection, key, null);
             }
+        }
+
+        if (asyncEnabled) {
+            dirty.set(true);
         }
     }
 
     @Override
     public void deleteAll(String collection, List<String> keys) {
-        var col = store.get(collection);
-        if (col != null) {
-            for (var key : keys) {
-                col.remove(key);
-                wal.log("DELETE", collection, key, null);
+        synchronized (writeBarrier) {
+            var col = store.get(collection);
+            if (col != null) {
+                for (var key : keys) {
+                    col.remove(key);
+                    wal.log("DELETE", collection, key, null);
+                }
             }
-            if (asyncEnabled) {
-                dirty.set(true);
-            }
+        }
+
+        if (asyncEnabled) {
+            dirty.set(true);
         }
     }
 
@@ -188,17 +204,23 @@ public class FileEngine implements StorageEngine {
 
     @Override
     public void flush() {
-        if (asyncEnabled) {
-            asyncFlush();
-            sync();
-        } else {
-            syncFlush();
-        }
-        
-        try {
-            wal.checkpoint();
-        } catch (IOException e) {
-            System.err.println("WAL checkpoint failed: " + e.getMessage());
+        // R-70: the snapshot and the checkpoint that releases the log happen inside the same
+        // barrier the write path holds across (apply + log). A checkpoint taken while a write was
+        // between its log record and its apply would truncate a record the snapshot does not
+        // contain — the write is acknowledged, absent from disk, and gone from the log.
+        synchronized (writeBarrier) {
+            if (asyncEnabled) {
+                asyncFlush();
+                sync();
+            } else {
+                syncFlush();
+            }
+
+            try {
+                wal.checkpoint();
+            } catch (IOException e) {
+                System.err.println("WAL checkpoint failed: " + e.getMessage());
+            }
         }
     }
 
@@ -380,13 +402,16 @@ public class FileEngine implements StorageEngine {
      */
     private void replayWal() {
         try {
-            var walFile = dataDir.resolve(".wal").resolve("wal.log");
-            if (!Files.exists(walFile)) return;
+            // R-66: read every segment, not just wal.log. Rotation moves older records into
+            // .wal/archive/*.log.gz (or a rotated .wal/wal-<ts>.log), and reading only the live
+            // log made those records unrecoverable — the pre-fix measurement recovered 0 of 40.
+            List<String> lines = WriteAheadLog.readRecoverableLines(dataDir);
+            if (lines.isEmpty()) return;
 
             // Entries up to the last CHECKPOINT marker are already reflected in
             // the JSON snapshot files; only newer entries need replay.
             long lastCheckpointSeq = -1;
-            for (String line : Files.readAllLines(walFile)) {
+            for (String line : lines) {
                 if (line.startsWith("CHECKPOINT:")) {
                     try {
                         lastCheckpointSeq = Long.parseLong(line.substring(11));
@@ -397,7 +422,7 @@ public class FileEngine implements StorageEngine {
             }
 
             int recovered = 0;
-            for (String line : Files.readAllLines(walFile)) {
+            for (String line : lines) {
                 // LogEntry format: sequence|timestamp|TYPE|collection|key|value
                 String[] parts = line.split("\\|", 6);
                 if (parts.length < 5) continue;

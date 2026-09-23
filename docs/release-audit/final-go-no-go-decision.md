@@ -126,11 +126,35 @@ the server lost **every** record written since startup (found by the new restart
 contract gate: `.btree/` empty on disk, row count 1 → 0 across a restart). It now runs the same
 periodic flusher as FILE.
 
+**Also fixed this round — the durability cluster (R-66, R-69…R-73):** the write-ahead log lost
+acknowledged records in three ways and could not read most of what it kept (rotation dropped
+**53 of 60** records; archived segments were never replayed — **0 of 40**; the log never shrank,
+`truncate()` having zero callers; a rotation could publish a half-written gzip and one unreadable
+segment discarded the whole log). `B_TREE` had **no WAL at all** — 12 documents accepted, **3**
+readable after a forced stop. Fixing the truncation exposed two more of the same shape:
+a checkpoint could release a log record whose value was still in flight (**12 accepted, 9
+surviving**), and `LSM_TREE`'s `get()` answered from an older table when the newest held a
+tombstone. `B_TREE`'s index was rewritten in place and **read back through a 1 MB buffer that
+desynchronised on any record straddling the boundary: 12 documents written and served, 3
+readable, while the file on disk still held all 12** — and a torn index was accepted without
+error. All six are fixed, each falsified at the pre-fix commit, and the live gate now proves
+**12 of 12** documents with full bodies survive a forced stop on FILE, LSM_TREE **and** B_TREE,
+with each engine reporting its own replay.
+
+**A gate-integrity note that belongs in the verdict:** that gate had been reporting false
+passes. `kill -9` from Git Bash cannot signal a native JVM (`No such process`, while the server
+kept answering), so its "restart" assertions were answered by the process they were supposed to
+replace; the previous round's restart evidence was produced that way. The gate now proves the
+stop (the port must stop answering), the start (no failed bind) and the replay before it claims
+anything.
+
 **Honest limits:** vector indexing is an auxiliary capability, **not a first-class vector
-database model** — it must not be marketed as one. `B_TREE` still has **no WAL**: durability is
-"as of the last flush", now an actual background flush (default 1 s, visible in `stats()`) plus
-`close()`, so a hard kill can lose up to one interval of writes — documented as D-02 and, since
-R-68, finally true of the running server rather than only of the engine class.
+database model** — it must not be marketed as one. All three persistent engines now make the
+same write-ahead guarantee, so the former "`B_TREE` has no WAL, durability = last flush"
+limitation (D-02) **no longer applies**; what remains is that `B_TREE` is heap-resident like the
+others, and that `--sync`/`--async` still do not mean what their names and the startup banner
+claim (R-67) — a naming/documentation defect, not a durability one, since every record is now
+fsynced to the log before the write is acknowledged.
 
 ## Console Verdict
 
@@ -242,8 +266,9 @@ not a documented limitation.
 |---|---|---|
 | R-13 | Maven Central credentials absent | **External** — GitHub-first release instead (ADR-007); Central availability unclaimed |
 | R-20 | Mixed-writer limitation | **Documented fundamental limitation** of the storage design; stated in README and doc 16 |
-| R-66 | The WAL is never truncated and only `wal.log` is replayed (`truncate()` has zero callers; rotation archives) | **Not a blocker, needs measurement** — unbounded growth is code-evident, a lost-tail window after rotation is `NOT VERIFIED` and requires a kill-during-rotation test before any claim is made |
-| R-67 | `--sync`/`--async` are inverted in effect (the flag is passed to engines as `asyncEnabled`), and `LSM_TREE`/`B_TREE` ignore it while the banner prints one meaning for all | **Not a blocker, needs a decision** — the *name and banner* overstate what the code does; changing `--sync` to mean flush-on-write is a durability-contract change per engine. The limitation must be stated on the release page |
+| R-66 | The WAL was never truncated and only `wal.log` was replayed (`truncate()` had zero callers; rotation archives) | **FIXED 2026-09-23** — and measured worse than registered: rotation dropped **53 of 60** accepted records, recovery replayed **0 of 40**, a rotation could publish a half-written gzip and lose the entire log (**0 of 6**). Every segment is now read in chronological order with per-segment isolation, and `checkpoint()` truncates. 4 tests, falsified 4/4 |
+| R-67 | `--sync`/`--async` are inverted in effect (the flag is passed to engines as `asyncEnabled`), and `LSM_TREE`/`B_TREE` ignore it while the banner prints one meaning for all | **Not a blocker, needs a decision** — the *name and banner* overstate what the code does; changing `--sync` to mean flush-on-write is a durability-contract change per engine. The limitation must be stated on the release page. **Narrowed 2026-09-23:** durability no longer depends on this flag — every write is fsynced to the WAL before it is acknowledged, on all three persistent engines |
+| R-69…R-72 | `B_TREE` acknowledged writes it never persisted (no WAL); a checkpoint could release a log record whose apply was in flight; the `B_TREE` index was rewritten in place and read back through a desynchronising 1 MB buffer (12 documents on disk → 3 readable); a torn index was accepted silently | **FIXED 2026-09-23** — see the RDBMS verdict above. Each falsified at the pre-fix commit; the live gate now returns 12 of 12 with full bodies on all three engines |
 
 ## Required Fixes (before pushing the release tag)
 
@@ -252,8 +277,10 @@ not a documented limitation.
 2. **State the limitation list** on the release page and in the README: no JDBC driver, no
    constraints, no sequences/views/procedures/triggers, no planner; SQL is a query layer over
    the document store; there is no collection-level delete and `DROP TABLE` only empties (R-63);
-   the <5 MB scope; `B_TREE` has no WAL (durability = last background flush, default 1 s);
-   `--sync`/`--async` do not switch flush-on-write (R-67); vectors are an auxiliary index.
+   the <5 MB scope; `--sync`/`--async` do not switch flush-on-write and the banner
+   overstates them (R-67); vectors are an auxiliary index. **All three persistent engines now
+   share the same write-ahead guarantee**, measured across a forced stop (12 of 12 documents,
+   full bodies), so `B_TREE`'s former no-WAL limitation is no longer part of the list.
 3. **Tag `v0.9.0`** and attach the shaded jar, sources, and javadoc to the GitHub release.
 
 ## Deferred Work (safe post-release)
@@ -261,8 +288,8 @@ not a documented limitation.
 Splitting `junify-db-core` into per-engine artifacts (ADR-001, ADR-002) · a real JDBC driver ·
 constraint enforcement (PK/FK/unique/check/not-null) · sequences, views, procedures, and
 triggers · a query planner and `EXPLAIN` · persisting HNSW indexes for `IN_MEMORY` decision
-review · WAL for `B_TREE` (D-02) · the `--sync`/`--async` semantics decision and a crash test
-for the untruncated WAL (R-67, R-66) · Maven Central publication once credentials exist (R-13) ·
+review · the `--sync`/`--async` semantics decision (R-67) · Maven Central publication once
+credentials exist (R-13) ·
 a stress/soak benchmark programme (doc 24).
 
 ## Documentation-Integrity Verdict
@@ -295,7 +322,7 @@ execution backs it — that rule now applies to the corpus itself.
 | Browser network traces | `docs/browser-testing/evidence/network/` |
 | Footprint bytes | `02-size-and-footprint-audit.md` |
 | Gates | `scripts/console-contract-gate.sh`, `scripts/console-auth-gate.sh`, `.github/workflows/ci.yml` |
-| Live verification premise | 821 + 4 + 43 green; gates PASS on FILE, LSM_TREE, B_TREE (CORS assertions plus a restart-durability block included); reproducibility gate PASS; 43/43 demo tests on nine demos |
+| Live verification premise | 832 + 4 + 43 green; gates PASS on FILE, LSM_TREE, B_TREE (92 ok / 0 FAIL each, including a crash-durability block that proves the stop, the restart and the replay, then requires 12 of 12 acknowledged documents back with full bodies); reproducibility gate PASS; 43/43 demo tests on nine demos |
 | R-61 before/after browser proof | hostile page on `127.0.0.1:8099` read the catalog pre-fix (`READ SUCCESS`) and is `BLOCKED` post-fix |
 | R-62 measured repro (empty table not durable; rows survive) | live `--sync` FILE server create → restart → `SELECT` |
 

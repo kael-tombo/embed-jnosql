@@ -86,11 +86,14 @@ public class LSMTreeEngine implements StorageEngine {
     public void put(String collection, String key, String value) {
         checkOpen();
         String compositeKey = compositeKey(collection, key);
-        
-        wal.log("PUT", collection, key, value);
-        
+
+        // R-70: the log record and the apply share one critical section, and the flush takes the
+        // same one for (snapshot + checkpoint). Otherwise a checkpoint could truncate a record
+        // whose value had not been applied yet, and the write would be acknowledged, absent from
+        // the snapshot, and gone from the log — measured as 3 of 12 documents lost on B_TREE.
         memtableLock.writeLock().lock();
         try {
+            wal.log("PUT", collection, key, value);
             memtable.put(compositeKey, value);
             bloomFilter.add(compositeKey);
             dirty.set(true);
@@ -137,11 +140,16 @@ public class LSMTreeEngine implements StorageEngine {
             memtableLock.readLock().unlock();
         }
         
-        // SSTables are ordered oldest -> newest; search newest first so the
-        // most recent flushed value wins (mirrors LSM read semantics).
+        // SSTables are ordered oldest -> newest; search newest first so the most recent
+        // version wins (mirrors LSM read semantics).
+        //
+        // R-73: read the raw entry, not SSTable.get() — that accessor hides tombstones by
+        // returning null, which this loop cannot tell apart from "absent from this table", so a
+        // deleted key was skipped in the newest table and answered from an older one. The newest
+        // version must decide, tombstone included.
         var snapshot = new ArrayList<>(sstables);
         for (int i = snapshot.size() - 1; i >= 0; i--) {
-            String value = snapshot.get(i).get(compositeKey);
+            String value = snapshot.get(i).raw(compositeKey);
             if (value != null) {
                 if (isTombstone(value)) return null;
                 return value;
@@ -161,10 +169,10 @@ public class LSMTreeEngine implements StorageEngine {
         checkOpen();
         String compositeKey = compositeKey(collection, key);
         
-        wal.log("DELETE", collection, key, null);
-        
         memtableLock.writeLock().lock();
         try {
+            // R-70: logged inside the same critical section as the tombstone (see put()).
+            wal.log("DELETE", collection, key, null);
             memtable.put(compositeKey, createTombstone());
             dirty.set(true);
         } finally {
@@ -324,19 +332,20 @@ public class LSMTreeEngine implements StorageEngine {
 
     @Override
     public void flush() {
+        // R-70: the checkpoint truncates the log, so it must not run between another thread's
+        // log record and its apply — both live inside this same lock (see put()).
         memtableLock.writeLock().lock();
         try {
             if (dirty.getAndSet(false) || !memtable.isEmpty()) {
                 writeMemtableToSSTable();
             }
+            try {
+                wal.checkpoint();
+            } catch (IOException e) {
+                System.err.println("WAL checkpoint failed: " + e.getMessage());
+            }
         } finally {
             memtableLock.writeLock().unlock();
-        }
-        
-        try {
-            wal.checkpoint();
-        } catch (IOException e) {
-            System.err.println("WAL checkpoint failed: " + e.getMessage());
         }
     }
 
@@ -472,11 +481,17 @@ public class LSMTreeEngine implements StorageEngine {
     }
 
     private void recoverFromWal() throws IOException {
-        Path walFile = walDir.resolve("wal.log");
-        if (!Files.exists(walFile)) return;
-        
-        try (var lines = Files.lines(walFile)) {
-            lines.forEach(line -> {
+        // R-66: every segment, not just wal.log — records rotation moved into the archive were
+        // otherwise unrecoverable after a crash (measured: 0 of 40 recorded entries replayed).
+        var lines = WriteAheadLog.readRecoverableLines(dataDir);
+        if (lines.isEmpty()) return;
+
+        // Counted so the recovery is visible to an operator and to the contract gate, which
+        // checks that a restarted server actually replayed rather than merely having the data in
+        // memory already (FILE prints the same shape of line).
+        var recovered = new java.util.concurrent.atomic.AtomicInteger();
+
+        lines.forEach(line -> {
                 try {
                     String[] parts = line.split("\\|", 6);
                     if (parts.length < 5) return;
@@ -490,14 +505,19 @@ public class LSMTreeEngine implements StorageEngine {
                     if ("PUT".equals(type)) {
                         memtable.put(compositeKey, value);
                         bloomFilter.add(compositeKey);
+                        recovered.incrementAndGet();
                     } else if ("DELETE".equals(type)) {
                         memtable.put(compositeKey, createTombstone());
                         bloomFilter.add(compositeKey);
+                        recovered.incrementAndGet();
                     }
                 } catch (Exception e) {
                     System.err.println("WAL recovery error: " + e.getMessage());
                 }
             });
+
+        if (recovered.get() > 0) {
+            System.out.println("LSMTreeEngine: recovered " + recovered.get() + " operations from WAL");
         }
     }
 
@@ -540,11 +560,23 @@ public class LSMTreeEngine implements StorageEngine {
         }
 
         public String get(String key) {
-            String value = data.get(key);
+            String value = raw(key);
             if (value != null && value.startsWith("__TOMBSTONE__")) {
                 return null;
             }
             return value;
+        }
+
+        /**
+         * The stored value as written, tombstones included, or {@code null} if this table has no
+         * entry for the key.
+         *
+         * <p>Callers that need to know <i>whether</i> a key was written in this table must use
+         * this: {@link #get(String)} folds a tombstone into {@code null}, which is also what an
+         * absent key returns, so it cannot express "deleted here, older value lives elsewhere".</p>
+         */
+        public String raw(String key) {
+            return data.get(key);
         }
 
         public Set<String> keys(String prefix) {

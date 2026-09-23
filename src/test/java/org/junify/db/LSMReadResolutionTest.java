@@ -116,6 +116,28 @@ class LSMReadResolutionTest {
     }
 
     @Test
+    @DisplayName("a tombstone in the newest SSTable decides get(), not just scan()")
+    void tombstoneInNewestSstableDecidesGet(@TempDir Path dir) {
+        withEngine(dir, engine -> {
+            engine.put("products", "gone", "{\"id\":\"gone\"}");
+            engine.flush();                        // the value reaches an older SSTable
+            engine.delete("products", "gone");     // tombstone in the memtable
+            engine.flush();                        // and now in a newer SSTable, log truncated
+        });
+
+        withEngine(dir, reopened -> {
+            // R-73: nothing but an SSTable holds the tombstone here, so the newest table must
+            // decide. SSTable.get() reports a tombstone as null — indistinguishable from "this
+            // table does not have the key" — which let an older table answer with the dead value.
+            assertNull(reopened.get("products", "gone"),
+                    "get() must answer from the newest version, which is a tombstone");
+            assertTrue(reopened.scan("products").isEmpty(), "scan() must agree with get()");
+            assertTrue(reopened.keys("products").isEmpty(), "keys() must agree with get()");
+            assertFalse(reopened.exists("products", "gone"), "exists() must agree with get()");
+        });
+    }
+
+    @Test
     @DisplayName("SQL and the document API see one row after a restart on LSM_TREE")
     void sqlAndDocumentReadsAgreeAfterRestart(@TempDir Path dir) {
         try (JunifyDB db = JunifyDB.embed()
