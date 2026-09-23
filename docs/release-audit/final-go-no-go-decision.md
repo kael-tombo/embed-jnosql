@@ -102,15 +102,18 @@ DBMS.**
   reads no longer create collections, `DROP` on a missing table errors (404) instead of
   reporting false success (R-48, R-49).
 - **Not implemented:** **JDBC driver** (none exists — the largest gap between the words "SQL
-  database" and the code), **foreign-key and `CHECK` constraints**, sequences,
-  identity columns, views, stored procedures, functions, triggers, and any query planner or
-  `EXPLAIN` (execution is interpretation).
+  database" and the code), sequences, identity columns, views, stored procedures, functions,
+  triggers, and any query planner or `EXPLAIN` (execution is interpretation).
 - **Constraints, added 2026-09-23 (R-74):** inline and table-level **PRIMARY KEY**, **UNIQUE**
   and **NOT NULL** are now parsed and **enforced** on INSERT and UPDATE for tables created with
   rules, and the rules survive a restart on FILE/LSM_TREE/B_TREE. Before this, a duplicate
   primary key silently overwrote the row and a `NULL` could be written into any column
   (measured against the pre-change jar: duplicate PK accepted, `NULL` accepted into `NOT NULL`).
-  Foreign keys and `CHECK` remain unsupported and stay in the limitation list.
+  **Extended 2026-09-23 (R-75):** `REFERENCES` (foreign key) and `CHECK` are now enforced too —
+  an orphan child row is rejected on INSERT/UPDATE, a referenced parent cannot be removed by
+  DELETE or DROP TABLE, and `CHECK` predicates (column- and table-level) are evaluated per row.
+  The remaining unsupported relational features are sequences, views, procedures, functions,
+  triggers and a query planner.
 - **Durability of DDL, measured and fixed (R-62):** `CREATE TABLE` used to report success for
   a table whose *existence* was not durable — an empty table left no collection on disk and
   disappeared on restart (`SELECT` → *"Table does not exist"*) while **rows were always safe**.
@@ -301,8 +304,8 @@ not a documented limitation.
 1. **Push the corrected commits** so GitHub Pages serves the corrected website, and confirm
    no old branding or false claim remains live.
 2. **State the limitation list** on the release page and in the README: no JDBC driver, no
-   foreign-key or `CHECK` constraints (inline `PRIMARY KEY`/`UNIQUE`/`NOT NULL` **are**
-   enforced), no sequences/views/procedures/triggers, no planner; SQL is a query layer over
+   sequences/views/procedures/triggers, no planner (`PRIMARY KEY`/`UNIQUE`/`NOT NULL`/`FOREIGN
+   KEY`/`CHECK` **are** enforced); SQL is a query layer over
    the document store; there is no collection-level delete and `DROP TABLE` only empties (R-63);
    the <5 MB scope; `--sync`/`--async` do not switch flush-on-write and the banner
    overstates them (R-67); vectors are an auxiliary index. **All three persistent engines now
@@ -313,9 +316,8 @@ not a documented limitation.
 ## Deferred Work (safe post-release)
 
 Splitting `junify-db-core` into per-engine artifacts (ADR-001, ADR-002) · a real JDBC driver ·
-**foreign-key and `CHECK`** constraint enforcement (inline `PRIMARY KEY`/`UNIQUE`/`NOT NULL`
-shipped 2026-09-23, R-74) · indexing of `UNIQUE` columns (currently an O(n) scan) · sequences,
-views, procedures, and triggers · a query planner and `EXPLAIN` · persisting HNSW indexes for `IN_MEMORY` decision
+indexing of `UNIQUE` and foreign-key columns (currently O(n) scans) · sequences, views,
+procedures, and triggers · a query planner and `EXPLAIN` · persisting HNSW indexes for `IN_MEMORY` decision
 review · the `--sync`/`--async` semantics decision (R-67) · Maven Central publication once
 credentials exist (R-13) ·
 a stress/soak benchmark programme (doc 24).
@@ -341,6 +343,7 @@ execution backs it — that rule now applies to the corpus itself.
 | 137-story user story map with status roll-up | `docs/product/USER_STORY_MAP.md` |
 | Final verification round (2026-09-23) | `70-final-verification-round-2026-09-23.md` |
 | Constraint enforcement (PRIMARY KEY/UNIQUE/NOT NULL) evidence | `71-constraint-enforcement-evidence.md` |
+| Referential + CHECK constraint evidence | `72-referential-constraint-evidence.md` |
 | Deep codebase assessment | `00-current-codebase-assessment.md` |
 | Architecture decisions | `67-architecture-decision-records.md` |
 | Defect register (R-31…R-68; every fix falsified against its pre-fix commit) | `53-defect-register.md` |
@@ -366,7 +369,7 @@ execution backs it — that rule now applies to the corpus itself.
 | Current codebase deeply assessed | ✅ `00-current-codebase-assessment.md` |
 | SQL and NoSQL genuinely separate engines | ✅ separate parsers/ASTs/pipelines/languages; shared storage **documented honestly** (ADR-002) |
 | SQL supported feature set honestly documented | ✅ website, README, Console hint, doc 05 |
-| Relational constraints enforced | ✅ **PRIMARY KEY / UNIQUE / NOT NULL** enforced (2026-09-23); foreign key + `CHECK` stated as limitations |
+| Relational constraints enforced | ✅ **PRIMARY KEY / UNIQUE / NOT NULL / FOREIGN KEY / CHECK** enforced (2026-09-23) |
 | Indexes functional and tested | ✅ B-tree + HNSW, in-memory and persistent |
 | Transactions verified | ✅ core/MVCC + savepoints; SQL surface PARTIAL and stated |
 | Procedures/functions/triggers implemented or explicitly unsupported | ✅ explicitly unsupported |

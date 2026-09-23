@@ -5,6 +5,7 @@ import org.junify.db.nosql.document.Document;
 import org.junify.db.nosql.document.DocumentCollection;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -35,6 +36,12 @@ public final class SqlSchemaCatalog {
         if (table == null) return null;
         ensureLoaded();
         return schemas.get(table.toLowerCase());
+    }
+
+    /** All known schemas — used to find the tables that reference a table being modified. */
+    public synchronized List<SqlTableSchema> all() {
+        ensureLoaded();
+        return List.copyOf(schemas.values());
     }
 
     /** Persists {@code schema} and caches it. The reserved collection is created here. */

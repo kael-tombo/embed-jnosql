@@ -51,15 +51,17 @@ Personas: **P1** plain-Java developer · **P2** test engineer · **P3** framewor
 
 | Status | Count | Notable IDs |
 |---|---|---|
-| `VERIFIED` | 105 | US-001, US-022, US-031 (**PRIMARY KEY**, 2026-09-23), US-043, US-062, US-094, US-122 |
-| `PARTIAL` | 24 | US-033 (`UNIQUE`/`NOT NULL` done, no `CHECK`), US-034 (no SQL `CREATE INDEX`), US-036 (SQL transaction granularity), US-120 (Jakarta NoSQL subset), US-127 (demo staleness trap) |
-| `NOT IMPLEMENTED` | 7 | US-032 (**foreign key**), US-039/040/041 (procedures/functions/triggers), US-042 (**JDBC**), US-044 (`EXPLAIN`) |
+| `VERIFIED` | 107 | US-001, US-022, US-031 (**PRIMARY KEY**), US-032 (**foreign key**), US-033 (**UNIQUE/NOT NULL/CHECK**), US-043, US-062, US-094, US-122 |
+| `PARTIAL` | 23 | US-034 (no SQL `CREATE INDEX`), US-036 (SQL transaction granularity), US-120 (Jakarta NoSQL subset), US-127 (demo staleness trap) |
+| `NOT IMPLEMENTED` | 5 | US-039/040/041 (procedures/functions/triggers), US-042 (**JDBC**), US-044 (`EXPLAIN`) |
 | `NOT VERIFIED` | 1 | US-128 (Maven Central — credentials absent) |
 | `EXPERIMENTAL` | 1 | US-074 (Kafka CDC connector) |
 | `RELEASE BLOCKER` | 0 | — (all blockers either fixed, external, or documented limitations) |
 
 Every `NOT IMPLEMENTED` story is a capability the product does not have and **must appear in the
-published limitation list**. Every `PARTIAL` story carries a documented gap. No story is marked
+published limitation list**. *(Correction 2026-09-23: the row above listing `NOT IMPLEMENTED` as
+7 after the first constraint slice was a miscount — six IDs remained; the two referential
+stories have since moved to `VERIFIED`, leaving five.)* Every `PARTIAL` story carries a documented gap. No story is marked
 `VERIFIED` without execution-backed evidence referenced in `../release-audit/evidence/`.
 
 ---
@@ -562,25 +564,26 @@ published limitation list**. Every `PARTIAL` story carries a documented gap. No 
 **Release impact:** removes a release-blocking limitation
 
 #### US-032 · Foreign-key constraint
-`E3 · P2 · NOT IMPLEMENTED · L`
+`E3 · P2 · VERIFIED · L`
 **Persona:** P1
 **Story:** As a developer, I want FK integrity, so that orphans cannot be created.
-**Outcome:** (target) orphan insert rejected.
+**Outcome:** An orphan child row is rejected on INSERT/UPDATE, and a referenced parent cannot be removed by DELETE or DROP TABLE.
 **Deps:** US-031
-**Files/modules:** parser/engine
-**API:** none · **Data:** none · **UI:** none · **Security:** integrity · **Perf:** —
-**Negative:** silent orphans
-**G/W/T:** *Given* an FK, *When* an orphan is inserted, *Then* it is rejected. *(Not implemented.)*
-**Test plan:** constraint test (blocked)
-**Evidence:** limitation statement
-**DoD:** implemented or documented unsupported
-**Release impact:** must be in the limitation list
+**Files/modules:** `sql/parser/SqlParser` (`REFERENCES`), `sql/engine/SqlEngine` (`enforceConstraints`, `assertNoIncomingReferences`), `sql/SqlTableSchema`
+**API:** inline `REFERENCES t(col)` and table-level `FOREIGN KEY (col) REFERENCES t(col)`; `SqlConstraintViolationException`
+**Data:** FK metadata persisted · **UI:** Console error message · **Security:** integrity · **Perf:** child-side is O(1) for an `id` parent, O(n) otherwise; parent-side DELETE scans referencing rows
+**Negative:** silent orphans; validating an FK must not create the referenced table (R-48 class)
+**G/W/T:** *Given* a child FK, *When* an orphan is inserted, *Then* it is rejected and the referenced table is not created; *And* a referenced parent cannot be deleted or dropped.
+**Test plan:** `SqlReferentialConstraintTest` (13 tests, child + parent side, table-level, durability)
+**Evidence:** 13/13 green; falsified against the pre-change jar (`PRE-FIX orphan FK: ACCEPTED`)
+**DoD:** both directions enforced; enforced after restart on FILE/LSM/B_TREE
+**Release impact:** removes a limitation
 
 #### US-033 · Unique / check / not-null constraints
-`E3 · P2 · PARTIAL · L`
+`E3 · P2 · VERIFIED · L`
 **Persona:** P1
 **Story:** As a developer, I want unique/check/not-null enforced, so that data stays valid.
-**Outcome:** `UNIQUE` and `NOT NULL` are enforced; `CHECK` is not implemented.
+**Outcome:** `UNIQUE`, `NOT NULL` and `CHECK` are enforced.
 **Deps:** US-031
 **Files/modules:** `sql/parser/SqlParser`, `sql/engine/SqlEngine`, `sql/SqlTableSchema`
 **API:** inline and table-level `UNIQUE`; inline `NOT NULL`
@@ -589,8 +592,8 @@ published limitation list**. Every `PARTIAL` story carries a documented gap. No 
 **G/W/T:** *Given* a `UNIQUE`/`NOT NULL` rule, *When* a violating row is inserted, *Then* it is rejected; `UNIQUE` allows multiple nulls.
 **Test plan:** `SqlConstraintTest.uniqueRejectsDuplicate`, `uniqueAllowsMultipleNulls`, `notNullRejectsExplicitNull`, `notNullRejectsOmittedValue`, `updateViolatingUniqueIsRejected`
 **Evidence:** green; falsified against the pre-change jar (NULL accepted into a NOT NULL column)
-**DoD:** `UNIQUE`/`NOT NULL` enforced; `CHECK` listed as unsupported
-**Release impact:** narrows the limitation list (`CHECK` only)
+**DoD:** all three enforced (column- and table-level `CHECK`); two-valued null semantics documented
+**Release impact:** removes a limitation
 
 #### US-034 · Create an index
 `E3 · P1 · PARTIAL · M`

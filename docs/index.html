@@ -1306,7 +1306,7 @@ db.<span class="fn">kv</span>().<span class="fn">set</span>(<span class="str">"a
         </div>
         <div class="engine-use">Best for: <strong>reporting, aggregation, teams that think in tables</strong></div>
         <div class="engine-use">DDL support: <code>CREATE TABLE</code> and <code>DROP TABLE</code> only — no <code>ALTER</code>, no <code>CREATE INDEX</code></div>
-        <div class="engine-use" style="color: var(--text-muted);">Inline <strong>PRIMARY KEY, UNIQUE and NOT NULL</strong> are enforced. Not included: <strong>foreign-key &amp; check constraints, views, sequences, stored procedures, JDBC driver</strong></div>
+        <div class="engine-use" style="color: var(--text-muted);">Constraints enforced: <strong>PRIMARY KEY, UNIQUE, NOT NULL, FOREIGN KEY &amp; CHECK</strong> (inline and table-level). Not included: <strong>views, sequences, stored procedures, JDBC driver</strong></div>
       </div>
 
       <div class="engine-card">

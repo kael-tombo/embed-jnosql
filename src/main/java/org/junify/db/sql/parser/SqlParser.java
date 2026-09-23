@@ -21,6 +21,14 @@ public class SqlParser {
         return new SqlParser(tokens).parseStatement();
     }
 
+    /**
+     * Parses a standalone boolean expression (no SELECT wrapper). Used to re-evaluate a persisted
+     * {@code CHECK} predicate against a row when it is written.
+     */
+    public static Expression parseExpression(String sql) {
+        return new SqlParser(SqlLexer.tokenize(sql)).parseExpression();
+    }
+
     public SqlStatement parseStatement() {
         if (matchKeyword("SELECT")) {
             return parseSelect();
@@ -281,9 +289,18 @@ public class SqlParser {
         if (first == null) return;
         String upper = first.toUpperCase(Locale.ROOT);
 
-        // Table-level constraints: PRIMARY KEY (col) | UNIQUE (col) | CONSTRAINT name PRIMARY KEY (col)
+        // Table-level constraint forms.
         if (upper.equals("PRIMARY") || upper.equals("UNIQUE") || upper.equals("CONSTRAINT")) {
             applyTableLevelConstraint(stmt, segment);
+            return;
+        }
+        if (upper.equals("FOREIGN")) {
+            applyTableLevelForeignKey(stmt, segment);
+            return;
+        }
+        if (upper.equals("CHECK")) {
+            String expr = extractCheckExpression(segment);
+            if (expr != null) stmt.getChecks().add(expr);
             return;
         }
 
@@ -295,7 +312,78 @@ public class SqlParser {
         boolean primaryKey = hasSequence(words, "PRIMARY", "KEY");
         boolean notNull = hasSequence(words, "NOT", "NULL");
         boolean unique = words.contains("UNIQUE");
-        stmt.getColumns().add(new ColumnDefinition(first, notNull, primaryKey, unique));
+
+        String[] ref = extractReferences(segment);
+        String check = extractCheckExpression(segment);
+        stmt.getColumns().add(new ColumnDefinition(first, notNull, primaryKey, unique,
+                ref != null ? ref[0] : null, ref != null ? ref[1] : null));
+        if (check != null) stmt.getChecks().add(check);
+    }
+
+    /** Table-level {@code FOREIGN KEY (col) REFERENCES table(col)}. */
+    private void applyTableLevelForeignKey(CreateTableStatement stmt, List<SqlLexer.Token> segment) {
+        int keyIdx = indexOfKeyword(segment, "KEY");
+        String column = null;
+        if (keyIdx >= 0 && keyIdx + 1 < segment.size()
+                && "(".equals(segment.get(keyIdx + 1).getValue()) && keyIdx + 2 < segment.size()) {
+            column = segment.get(keyIdx + 2).getValue();
+        }
+        if (column == null) return;
+        String[] ref = extractReferences(segment);
+        if (ref == null) return;
+        mergeColumn(stmt, column, false, false, ref[0], ref[1]);
+    }
+
+    private static int indexOfKeyword(List<SqlLexer.Token> tokens, String keyword) {
+        for (int i = 0; i < tokens.size(); i++) {
+            String v = tokens.get(i).getValue();
+            if (v != null && v.equalsIgnoreCase(keyword)) return i;
+        }
+        return -1;
+    }
+
+    /**
+     * Parses the target of {@code REFERENCES}. Returns {@code [table, column]} (column defaults
+     * to {@code id} when omitted) or {@code null} when there is no REFERENCES clause.
+     */
+    private static String[] extractReferences(List<SqlLexer.Token> tokens) {
+        int i = indexOfKeyword(tokens, "REFERENCES");
+        if (i < 0 || i + 1 >= tokens.size()) return null;
+        String table = tokens.get(i + 1).getValue();
+        String column = "id";
+        if (i + 3 < tokens.size() && "(".equals(tokens.get(i + 2).getValue())) {
+            column = tokens.get(i + 3).getValue();
+        }
+        return new String[]{table, column};
+    }
+
+    /**
+     * Reconstructs the SQL text of the parenthesised expression after {@code CHECK}, so it can be
+     * stored in the schema and re-parsed when rows are written. String literals are re-quoted.
+     */
+    private static String extractCheckExpression(List<SqlLexer.Token> tokens) {
+        int checkIdx = indexOfKeyword(tokens, "CHECK");
+        if (checkIdx < 0) return null;
+        int open = checkIdx + 1;
+        if (open >= tokens.size() || !"(".equals(tokens.get(open).getValue())) return null;
+        int depth = 0;
+        StringBuilder sb = new StringBuilder();
+        for (int k = open; k < tokens.size(); k++) {
+            SqlLexer.Token tok = tokens.get(k);
+            String v = tok.getValue();
+            if (v == null) continue;
+            if ("(".equals(v)) {
+                depth++;
+                if (depth == 1) continue; // the CHECK's own parenthesis
+            } else if (")".equals(v)) {
+                depth--;
+                if (depth == 0) break;   // end of the CHECK expression
+            }
+            if (sb.length() > 0) sb.append(' ');
+            sb.append(tok.getType() == SqlLexer.TokenType.STRING_LITERAL
+                    ? "'" + v.replace("'", "''") + "'" : v);
+        }
+        return sb.length() == 0 ? null : sb.toString();
     }
 
     private void applyTableLevelConstraint(CreateTableStatement stmt, List<SqlLexer.Token> segment) {
@@ -319,6 +407,12 @@ public class SqlParser {
     }
 
     private void markColumn(CreateTableStatement stmt, String colName, boolean primaryKey, boolean unique) {
+        mergeColumn(stmt, colName, primaryKey, unique, null, null);
+    }
+
+    /** Adds/merges a column's flags, preserving any foreign key already attached to it. */
+    private void mergeColumn(CreateTableStatement stmt, String colName, boolean primaryKey,
+                             boolean unique, String refTable, String refColumn) {
         List<ColumnDefinition> cols = stmt.getColumns();
         for (int i = 0; i < cols.size(); i++) {
             ColumnDefinition existing = cols.get(i);
@@ -327,11 +421,13 @@ public class SqlParser {
                         existing.getName(),
                         existing.isNotNull() || primaryKey,
                         existing.isPrimaryKey() || primaryKey,
-                        existing.isUnique() || unique));
+                        existing.isUnique() || unique,
+                        refTable != null ? refTable : existing.getForeignKeyTable(),
+                        refColumn != null ? refColumn : existing.getForeignKeyColumn()));
                 return;
             }
         }
-        cols.add(new ColumnDefinition(colName, primaryKey, primaryKey, unique));
+        cols.add(new ColumnDefinition(colName, primaryKey, primaryKey, unique, refTable, refColumn));
     }
 
     private static boolean hasSequence(List<String> words, String first, String second) {

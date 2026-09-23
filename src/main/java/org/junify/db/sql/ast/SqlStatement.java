@@ -154,24 +154,36 @@ public interface SqlStatement {
         private final boolean notNull;
         private final boolean primaryKey;
         private final boolean unique;
+        private final String foreignKeyTable;
+        private final String foreignKeyColumn;
 
         public ColumnDefinition(String name, boolean notNull, boolean primaryKey, boolean unique) {
+            this(name, notNull, primaryKey, unique, null, null);
+        }
+
+        public ColumnDefinition(String name, boolean notNull, boolean primaryKey, boolean unique,
+                                String foreignKeyTable, String foreignKeyColumn) {
             this.name = name;
             this.notNull = notNull;
             this.primaryKey = primaryKey;
             this.unique = unique;
+            this.foreignKeyTable = foreignKeyTable;
+            this.foreignKeyColumn = foreignKeyColumn;
         }
 
         public String getName() { return name; }
         public boolean isNotNull() { return notNull; }
         public boolean isPrimaryKey() { return primaryKey; }
         public boolean isUnique() { return unique; }
+        public String getForeignKeyTable() { return foreignKeyTable; }
+        public String getForeignKeyColumn() { return foreignKeyColumn; }
     }
 
     class CreateTableStatement implements SqlStatement {
         private String tableName;
         private boolean ifNotExists;
         private final List<ColumnDefinition> columns = new ArrayList<>();
+        private final List<String> checks = new ArrayList<>();
 
         @Override
         public StatementType getStatementType() { return StatementType.CREATE_TABLE; }
@@ -181,6 +193,8 @@ public interface SqlStatement {
         public boolean isIfNotExists() { return ifNotExists; }
         public void setIfNotExists(boolean ifNotExists) { this.ifNotExists = ifNotExists; }
         public List<ColumnDefinition> getColumns() { return columns; }
+        /** Table-level and column-level CHECK predicates, stored as SQL text. */
+        public List<String> getChecks() { return checks; }
     }
 
     class DropTableStatement implements SqlStatement {

@@ -20,6 +20,8 @@ public class SqlEngine {
 
     private final JunifyDB db;
     private final SqlSchemaCatalog schemaCatalog;
+    /** Parsed CHECK predicates, keyed by their stored SQL text (parsed once, reused per write). */
+    private final Map<String, Expression> parsedChecks = new HashMap<>();
 
     public SqlEngine(JunifyDB db) {
         this.db = db;
@@ -396,6 +398,7 @@ public class SqlEngine {
         String tableName = update.getTableName();
         DocumentCollection col = existingCollection(tableName, "UPDATE");
         SqlTableSchema schema = schemaCatalog.get(tableName);
+        // FK parent-side + CHECK are validated per row below; see enforceConstraints.
         int count = 0;
 
         for (Document doc : col.findAll()) {
@@ -445,18 +448,28 @@ public class SqlEngine {
     private SqlResultSet executeDelete(DeleteStatement delete, List<Object> params) {
         // R-48: same as UPDATE — DELETE on a missing table is an SQL error,
         // not a silent 0 that leaves an empty collection behind.
-        DocumentCollection col = existingCollection(delete.getTableName(), "DELETE");
-        int count = 0;
+        String tableName = delete.getTableName();
+        DocumentCollection col = existingCollection(tableName, "DELETE");
 
+        // Collect the matching rows first, so a foreign-key violation leaves the table untouched
+        // instead of deleting part of the statement's rows.
+        List<Document> matched = new ArrayList<>();
         for (Document doc : col.findAll()) {
             Map<String, Object> ctx = new LinkedHashMap<>();
             if (doc.getId() != null) ctx.put("id", doc.getId());
             doc.getFields().forEach(ctx::put);
 
             if (delete.getWhereClause() == null || Boolean.TRUE.equals(delete.getWhereClause().evaluate(ctx, params))) {
-                col.deleteById(doc.getId());
-                count++;
+                matched.add(doc);
             }
+        }
+
+        assertNoIncomingReferences(tableName, matched);
+
+        int count = 0;
+        for (Document doc : matched) {
+            col.deleteById(doc.getId());
+            count++;
         }
 
         return SqlResultSet.ofUpdate(count, "DELETE");
@@ -472,13 +485,19 @@ public class SqlEngine {
         // (PRIMARY KEY / UNIQUE / NOT NULL). A bare CREATE TABLE, or one that lists columns with
         // no constraints, keeps the original schemaless behaviour and writes no metadata — so
         // existing databases are byte-identical and no reserved collection appears for them.
-        if (create.getColumns() != null && !create.getColumns().isEmpty()) {
+        boolean hasColumns = create.getColumns() != null && !create.getColumns().isEmpty();
+        boolean hasChecks = create.getChecks() != null && !create.getChecks().isEmpty();
+        if (hasColumns || hasChecks) {
             List<SqlTableSchema.ColumnRule> rules = new ArrayList<>();
-            for (SqlStatement.ColumnDefinition def : create.getColumns()) {
-                rules.add(new SqlTableSchema.ColumnRule(
-                        def.getName(), def.isNotNull(), def.isPrimaryKey(), def.isUnique()));
+            if (hasColumns) {
+                for (SqlStatement.ColumnDefinition def : create.getColumns()) {
+                    rules.add(new SqlTableSchema.ColumnRule(
+                            def.getName(), def.isNotNull(), def.isPrimaryKey(), def.isUnique(),
+                            def.getForeignKeyTable(), def.getForeignKeyColumn()));
+                }
             }
-            SqlTableSchema schema = new SqlTableSchema(create.getTableName(), rules);
+            SqlTableSchema schema = new SqlTableSchema(
+                    create.getTableName(), rules, hasChecks ? create.getChecks() : List.of());
             if (schema.hasConstraints()) {
                 schemaCatalog.save(schema);
             }
@@ -513,6 +532,59 @@ public class SqlEngine {
                             (rule.isPrimaryKey() ? "PRIMARY KEY" : "UNIQUE")
                                     + " constraint violated on " + tableName + "." + column
                                     + ": value '" + value + "' already exists");
+                }
+            }
+
+            if (rule.isForeignKey() && value != null) {
+                String refTable = rule.getForeignKeyTable();
+                String refColumn = rule.getForeignKeyColumn();
+                if (!db.getCollectionNames().contains(refTable)) {
+                    throw new SqlConstraintViolationException(
+                            "FOREIGN KEY constraint violated on " + tableName + "." + column
+                                    + ": referenced table '" + refTable + "' does not exist");
+                }
+                if (findExistingId(db.documentCollection(refTable), refColumn, value, null) == null) {
+                    throw new SqlConstraintViolationException(
+                            "FOREIGN KEY constraint violated on " + tableName + "." + column
+                                    + ": no row in " + refTable + "." + refColumn
+                                    + " matches '" + value + "'");
+                }
+            }
+        }
+
+        for (String checkSql : schema.getChecks()) {
+            Expression expr = parsedChecks.computeIfAbsent(checkSql, SqlParser::parseExpression);
+            Map<String, Object> ctx = new LinkedHashMap<>();
+            if (candidate.getId() != null) ctx.put("id", candidate.getId());
+            candidate.getFields().forEach(ctx::put);
+            if (!Boolean.TRUE.equals(expr.evaluate(ctx, List.of()))) {
+                throw new SqlConstraintViolationException(
+                        "CHECK constraint violated on " + tableName + ": " + checkSql);
+            }
+        }
+    }
+
+    /**
+     * Blocks removal of rows that a foreign key still points at. Used by DELETE and DROP TABLE so
+     * that a foreign key is enforced in both directions, not only when a child row is written.
+     */
+    private void assertNoIncomingReferences(String tableName, List<Document> rows) {
+        for (SqlTableSchema other : schemaCatalog.all()) {
+            if (other.getTableName().equalsIgnoreCase(tableName)) continue;
+            if (!db.getCollectionNames().contains(other.getTableName())) continue;
+            for (SqlTableSchema.ColumnRule rule : other.getColumns()) {
+                if (!rule.isForeignKey()
+                        || !rule.getForeignKeyTable().equalsIgnoreCase(tableName)) continue;
+                DocumentCollection referrers = db.documentCollection(other.getTableName());
+                for (Document row : rows) {
+                    Object key = readColumn(row, rule.getForeignKeyColumn());
+                    if (key == null) continue;
+                    if (findExistingId(referrers, rule.getName(), key, null) != null) {
+                        throw new SqlConstraintViolationException(
+                                "FOREIGN KEY constraint violated: cannot remove " + tableName
+                                        + " row '" + key + "' while " + other.getTableName() + "."
+                                        + rule.getName() + " still references it");
+                    }
                 }
             }
         }
@@ -557,7 +629,9 @@ public class SqlEngine {
         // delete nothing and report success. Fail loudly instead (IF EXISTS is
         // not yet supported by the parser; tracked in the defect register).
         DocumentCollection col = existingCollection(drop.getTableName(), "DROP TABLE");
-        for (Document d : col.findAll()) {
+        List<Document> rows = col.findAll();
+        assertNoIncomingReferences(drop.getTableName(), rows);
+        for (Document d : rows) {
             col.deleteById(d.getId());
         }
         schemaCatalog.drop(drop.getTableName());

@@ -84,7 +84,7 @@ product must **not** claim H2's relational completeness or MongoDB's distributio
 | Language | implementation-defined SQL dialect | fluent criteria + MongoDB-style JSON filter |
 | Parser/AST | `sql/parser`, `sql/ast` | `nosql/query` |
 | Verified surface | SELECT/INSERT/UPDATE/DELETE, WHERE, ORDER BY, GROUP BY, HAVING, LIMIT, OFFSET, INNER JOIN, CREATE/DROP TABLE, aggregations | document CRUD, nested docs, arrays, projections, sort/paging, KV(string/hash/list/set), TTL, B-tree + HNSW indexes, repositories |
-| **NOT implemented** | JDBC driver, foreign-key and `CHECK` constraints, sequences, views, stored procedures, functions, triggers, query planner/EXPLAIN. (**Supported since 2026-09-23, R-74:** inline/table-level `PRIMARY KEY`, `UNIQUE`, `NOT NULL` — enforced and durable) | full document-database breadth (aggregation pipelines, change streams beyond CDC, transactions at SQL surface granularity) |
+| **NOT implemented** | JDBC driver, sequences, views, stored procedures, functions, triggers, query planner/EXPLAIN. (**Supported since 2026-09-23, R-74 + R-75:** `PRIMARY KEY`, `UNIQUE`, `NOT NULL`, foreign key (`REFERENCES`, both directions) and `CHECK` — enforced and durable) | full document-database breadth (aggregation pipelines, change streams beyond CDC, transactions at SQL surface granularity) |
 
 The shared substrate (storage, catalog, WAL, locking) is **intentional** (ADR-002) and
 **documented as a defect vector** where it leaks semantics between engines (the compensating
@@ -147,10 +147,9 @@ claim.
 1. The repository is the source of truth; the checked-in code defines truth, not marketing copy.
 2. No claim of ACID, durability, compatibility, performance, or production-readiness without
    execution-backed evidence.
-3. Limitations (no JDBC, no foreign-key/`CHECK` constraints, no
-   sequences/views/procedures/triggers, no planner, SQL is a query layer over the document
-   store — though inline `PRIMARY KEY`/`UNIQUE`/`NOT NULL` **are** enforced) ship **on the
-   release page and README**, not in a footnote.
+3. Limitations (no JDBC, no sequences/views/procedures/triggers, no planner, SQL is a query
+   layer over the document store — though `PRIMARY KEY`/`UNIQUE`/`NOT NULL`/`FOREIGN KEY`/`CHECK`
+   **are** enforced) ship **on the release page and README**, not in a footnote.
 4. Release path is **GitHub-first** (ADR-007); Maven Central is **not** claimed until credentials
    exist and a dry-run passes.
 5. Any UI feature is complete only when frontend, API, backend, engine, storage, and UI feedback
@@ -172,8 +171,8 @@ claim.
 
 **Explicitly out of scope (post-release):**
 
-- JDBC driver; relational constraints; sequences/views/procedures/functions/triggers; query
-  planner/`EXPLAIN`.
+- JDBC driver; sequences/views/procedures/functions/triggers; query planner/`EXPLAIN`;
+  indexing of `UNIQUE`/foreign-key columns (currently O(n) scans).
 - Per-engine artifact split (single-jar remains).
 - Maven Central publication (blocked on credentials).
 - Distributed/clustered operation; hardened internet-facing multi-tenant deployment.

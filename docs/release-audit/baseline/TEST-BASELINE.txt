@@ -1,9 +1,10 @@
 Command: mvn test
-Result: Tests run: 846, Failures: 0, Errors: 0, Skipped: 0
-History: 785 (2026-09-22) → 832 (durability round) → **846** (after the constraint slice R-74,
-which added 14 tests in `SqlConstraintTest`). Java: 23.0.1 / Maven: 3.9.6.
+Result: Tests run: 859, Failures: 0, Errors: 0, Skipped: 0
+History: 785 (2026-09-22) → 832 (durability round) → 846 (R-74 keys: +14 `SqlConstraintTest`)
+→ **859** (R-75 referential + CHECK: +13 `SqlReferentialConstraintTest`).
+Java: 23.0.1 / Maven: 3.9.6.
 
-Coverage (JaCoCo, line): covered 28,908 / missed 9,094 = **76.1%**. The 70% line gate is
+Coverage (JaCoCo, line): covered 29,647 / missed 9,123 = **76.5%**. The 70% line gate is
 satisfied. Branch coverage is reported separately and is not gated; the gate lives in the
 `coverage-check` profile and is not enforced by the default `mvn test`.
 
