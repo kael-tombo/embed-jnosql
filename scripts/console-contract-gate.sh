@@ -522,6 +522,81 @@ else
 fi
 
 echo
+echo "== R-62/R-65: what the server writes must survive a restart, once =="
+# Both defects live *across* a restart, so this block stops the server and starts it
+# again on the same data dir. Pre-fix on FILE, an empty `CREATE TABLE` produced no file
+# and the table was gone afterwards; pre-fix on LSM_TREE/B_TREE it had no engine-side
+# identity either, and LSM additionally replayed its whole WAL into a memtable that was
+# already represented on disk, so reads returned every flushed row twice.
+SQL_EMPTY=$(curl -s -m 10 -X POST "$BASE/api/sql" -H 'Content-Type: application/json' \
+  -d '{"query":"CREATE TABLE gate_empty (id INT, sku VARCHAR)"}')
+expect_contains "CREATE TABLE with zero rows" "$SQL_EMPTY" '"status":"success"'
+CAT_BEFORE=$(curl -s -m 5 "$BASE/api/collections")
+expect_contains "catalog lists the empty table before restart" "$CAT_BEFORE" '"name":"gate_empty"'
+ROWS_BEFORE=$(curl -s -m 10 -X POST "$BASE/api/sql" -H 'Content-Type: application/json' \
+  -d '{"query":"SELECT * FROM products"}' | tr -d ' ' | grep -o '"rowCount":[0-9]*' | head -1)
+DOCS_BEFORE=$(curl -s -m 5 "$BASE/api/collections/products" | tr -d ' ' | grep -o '"id":' | wc -l | tr -d ' ')
+
+# R-64: resolving a collection on a read is not a write — probe it before the restart
+# so the post-restart catalog is also evidence that the typo created nothing.
+TYPO_CODE=$(curl -s -m 5 -o /tmp/contract-gate-typo.json -w '%{http_code}' "$BASE/api/indexes/gate_typo")
+if [ "$TYPO_CODE" = "404" ]; then
+  pass "GET /api/indexes/{unknown} -> 404"
+else
+  fail "GET /api/indexes/{unknown} -> $TYPO_CODE (expected 404, body: $(head -c 120 /tmp/contract-gate-typo.json))"
+fi
+CAT_TYPO=$(curl -s -m 5 "$BASE/api/collections")
+case "$CAT_TYPO" in
+  *gate_typo*) fail "a read added 'gate_typo' to the catalog" ;;
+  *) pass "the index read created nothing" ;;
+esac
+
+echo
+echo "== restarting the server on the same data dir =="
+if [ -n "$SERVER_PID" ] && kill -0 "$SERVER_PID" 2>/dev/null; then
+  kill "$SERVER_PID" 2>/dev/null
+  wait "$SERVER_PID" 2>/dev/null
+fi
+java -jar "$JAR" --port "$PORT" --data-dir "$DATA_DIR" --engine "$ENGINE" --sync >"$LOG.restart" 2>&1 &
+SERVER_PID=$!
+RESTARTED=0
+for i in $(seq 1 30); do
+  if [ "$(curl -s -m 2 -o /dev/null -w '%{http_code}' "$BASE/api/health" 2>/dev/null)" = "200" ]; then
+    RESTARTED=1
+    break
+  fi
+  sleep 1
+done
+if [ "$RESTARTED" != "1" ]; then
+  fail "server did not come back up on the same data dir (see $LOG.restart)"
+else
+  CAT_AFTER=$(curl -s -m 5 "$BASE/api/collections")
+  case "$CAT_AFTER" in
+    *'"name":"gate_empty"'*) pass "the empty table is still in the catalog after a restart" ;;
+    *) fail "the empty table vanished across the restart: $CAT_AFTER" ;;
+  esac
+  EMPTY_SELECT=$(curl -s -m 10 -X POST "$BASE/api/sql" -H 'Content-Type: application/json' \
+    -d '{"query":"SELECT * FROM gate_empty"}')
+  case "$EMPTY_SELECT" in
+    *'"rowCount":0'*) pass "SELECT on the empty table answers 0 rows, not \"does not exist\"" ;;
+    *) fail "SELECT on the recreated table failed: $(echo "$EMPTY_SELECT" | head -c 160)" ;;
+  esac
+  ROWS_AFTER=$(curl -s -m 10 -X POST "$BASE/api/sql" -H 'Content-Type: application/json' \
+    -d '{"query":"SELECT * FROM products"}' | tr -d ' ' | grep -o '"rowCount":[0-9]*' | head -1)
+  if [ -n "$ROWS_BEFORE" ] && [ "$ROWS_BEFORE" = "$ROWS_AFTER" ]; then
+    pass "SELECT returns the same row count after a restart ($ROWS_AFTER)"
+  else
+    fail "SELECT returned $ROWS_AFTER after the restart but $ROWS_BEFORE before it — rows must survive exactly once"
+  fi
+  DOCS_AFTER=$(curl -s -m 5 "$BASE/api/collections/products" | tr -d ' ' | grep -o '"id":' | wc -l | tr -d ' ')
+  if [ "$DOCS_BEFORE" = "$DOCS_AFTER" ]; then
+    pass "the documents endpoint agrees with SELECT after a restart ($DOCS_AFTER documents)"
+  else
+    fail "documents endpoint returned $DOCS_AFTER documents after the restart but $DOCS_BEFORE before it"
+  fi
+fi
+
+echo
 echo "========================================"
 if [ "$FAILURES" -eq 0 ]; then
   echo "CONTRACT GATE: PASS (all console-called endpoints answered honestly)"

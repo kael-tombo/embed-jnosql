@@ -7,6 +7,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -19,21 +22,46 @@ public class BTreeEngine implements StorageEngine {
     private final ConcurrentHashMap<String, String> ramIndex;
     private final ReentrantReadWriteLock indexLock;
     private final Set<String> dirtyKeys;
+    /** R-62: persisted identity for collections that hold no records yet. */
+    private final CollectionRegistry collectionRegistry;
     private final boolean asyncEnabled;
+    /**
+     * R-68: the periodic flusher. Before this existed, {@code B_TREE} wrote its index
+     * <b>only</b> when something called {@code flush()} — and in the server path nothing
+     * did except a graceful close, so a terminated server lost every record written since
+     * the last explicit flush. Measured by the contract gate's restart block: a document
+     * readable before the restart was gone after it.
+     */
+    private final ScheduledExecutorService scheduler;
+    private final long flushIntervalMs;
     private volatile boolean closed;
 
+    /** Default interval, matching the FILE engine's scheduler. */
+    private static final long DEFAULT_FLUSH_INTERVAL_MS = 1000;
+
     public BTreeEngine(Path dataDir) {
-        this(dataDir, 1000);
+        this(dataDir, 1000, DEFAULT_FLUSH_INTERVAL_MS);
     }
 
     public BTreeEngine(Path dataDir, int maxNodeSize) {
+        this(dataDir, maxNodeSize, DEFAULT_FLUSH_INTERVAL_MS);
+    }
+
+    /**
+     * @param flushIntervalMs interval for the background flusher, or {@code <= 0} to write
+     *                        the index only on an explicit {@link #flush()} (tests) or on
+     *                        {@link #close()}
+     */
+    public BTreeEngine(Path dataDir, int maxNodeSize, long flushIntervalMs) {
         this.dataDir = dataDir;
         this.indexDir = dataDir.resolve(".btree");
         this.maxNodeSize = maxNodeSize;
         this.ramIndex = new ConcurrentHashMap<>();
         this.indexLock = new ReentrantReadWriteLock();
         this.dirtyKeys = ConcurrentHashMap.newKeySet();
+        this.collectionRegistry = new CollectionRegistry(dataDir);
         this.asyncEnabled = true;
+        this.flushIntervalMs = flushIntervalMs;
         this.closed = false;
 
         try {
@@ -41,6 +69,26 @@ public class BTreeEngine implements StorageEngine {
             loadIndex();
         } catch (IOException e) {
             throw new org.junify.db.core.exception.StorageException("Failed to initialize B-Tree engine", e);
+        }
+
+        if (flushIntervalMs > 0) {
+            this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+                var thread = new Thread(r, "btree-flusher");
+                thread.setDaemon(true);
+                return thread;
+            });
+            scheduler.scheduleAtFixedRate(this::flushQuietly, flushIntervalMs, flushIntervalMs, TimeUnit.MILLISECONDS);
+        } else {
+            this.scheduler = null;
+        }
+    }
+
+    /** Never lets a flush failure escape onto the scheduler thread. */
+    private void flushQuietly() {
+        try {
+            flush();
+        } catch (Exception e) {
+            System.err.println("Periodic B-Tree flush failed: " + e.getMessage());
         }
     }
 
@@ -189,6 +237,14 @@ public class BTreeEngine implements StorageEngine {
         if (closed) return;
         flush();
         closed = true;
+        if (scheduler != null) {
+            scheduler.shutdown();
+            try {
+                scheduler.awaitTermination(5, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     public List<String> rangeScan(String collection, String startKey, String endKey) {
@@ -315,7 +371,22 @@ public class BTreeEngine implements StorageEngine {
         } finally {
             indexLock.readLock().unlock();
         }
+        // R-62: a collection created with no records has no composite key to derive a name
+        // from, so its existence is recorded separately and unioned in here.
+        collections.addAll(collectionRegistry.names());
         return collections;
+    }
+
+    /**
+     * R-62: records the collection's existence so an empty collection survives a restart.
+     * B_TREE addresses data by {@code collection:key}, so a collection with no records is
+     * otherwise invisible to {@link #collections()} after the process exits.
+     */
+    @Override
+    public boolean ensureCollection(String collection) {
+        if (collection == null || collection.isBlank()) return false;
+        collectionRegistry.mark(collection);
+        return true;
     }
 
     private String extractKey(String compositeKey) {
@@ -342,6 +413,7 @@ public class BTreeEngine implements StorageEngine {
             "indexDir", indexDir.toString(),
             "maxNodeSize", maxNodeSize,
             "dirtyKeys", dirtyKeys.size(),
+            "flushIntervalMs", flushIntervalMs,
             "type", "btree-persistent"
         );
     }

@@ -44,7 +44,12 @@ public record JunifyDBConfig(
                 case IN_MEMORY -> new org.junify.db.storage.spi.InMemoryEngine();
                 case FILE -> new org.junify.db.storage.spi.FileEngine(dataDir, flushIntervalMs, autoFlush);
                 case LSM_TREE -> new org.junify.db.storage.spi.LSMTreeEngine(dataDir, 1024 * 1024, 64 * 1024 * 1024);
-                case B_TREE -> new org.junify.db.storage.spi.BTreeEngine(dataDir);
+                // R-68: B_TREE previously ignored the flush settings entirely and only ever
+                // wrote its index on an explicit flush()/close(), so a terminated server lost
+                // every record written since the last flush. It now runs the same periodic
+                // flusher as FILE. The engine has no WAL, so a hard kill can still lose up to
+                // one interval of writes — documented in 15/18, not hidden.
+                case B_TREE -> new org.junify.db.storage.spi.BTreeEngine(dataDir, 1000, flushIntervalMs);
             };
         }
     }
