@@ -1,17 +1,24 @@
-Command: mvn test
-Result: Tests run: 872, Failures: 0, Errors: 0, Skipped: 0
+Command: mvn test  (then: mvn verify -Pcoverage-check)
+Result: Tests run: 879, Failures: 0, Errors: 0, Skipped: 0
+Coverage gate: `mvn verify -Pcoverage-check` → "All coverage checks have been met." (70% LINE rule, BUNDLE)
 History: 785 (2026-09-22) → 832 (durability round) → 846 (R-74 keys: +14 `SqlConstraintTest`)
 → 859 (R-75 referential + CHECK: +13 `SqlReferentialConstraintTest`)
-→ **872** (R-76 JDBC driver: +13 `JdbcDriverTest`).
+→ 872 (R-76 JDBC driver: +13 `JdbcDriverTest`)
+→ **879** (R-77…R-81 Console task-success layer: +7 `ConsoleTaskSuccessTest`).
 Java: 23.0.1 / Maven: 3.9.6.
 
-Coverage (JaCoCo, line): covered 30,625 / missed 10,515 = **74.4%**. The 70% line gate is
-satisfied. Coverage fell from 76.5% because the JDBC driver's reflective dispatch adds many
-untested paths (including the deliberately unsupported ones); branch coverage is reported
-separately and is not gated; the gate lives in the `coverage-check` profile and is not enforced
-by the default `mvn test`.
+Coverage (JaCoCo, line), this round's measured basis: covered 6,579 / missed 2,149 = **75.4%**
+over **181 instrumented classes**; branch 57.6%. Gate PASS.
 
-cli/: 4/4 (verified in the prior round; not re-run this round)
+WARNING — R-82: these figures are NOT comparable with earlier rounds in this file. The previous
+round recorded 30,625/10,515 (74.4%, 41,140 lines) and the round before 27,791/36,821 (76.5%,
+36,821 lines) from the same plugin and profile, while this round's `jacoco.csv` reports 8,728
+measured lines (246 compiled classes exist in `target/classes`). The denominator is unstable and
+unexplained. Only the gate result should be quoted until a measurement round defines and
+publishes the scope. See `../53-defect-register.md` R-82 and
+`../74-console-task-success-evidence.md` §3.2.
+
+cli/: 4/4 (verified in a prior round; not re-run this round)
 demo end-to-end-validation: 4/4 (prior round)
 Gates: console-contract PASS (FILE, LSM_TREE, B_TREE); console-auth PASS (prior round;
 not re-run this round)

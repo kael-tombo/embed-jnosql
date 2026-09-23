@@ -14,14 +14,24 @@ deliverables `docs/product/PRODUCT_BLUEPRINT.md` and `docs/product/USER_STORY_MA
 (**137** stories / 10 epics) were added. Nothing was discarded; the concurrent session's
 modified files were left untouched. No gate changed direction.
 
-**Same day, three further slices landed (R-74, R-75, R-76).** (1) `PRIMARY KEY`, `UNIQUE` and
+**Same day, four further slices landed (R-74 … R-81).** (1) `PRIMARY KEY`, `UNIQUE` and
 `NOT NULL` are declared and enforced; (2) `REFERENCES` (foreign key, in both directions) and
 `CHECK` are enforced; (3) a working **JDBC driver** ships (`jdbc:junifydb:...`), explicitly
 `PARTIAL` — `Driver.jdbcCompliant()` is `false`, and explicit transactions and schema reflection
-are not implemented. The suite is now **872/872**, coverage **74.4%**, jar **3,164,082 bytes**.
-The `NOT IMPLEMENTED` limitation set is down to **4** (procedures, functions, triggers, `EXPLAIN`);
-JDBC is `PARTIAL`. Full evidence: `71-constraint-enforcement-evidence.md`,
-`72-referential-constraint-evidence.md`, `73-jdbc-driver-evidence.md`.
+are not implemented; (4) a **Console task-success layer** (R-77…R-81) adds an always-visible
+orientation context (engine, database, data directory, storage mode **with its durability
+meaning**, connection, transaction and security state), a single explicit state vocabulary in
+which a 0-row result is `empty` and not `success` and a stall is `timeout`, a named confirmation
+dialog for destructive actions (target, impact, reversibility — replacing `window.confirm`), and
+an `X-Correlation-Id` on every response that every error body repeats. The suite is now
+**879/879**, the 70% line gate passes (`All coverage checks have been met.`), and the jar is
+**3,174,260 bytes**. The `NOT IMPLEMENTED` limitation set is **5** (procedures, functions,
+triggers, `EXPLAIN`, and SQL editor assistance — highlighting/autocomplete/formatting/saved
+queries/tabs); JDBC is `PARTIAL`. Full evidence: `71-constraint-enforcement-evidence.md`,
+`72-referential-constraint-evidence.md`, `73-jdbc-driver-evidence.md`,
+`74-console-task-success-evidence.md`. **One measurement caveat is recorded rather than smoothed
+over (R-82): published coverage percentages in this corpus have no stable denominator, so only
+the gate result is quotable until a round defines the scope.**
 
 ---
 
@@ -192,7 +202,7 @@ fsynced to the log before the write is acknowledged.
 
 ## Console Verdict
 
-**PASS — browser-validated, and no fake functionality remains on the typed surface.**
+**PASS for correctness — and now PASS for task success, with editor assistance explicitly absent.**
 
 22 `/api/...` routes; every route the UI calls was exercised against a running server across
 ten audit rounds. 23 defects were found and fixed, dominated by one family: **fake success**
@@ -204,6 +214,23 @@ Coverage is mechanical, not manual: `console-contract-gate.sh` runs against a **
 each of FILE, LSM_TREE, and B_TREE** in CI, and `console-auth-gate.sh` covers authentication.
 Both gates were hardened during the audit to fail fast on a bound port and to require a
 freshly packaged jar — two process traps that had produced misleading results.
+
+The **task-success layer (R-77…R-81)** addressed the requirements the previous verdict did not
+measure: the Console previously rendered *activity* but never *context, outcome or provenance*.
+It now always shows engine, active database and data directory, storage mode **with what it
+means for durability** (an in-memory database says its writes are lost on exit), connection,
+transaction and security identity; every action resolves to one explicit state; destructive
+actions pass through a dialog that names the target and states the impact; and every error
+carries a correlation id plus a direct answer to "did my data change?".
+
+**Honest limits of this verdict.** A browser journey was executed against a live server (guard
+before Run, Cancel provably a no-op with all 4 documents intact, `validation error` reported with
+`Correlation ID: b0ae7ff4` and "No data was changed"), but **no screen-reader pass and no
+automated contrast audit** were run, rollback/backup for a destructive action remains **advisory**
+rather than automatic, bulk deletion reports a counter rather than a cancelable progress bar, and
+**SQL editor assistance is `NOT IMPLEMENTED`**: no syntax highlighting, autocomplete, formatting,
+saved-query library, multiple tabs, or `EXPLAIN`. The Console must not be described as a
+full-featured SQL IDE. Evidence: `74-console-task-success-evidence.md`.
 
 ## Website Verdict
 
@@ -238,9 +265,10 @@ identical semantics. Audit detail: `44-brand-and-design-system.md`, `45-website-
 
 ## Footprint Verdict
 
-**PASS.** Shaded core jar **3,119,376 bytes (3.12 MB)** plus **three** mandatory runtime
+**PASS.** Shaded core jar **3,174,260 bytes (3.17 MB)** plus **three** mandatory runtime
 dependencies (`jackson-databind`, `jackson-datatype-jsr310`, `slf4j-api`) — combined runtime
-**under 5 MB**.
+**under 5 MB**. (History: 3,119,376 → 3,164,082 after JDBC → **3,174,260** after the Console
+task-success layer.)
 
 **What the measurement includes:** core jar + those three dependencies. It **excludes**
 framework integrations, Console, demos, and test dependencies — all correctly scoped
@@ -249,9 +277,10 @@ The <5 MB claim must always be published with this scope attached.
 
 ## Test-Quality Verdict
 
-**PASS.** **821/821** core, **4/4** CLI, **43/43** across nine demos, both Console gates PASS on
-three engines (each contract-gate run now includes a **restart-durability block**), and CI runs
-the contract gate across FILE/LSM_TREE/B_TREE.
+**PASS.** **879/879** core (872 + 7 for the Console task-success layer), **4/4** CLI, **43/43**
+across nine demos, the 70% line gate passes (`All coverage checks have been met.`), both Console
+gates PASS on three engines (each contract-gate run includes a **restart-durability block**), and
+CI runs the contract gate across FILE/LSM_TREE/B_TREE.
 
 Tests are not trusted merely for existing: every fix in this session was **falsified** — its
 new tests were executed against the pre-fix commit in a throwaway worktree and required to
@@ -259,11 +288,26 @@ fail there (observed: 9/11, 4/9, 9/9, 3, 2/4). Two tests were caught **codifying
 expected behaviour** and inverted. One mid-round case saw the suite catch an *incomplete fix*
 of mine (UPDATE/DELETE still auto-creating after I had guarded only SELECT/JOIN/DROP).
 
+The **Console task-success slice was falsified differently**, because its subject is the UI's
+behaviour rather than a library call: seven tests assert the service contract and the *shipped
+static assets* (status-bar items, `role="dialog"`, no bare `confirm(...)` call, the full state
+vocabulary, the "Did data change?" and "Correlation ID" strings), and the **pre-change server
+still listening on port 8081 was probed directly** — `NO context block present`, `HTTP/1.1 404`
+with no `X-Correlation-Id` header and no body id — while the rebuilt server returned both, with
+the header id equal to the body id. A browser journey then exercised the real user path and
+verified the store afterwards (Cancel left all 4 documents intact).
+
 **Weak spots, stated honestly:** the JDBC driver covers a `PARTIAL` surface (no explicit
 transactions or schema reflection) and relies on reflective dispatch for `ResultSet`/
-`DatabaseMetaData`; and `demo/` projects resolve a stale installed `junify-db-core` unless
-`mvn install` is run first — a trap that once produced a false-negative demo run and is now
-documented in `35-demo-project-audit.md`.
+`DatabaseMetaData`; **published coverage percentages in this corpus have no stable denominator
+(R-82), so only the gate result should be quoted** — this round measured 75.4% over 181
+instrumented classes while the previous round recorded 41,140 measured lines from the same
+plugin and profile, a discrepancy that is recorded as OPEN rather than smoothed away; the
+Console's automated-test coverage of its own JavaScript is **structural** (presence of
+controls and vocabulary), not behavioural — the behavioural evidence is the manual browser
+journey, which is not repeatable by CI; and `demo/` projects resolve a stale installed
+`junify-db-core` unless `mvn install` is run first — a trap that once produced a false-negative
+demo run and is now documented in `35-demo-project-audit.md`.
 
 ## Security Verdict
 
@@ -307,6 +351,8 @@ not a documented limitation.
 | R-66 | The WAL was never truncated and only `wal.log` was replayed (`truncate()` had zero callers; rotation archives) | **FIXED 2026-09-23** — and measured worse than registered: rotation dropped **53 of 60** accepted records, recovery replayed **0 of 40**, a rotation could publish a half-written gzip and lose the entire log (**0 of 6**). Every segment is now read in chronological order with per-segment isolation, and `checkpoint()` truncates. 4 tests, falsified 4/4 |
 | R-67 | `--sync`/`--async` are inverted in effect (the flag is passed to engines as `asyncEnabled`), and `LSM_TREE`/`B_TREE` ignore it while the banner prints one meaning for all | **Not a blocker, needs a decision** — the *name and banner* overstate what the code does; changing `--sync` to mean flush-on-write is a durability-contract change per engine. The limitation must be stated on the release page. **Narrowed 2026-09-23:** durability no longer depends on this flag — every write is fsynced to the WAL before it is acknowledged, on all three persistent engines |
 | R-69…R-72 | `B_TREE` acknowledged writes it never persisted (no WAL); a checkpoint could release a log record whose apply was in flight; the `B_TREE` index was rewritten in place and read back through a desynchronising 1 MB buffer (12 documents on disk → 3 readable); a torn index was accepted silently | **FIXED 2026-09-23** — see the RDBMS verdict above. Each falsified at the pre-fix commit; the live gate now returns 12 of 12 with full bodies on all three engines |
+| R-77…R-81 | The Console rendered activity but never context, outcome or provenance: no orientation context (an in-memory database was indistinguishable from a durable one), `window.confirm` for destructive actions, no correlation id, a 0-row result shown as success, and a stalled request with no state | **FIXED 2026-09-23** — status bar fed by a live `context` block, one explicit state vocabulary, a named confirmation dialog, and `X-Correlation-Id` on every response. Falsified against the pre-change server (no context block, no correlation id) and verified in a browser journey. Evidence: `74-console-task-success-evidence.md` |
+| R-82 | **Coverage percentages in this corpus have no stable denominator**, so "coverage rose/fell" statements are not comparable: this round measured 181 classes / 8,728 lines (75.4%), the previous round recorded 41,140 lines (74.4%), and the round before 36,821 lines (76.5%) — same plugin, same profile, unexplained difference | **OPEN — not a release blocker (the 70% gate itself passes), but a documentation-integrity defect.** Only the gate result is quotable until a round defines and publishes the measurement scope. Recorded rather than replaced, because a corpus that edits its own history cannot be trusted for anything else |
 
 ## Required Fixes (before pushing the release tag)
 
@@ -321,6 +367,11 @@ not a documented limitation.
    overstates them (R-67); vectors are an auxiliary index. **All three persistent engines now
    share the same write-ahead guarantee**, measured across a forced stop (12 of 12 documents,
    full bodies), so `B_TREE`'s former no-WAL limitation is no longer part of the list.
+   **Console limits must also be stated:** no syntax highlighting, autocomplete, SQL formatting,
+   saved-query library, multiple editor tabs, or `EXPLAIN`; NoSQL editing is JSON-only (no tree
+   or form view); rollback/backup for a destructive action is advisory rather than automatic;
+   Console writes do not join a transaction; and no screen-reader or contrast-conformance audit
+   has been performed. The Console must not be described as a full SQL IDE.
 3. **Tag `v0.9.0`** and attach the shaded jar, sources, and javadoc to the GitHub release.
 
 ## Deferred Work (safe post-release)
@@ -330,7 +381,11 @@ transactions, savepoints, batch execution and schema reflection (the driver is `
 indexing of `UNIQUE` and foreign-key columns (currently O(n) scans) · sequences, views,
 procedures, and triggers · a query planner and `EXPLAIN` · persisting HNSW indexes for `IN_MEMORY` decision
 review · the `--sync`/`--async` semantics decision (R-67) · Maven Central publication once
-credentials exist (R-13) ·
+credentials exist (R-13) · **SQL editor assistance** (syntax highlighting, autocomplete,
+formatting, saved queries, multiple tabs — US-145) and a NoSQL document tree/form view · a
+**screen-reader and automated contrast audit** of the Console, and CI-grade behavioural tests for
+its JavaScript (today's automated coverage of the UI is structural, not behavioural) ·
+reconciling the coverage denominator (R-82) ·
 a stress/soak benchmark programme (doc 24).
 
 ## Documentation-Integrity Verdict
@@ -349,16 +404,17 @@ execution backs it — that rule now applies to the corpus itself.
 
 | Evidence | Location |
 |---|---|
-| Baseline snapshot + validation (refreshed 2026-09-23: 832 tests, 3.12 MB) | `docs/release-audit/baseline/` |
+| Baseline snapshot + validation (refreshed 2026-09-23: 879 tests, 3.17 MB, gate PASS; coverage denominator flagged R-82) | `docs/release-audit/baseline/` |
+| Console task-success evidence (context block, states, destructive guard, correlation ids) | `docs/release-audit/74-console-task-success-evidence.md` |
 | Product blueprint | `docs/product/PRODUCT_BLUEPRINT.md` |
-| 137-story user story map with status roll-up | `docs/product/USER_STORY_MAP.md` |
+| 145-story user story map with status roll-up (116 VERIFIED / 22 PARTIAL / 5 NOT IMPLEMENTED / 1 NOT VERIFIED / 1 EXPERIMENTAL) | `docs/product/USER_STORY_MAP.md` |
 | Final verification round (2026-09-23) | `70-final-verification-round-2026-09-23.md` |
 | Constraint enforcement (PRIMARY KEY/UNIQUE/NOT NULL) evidence | `71-constraint-enforcement-evidence.md` |
 | Referential + CHECK constraint evidence | `72-referential-constraint-evidence.md` |
 | JDBC driver evidence (PARTIAL) | `73-jdbc-driver-evidence.md` |
 | Deep codebase assessment | `00-current-codebase-assessment.md` |
 | Architecture decisions | `67-architecture-decision-records.md` |
-| Defect register (R-31…R-68; every fix falsified against its pre-fix commit) | `53-defect-register.md` |
+| Defect register (R-31…R-82; every fix falsified against its pre-fix commit, except R-82, which is OPEN documentation-integrity) | `53-defect-register.md` |
 | Release-blocker register (only R-13 + R-20 open, both non-blocking) | `54-release-blocker-register.md` |
 | Maven Central evidence (MC-02 still `NOT VERIFIED`; MC-04 records the false-claim correction) | `46-maven-central-readiness.md` |
 | Release checklist at `v0.9.0` | `60-public-release-checklist.md` |

@@ -961,12 +961,15 @@ public class JunifyDBServer {
             var runtime = Runtime.getRuntime();
             var totalMem = runtime.totalMemory();
             var freeMem = runtime.freeMemory();
-            
+            var config = db.config();
+            var engineType = config.storageEngine();
+            boolean inMemory = engineType == org.junify.db.config.JunifyDBConfig.StorageEngineType.IN_MEMORY;
+
             var health = Map.of(
                 "status", "ok",
                 "open", db.isOpen(),
                 "version", "1.0.0",
-                "engine", db.config().storageEngine().name(),
+                "engine", engineType.name(),
                 "uptime", System.currentTimeMillis() - startTime,
                 "timestamp", System.currentTimeMillis(),
                 "memory", Map.of(
@@ -978,10 +981,69 @@ public class JunifyDBServer {
                 "threads", Map.of(
                     "active", Thread.activeCount(),
                     "daemon", Thread.activeCount()
-                )
+                ),
+                // Console orientation context: what the UI must always be able to show.
+                // Everything here is read from the live configuration, never guessed by
+                // the front end. `durability` spells out what a crash can cost, so the
+                // Console can state data-safety honestly instead of implying "saved".
+                "context", buildContext(exchange, engineType, inMemory, config)
             );
             sendJson(exchange, 200, health);
         }
+    }
+
+    /** Ordered orientation context for the Console (engine, storage, database, identity). */
+    private Map<String, Object> buildContext(HttpExchange exchange,
+            org.junify.db.config.JunifyDBConfig.StorageEngineType engineType,
+            boolean inMemory,
+            org.junify.db.config.JunifyDBConfig config) {
+        var context = new LinkedHashMap<String, Object>();
+        context.put("engine", engineType.name());
+        context.put("relationalEngine", "JUNIFYDB-RDBMS");
+        context.put("nosqlEngine", "JUNIFYDB-NOSQL");
+        context.put("storageMode", inMemory ? "in-memory" : (config.autoFlush() ? "sync" : "async"));
+        context.put("durability", inMemory
+                ? "no durability - data is lost when the process exits"
+                : (config.autoFlush()
+                    ? "periodic flush every " + config.flushIntervalMs() + " ms"
+                    : "explicit flush / flush on close only - a hard kill can lose writes"));
+        context.put("database", inMemory ? "memory" : String.valueOf(config.dataDir()));
+        context.put("dataDir", inMemory ? "" : String.valueOf(config.dataDir().toAbsolutePath()));
+        context.put("authEnabled", authEnabled);
+        context.put("user", currentUser(exchange));
+        context.put("activeTransactions", activeTransactions.size());
+        context.put("transactionalConsoleWrites", false);
+        context.put("transactionScope", "Console writes bypass transactions; use the Java API "
+                + "(db.beginTransaction()) to put writes inside one");
+        return context;
+    }
+
+    /**
+     * Identity behind the current request, for the Console's security-context display.
+     * Returns {@code api-key} for key auth, {@code anonymous} when auth is disabled, and
+     * the signed-in username for a session.
+     */
+    private String currentUser(HttpExchange exchange) {
+        if (!authEnabled) return "anonymous";
+        var apiKeyHeader = exchange.getRequestHeaders().getFirst("X-API-Key");
+        if (apiKey != null && apiKey.equals(apiKeyHeader)) return "api-key";
+        var bearerHeader = exchange.getRequestHeaders().getFirst("Authorization");
+        if (bearerHeader != null && bearerHeader.startsWith("Bearer ")) {
+            String token = bearerHeader.substring(7);
+            if (apiKey != null && apiKey.equals(token)) return "api-key";
+            SessionInfo session = sessions.get(token);
+            if (session != null && session.expiresAt() > System.currentTimeMillis()) {
+                return session.username();
+            }
+        }
+        String sessionId = sessionManager.getSessionIdFromCookie(exchange);
+        if (sessionId != null) {
+            SessionInfo session = sessions.get(sessionId);
+            if (session != null && session.expiresAt() > System.currentTimeMillis()) {
+                return session.username();
+            }
+        }
+        return "anonymous";
     }
 
     private class CollectionsHandler implements HttpHandler {
@@ -2723,6 +2785,18 @@ public class JunifyDBServer {
         addCorsHeaders(exchange);
         exchange.getResponseHeaders().set("Content-Type", "application/json");
 
+        // Every response carries a correlation id, and every error body embeds it, so a
+        // user can quote one value and an operator can find the matching server log line.
+        // A caller-supplied X-Correlation-Id is honoured so a request can be traced end to end.
+        String correlationId = exchange.getRequestHeaders().getFirst("X-Correlation-Id");
+        if (correlationId == null || correlationId.isBlank()) {
+            correlationId = java.util.UUID.randomUUID().toString().substring(0, 8);
+        }
+        exchange.getResponseHeaders().set("X-Correlation-Id", correlationId);
+        if (status >= 400) {
+            body = withCorrelationId(body, correlationId);
+        }
+
         var json = body != null ? JsonSerde.toJson(body) : "";
         var bytes = json.getBytes(StandardCharsets.UTF_8);
 
@@ -2743,6 +2817,26 @@ public class JunifyDBServer {
         try (var os = exchange.getResponseBody()) {
             os.write(bytes);
         }
+    }
+
+    /**
+     * Copies an error payload into a mutable map and stamps {@code correlationId} on it.
+     * Non-map bodies (lists, strings) are wrapped so the id is never silently dropped.
+     */
+    private static Object withCorrelationId(Object body, String correlationId) {
+        if (body instanceof Map<?, ?> map) {
+            if (map.containsKey("correlationId")) return body;
+            var copy = new LinkedHashMap<String, Object>();
+            for (var entry : map.entrySet()) {
+                copy.put(String.valueOf(entry.getKey()), entry.getValue());
+            }
+            copy.put("correlationId", correlationId);
+            return copy;
+        }
+        var wrapper = new LinkedHashMap<String, Object>();
+        wrapper.put("error", body == null ? "Request failed" : String.valueOf(body));
+        wrapper.put("correlationId", correlationId);
+        return wrapper;
     }
 
     private class MetricsHandler implements HttpHandler {

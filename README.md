@@ -431,9 +431,26 @@ Open `http://localhost:8080` to access:
 - 🔑 **Key-Value Store** — get/put/delete with TTL management
 - 🔢 **Redis Structures** — Lists, Sets, Hashes with visual inspection
 - 🧩 **Wide-Column Families** — Row/column matrix viewer
-- 🤖 **SQL Studio** — Interactive SQL editor with result table
+- 🤖 **SQL Studio** — Interactive SQL editor with result table, run-selection, cancellation, CSV/JSON export, and a confirmation guard on destructive statements
 - 📡 **Change Data Capture** — CDC connector status and event viewer
 - 🔐 **Audit Trail** — In-memory operation log (recent events; not persisted, not cryptographically verified)
+
+The Console always shows its **active context** in a persistent status bar — storage engine,
+active database and data directory, storage mode **with its durability meaning** (an in-memory
+database states that writes are lost on exit), connection state, transaction state, and the
+security identity in use — all read from `GET /api/health`'s `context` block rather than
+guessed in the browser. Every action resolves to an explicit state (idle, loading, success,
+**empty**, validation error, backend error, timeout, permission denied, conflict, rate
+limited, recovery required), so a 0-row result is never shown as a success and a stalled
+request cannot look like progress. Destructive actions (drop, unqualified `DELETE`/`UPDATE`,
+collection-wide delete, restore) require a dialog that names the target and states the impact.
+Every response carries an `X-Correlation-Id`, and every error body repeats it, so a failure
+reported to support can be tied to a specific request.
+
+Honest limits: the SQL editor has **no syntax highlighting, autocomplete, formatting, saved-query
+library, multiple tabs, or `EXPLAIN`**; NoSQL editing is JSON-only (no tree or form view); and no
+screen-reader or automated contrast audit has been run. See
+[`docs/release-audit/74-console-task-success-evidence.md`](docs/release-audit/74-console-task-success-evidence.md).
 
 ---
 

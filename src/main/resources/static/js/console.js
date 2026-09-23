@@ -13,18 +13,136 @@ const esc = (v) => String(v ?? '').replace(/[&<>"']/g,
 
 let authRedirecting = false;
 
+/* ============================================================
+   Explicit action states
+   Every user action resolves into exactly one of these, and the UI
+   must say which — never a blank panel and never a silent failure.
+   ============================================================ */
+const STATES = {
+  IDLE: 'idle',
+  LOADING: 'loading',
+  SUCCESS: 'success',
+  EMPTY: 'empty',
+  VALIDATION: 'validation',
+  BACKEND: 'backend',
+  TIMEOUT: 'timeout',
+  PERMISSION: 'permission',
+  CONFLICT: 'conflict',
+  RATE: 'rate_limited',
+  RECOVERY: 'recovery_required',
+};
+
+/** Badge text + CSS class for each state. */
+const STATE_UI = {
+  [STATES.IDLE]:      { label: 'idle',             cls: 'badge' },
+  [STATES.LOADING]:   { label: 'loading…',         cls: 'badge' },
+  [STATES.SUCCESS]:   { label: 'success',          cls: 'badge ok' },
+  [STATES.EMPTY]:     { label: 'empty',            cls: 'badge warn' },
+  [STATES.VALIDATION]:{ label: 'validation error', cls: 'badge err' },
+  [STATES.BACKEND]:   { label: 'backend error',    cls: 'badge err' },
+  [STATES.TIMEOUT]:   { label: 'timeout',          cls: 'badge err' },
+  [STATES.PERMISSION]:{ label: 'permission denied',cls: 'badge err' },
+  [STATES.CONFLICT]:  { label: 'conflict',         cls: 'badge err' },
+  [STATES.RATE]:      { label: 'rate limited',     cls: 'badge err' },
+  [STATES.RECOVERY]:  { label: 'recovery required',cls: 'badge err' },
+};
+
+/** Default per-request ceiling so a stalled engine surfaces as a timeout, not a hang. */
+const REQUEST_TIMEOUT_MS = 20000;
+
+/** Structured failure carrying the state, HTTP status, correlation id, and data-safety answer. */
+class ApiError extends Error {
+  constructor(message, { state, status = 0, correlationId = null, data = null, dataChanged }) {
+    super(message);
+    this.name = 'ApiError';
+    this.state = state;
+    this.status = status;
+    this.correlationId = correlationId;
+    this.data = data;
+    this.dataChanged = dataChanged;
+  }
+  /** Human answer to "did my data change?" — required for every failure surface. */
+  get impact() {
+    switch (this.state) {
+      case STATES.VALIDATION:
+      case STATES.PERMISSION:
+      case STATES.CONFLICT:
+      case STATES.RATE:
+        return 'No data was changed — the engine rejected the request.';
+      case STATES.BACKEND:
+        return 'The server reported an error; the outcome of this operation is unconfirmed. '
+             + 'Reload the affected data before retrying.';
+      case STATES.TIMEOUT:
+        return 'The request timed out. It may still be running server-side — reload before retrying, '
+             + 'because the write may have been applied.';
+      case STATES.RECOVERY:
+        return 'The server is recovering; writes are refused until recovery completes.';
+      default:
+        return 'The request never reached the engine.';
+    }
+  }
+}
+
+function stateForStatus(status) {
+  if (status === 400 || status === 422) return STATES.VALIDATION;
+  if (status === 401 || status === 403) return STATES.PERMISSION;
+  if (status === 404) return STATES.VALIDATION;
+  if (status === 409) return STATES.CONFLICT;
+  if (status === 429) return STATES.RATE;
+  if (status === 503) return STATES.RECOVERY;
+  return STATES.BACKEND;
+}
+
 async function api(path, opts = {}) {
-  const res = await fetch('/api' + path, {
-    headers: { 'Content-Type': 'application/json' },
-    ...opts,
-    body: opts.body != null ? JSON.stringify(opts.body) : undefined,
-  });
+  const { timeoutMs = REQUEST_TIMEOUT_MS, signal, ...rest } = opts;
+  const ctrl = new AbortController();
+  const relayAbort = () => ctrl.abort();
+  if (signal) {
+    if (signal.aborted) ctrl.abort(); else signal.addEventListener('abort', relayAbort, { once: true });
+  }
+  let timedOut = false;
+  const timer = timeoutMs > 0
+    ? setTimeout(() => { timedOut = true; ctrl.abort(); }, timeoutMs)
+    : null;
+
+  let res;
+  try {
+    res = await fetch('/api' + path, {
+      headers: { 'Content-Type': 'application/json' },
+      ...rest,
+      signal: ctrl.signal,
+      body: rest.body != null ? JSON.stringify(rest.body) : undefined,
+    });
+  } catch (e) {
+    // Distinguish a real timeout from an operator cancellation from a dead server:
+    // each has a different data-safety answer, so they must not collapse into one error.
+    if (timedOut) {
+      throw new ApiError(`Timed out after ${Math.round(timeoutMs / 1000)}s waiting for the engine`,
+        { state: STATES.TIMEOUT });
+    }
+    if (signal && signal.aborted) {
+      throw new ApiError('Cancelled by user', { state: STATES.IDLE, dataChanged: false });
+    }
+    throw new ApiError('Cannot reach the JunifyDB server — is it still running?',
+      { state: STATES.BACKEND, dataChanged: false });
+  } finally {
+    if (timer) clearTimeout(timer);
+    if (signal) signal.removeEventListener('abort', relayAbort);
+  }
+
+  const correlationId = res.headers.get('X-Correlation-Id');
   let data = null;
   const text = await res.text();
   try { data = text ? JSON.parse(text) : null; } catch { data = { raw: text }; }
   if (!res.ok) {
     const msg = (data && (data.error || data.message)) || `HTTP ${res.status}`;
-    const err = new Error(msg);
+    const err = new ApiError(msg, {
+      state: stateForStatus(res.status),
+      status: res.status,
+      correlationId: (data && data.correlationId) || correlationId,
+      data,
+      dataChanged: false,
+    });
     err.status = res.status;
     err.data = data;
     // Session expired / not signed in: send the user to the login page
@@ -46,10 +164,105 @@ async function api(path, opts = {}) {
 function toast(msg, kind = 'info', ms = 3200) {
   const box = document.createElement('div');
   box.className = `toast ${kind}`;
+  box.setAttribute('role', kind === 'err' ? 'alert' : 'status');
   box.innerHTML = `<span>${esc(msg)}</span><button class="x" aria-label="Dismiss">×</button>`;
   box.querySelector('.x').onclick = () => box.remove();
   $('#toasts').appendChild(box);
   if (ms) setTimeout(() => box.remove(), ms);
+}
+
+/** Applies a state to a badge element. One place, so no surface can invent its own wording. */
+function setBadge(el, state, extra = '') {
+  const ui = STATE_UI[state] || STATE_UI[STATES.IDLE];
+  el.textContent = extra ? `${ui.label} · ${extra}` : ui.label;
+  el.className = ui.cls;
+  el.dataset.state = state;
+}
+
+/**
+ * Turns (value, isEmpty) into SUCCESS or EMPTY. Used so "0 rows" is never rendered
+ * as a successful result — an empty answer is its own explicit state.
+ */
+function successOrEmpty(count) {
+  return count === 0 ? STATES.EMPTY : STATES.SUCCESS;
+}
+
+/**
+ * Renders a failure as a full explanation: what failed, why, whether data changed,
+ * how to fix it, where to learn more, and the correlation id to quote in a bug report.
+ */
+function errorBanner(err, { title = 'Request failed', learnMore = '' } = {}) {
+  const state = err.state || STATES.BACKEND;
+  const ui = STATE_UI[state] || STATE_UI[STATES.BACKEND];
+  const severity = state === STATES.TIMEOUT || state === STATES.BACKEND ? 'err' : 'warn';
+  const id = err.correlationId
+    ? `<div class="state-meta">Correlation ID: <code>${esc(err.correlationId)}</code>`
+      + ' — quote this when reporting the problem.</div>'
+    : '<div class="state-meta">No correlation ID was returned (the request may not have reached the server).</div>';
+  return `<div class="state-banner ${severity}" role="alert">
+    <div>
+      <div class="state-title">✖ ${esc(title)} — ${esc(ui.label)}</div>
+      <div style="margin-top:4px"><strong>What failed:</strong> ${esc(err.message)}</div>
+      <div><strong>Did data change?</strong> ${esc(err.impact || 'Unknown — verify before retrying.')}</div>
+      <div><strong>How to fix it:</strong> ${esc(fixHint(state))}</div>
+      ${learnMore ? `<div class="state-meta">Learn more: ${learnMore}</div>` : ''}
+      ${id}
+    </div>
+  </div>`;
+}
+
+function fixHint(state) {
+  switch (state) {
+    case STATES.VALIDATION: return 'Correct the highlighted input and submit again.';
+    case STATES.PERMISSION: return 'Sign in again, or use an API key that is allowed to perform this operation.';
+    case STATES.CONFLICT:  return 'Reload the resource, then reapply the change on the current version.';
+    case STATES.RATE:      return 'Wait a moment (the server rate limit is per minute), then retry.';
+    case STATES.TIMEOUT:   return 'Check the Server panel and the log, reload the data, then retry.';
+    case STATES.RECOVERY:  return 'Wait for recovery to finish, then retry; the data directory is still intact.';
+    default:               return 'Reload the data; if it persists, check the server log for this correlation ID.';
+  }
+}
+
+/* ---------------- destructive-action confirmation ----------------
+   A confirm() dialog cannot state a target or an impact, so destructive actions
+   go through this dialog instead: it names what is about to change and quantifies
+   the damage before anything is sent to the engine. */
+function confirmAction({ title, target, impact, irrecoverable = true, confirmLabel = 'Confirm', hint = '' }) {
+  return new Promise((resolve) => {
+    const backdrop = $('#confirmBackdrop');
+    const accept = $('#confirmAccept');
+    const cancel = $('#confirmCancel');
+    const previousFocus = document.activeElement;
+
+    $('#confirmTitle').textContent = title;
+    $('#confirmBody').innerHTML = `<dl>
+        <dt>Target</dt><dd>${esc(target)}</dd>
+        <dt>Impact</dt><dd>${esc(impact)}</dd>
+        <dt>Undo</dt><dd>${irrecoverable
+          ? 'Not reversible from the Console. Create a backup first if you need a way back.'
+          : 'Reversible by restoring a backup from the Backup panel.'}</dd>
+      </dl>`;
+    $('#confirmHint').textContent = hint;
+    accept.textContent = confirmLabel;
+    backdrop.hidden = false;
+    cancel.focus();
+
+    const close = (answer) => {
+      backdrop.hidden = true;
+      accept.onclick = null;
+      cancel.onclick = null;
+      backdrop.onclick = null;
+      document.removeEventListener('keydown', onKey);
+      if (previousFocus && previousFocus.focus) previousFocus.focus();
+      resolve(answer);
+    };
+    const onKey = (e) => { if (e.key === 'Escape') { e.preventDefault(); close(false); } };
+
+    accept.onclick = () => close(true);
+    cancel.onclick = () => close(false);
+    backdrop.onclick = (e) => { if (e.target === backdrop) close(false); };
+    document.addEventListener('keydown', onKey);
+  });
 }
 
 /* ---------------- JSON highlighter ---------------- */
@@ -237,37 +450,187 @@ const SQL_EXAMPLES = [
   'SELECT * FROM products WHERE price > 10 ORDER BY price DESC',
 ];
 
-async function runSql() {
-  const sql = $('#sqlInput').value.trim();
+/** The statement currently in flight, so it can be cancelled by the user. */
+let sqlController = null;
+/** Last result set, kept so it can be exported without re-running the query. */
+let lastSqlResult = null;
+
+/**
+ * Classifies a statement as destructive and explains why, or returns null.
+ * This guards the two ways a console query silently destroys data: a DROP, and a
+ * DELETE/UPDATE with no WHERE clause (which reads as a filter to a tired human).
+ */
+function destructiveReason(sql) {
+  const stripped = sql.replace(/--[^\n]*/g, ' ').replace(/\/\*[\s\S]*?\*\//g, ' ').trim();
+  const upper = stripped.toUpperCase();
+  // Keyword detection runs on the uppercased copy; the target is read from the
+  // original so the dialog echoes the user's own spelling, not a shouting version.
+  if (/^\s*(DROP)\b/.test(upper)) {
+    const m = stripped.match(/^\s*DROP\s+(TABLE|INDEX)\s+(IF\s+EXISTS\s+)?([\w."]+)/i);
+    return { kind: 'DROP', target: m ? m[3] : 'object named in the statement',
+             impact: 'Drops the object and its contents. Rows are gone permanently.' };
+  }
+  const write = upper.match(/^\s*(DELETE|UPDATE)\b/);
+  if (write) {
+    const hasWhere = /\bWHERE\b/.test(upper);
+    const target = (stripped.match(/^\s*(?:DELETE\s+FROM|UPDATE)\s+([\w."]+)/i) || [])[1]
+      || 'table in the statement';
+    if (!hasWhere) {
+      return { kind: write[1], target,
+               impact: `Applies to EVERY row in ${target} — the statement has no WHERE clause.` };
+    }
+    return { kind: write[1], target,
+             impact: `Modifies every row in ${target} that matches the WHERE clause. Run it as a SELECT first if you want to preview the rows.` };
+  }
+  return null;
+}
+
+/** Live warning badge: the user sees the danger before pressing Run. */
+function refreshDestructiveBadge() {
+  const badge = $('#sqlDestructive');
+  const reason = destructiveReason($('#sqlInput').value);
+  if (!reason) { badge.hidden = true; badge.textContent = ''; return; }
+  badge.hidden = false;
+  badge.className = 'badge err';
+  badge.textContent = `⚠ destructive ${reason.kind}`;
+  badge.title = reason.impact;
+}
+
+async function runSql(onlySelection = false) {
+  const input = $('#sqlInput');
   const status = $('#sqlStatus');
-  if (!sql) { status.textContent = 'empty'; status.className = 'badge err'; return; }
-  status.textContent = 'running…'; status.className = 'badge';
+  const selected = onlySelection ? input.value.slice(input.selectionStart, input.selectionEnd).trim() : '';
+  const sql = (selected || input.value).trim();
+
+  if (!sql) {
+    setBadge(status, STATES.VALIDATION, 'empty statement');
+    $('#sqlOut').innerHTML = '<div class="state-banner warn" role="alert"><div>'
+      + '<div class="state-title">✖ Nothing to run — validation error</div>'
+      + '<div><strong>What failed:</strong> the editor is empty.</div>'
+      + '<div><strong>Did data change?</strong> No data was changed — no statement was sent.</div>'
+      + '<div><strong>How to fix it:</strong> type a statement, or pick one from the history buttons below.</div>'
+      + '</div></div>';
+    return;
+  }
+
+  const reason = destructiveReason(sql);
+  if (reason) {
+    const ok = await confirmAction({
+      title: `Confirm destructive ${reason.kind}`,
+      target: `${reason.target} (Relational SQL Engine)`,
+      impact: reason.impact,
+      confirmLabel: `Run ${reason.kind}`,
+      hint: 'Tip: run the equivalent SELECT first to see exactly which rows you are about to change.',
+    });
+    if (!ok) {
+      setBadge(status, STATES.IDLE, 'cancelled by user');
+      return;
+    }
+  }
+
+  sqlController = new AbortController();
+  $('#sqlCancel').hidden = false;
+  setBadge(status, STATES.LOADING);
+  $('#sqlMeta').textContent = '';
   try {
     const t0 = performance.now();
-    const res = await api('/sql', { method: 'POST', body: { query: sql } });
+    const res = await api('/sql', { method: 'POST', body: { query: sql }, signal: sqlController.signal });
     const ms = Math.max(1, Math.round(performance.now() - t0));
-    status.textContent = `ok · ${ms} ms`; status.className = 'badge ok';
-    $('#sqlMeta').textContent = `${res.rowCount} row${res.rowCount === 1 ? '' : 's'} · server ${res.executionTimeMs} ms`;
+    lastSqlResult = res;
+    const rows = res.rowCount ?? (res.rows || []).length;
+    const hasColumns = !!(res.columns && res.columns.length);
+    // A statement that returns no result set is not "empty" — only a 0-row result set is.
+    const state = hasColumns ? successOrEmpty(rows) : STATES.SUCCESS;
+    setBadge(status, state, `${ms} ms`);
+    $('#sqlMeta').textContent = `${rows} row${rows === 1 ? '' : 's'} · server ${res.executionTimeMs} ms`;
+    setActiveContext(hasColumns ? `SQL result · ${rows} row${rows === 1 ? '' : 's'}` : 'SQL statement (no result set)');
+    $('#sqlExportCsv').hidden = !hasColumns || rows === 0;
+    $('#sqlExportJson').hidden = rows === 0 && !hasColumns;
     renderSqlResult(res);
     saveHistory(sql);
+    renderHistory();
   } catch (e) {
-    status.textContent = 'error'; status.className = 'badge err';
-    $('#sqlMeta').textContent = '';
-    $('#sqlOut').innerHTML = `<div class="card card-pad" style="border-color:var(--err-dim)" role="alert">
-      <strong style="color:var(--err)">✖ SQL error — ${esc(e.message)}</strong>
-      ${e.data && e.data.message ? `<div style="margin-top:6px;color:var(--text-1)">${esc(e.data.message)}</div>` : ''}
-      <div style="margin-top:8px;font-size:12px;color:var(--text-2)">The Relational SQL Engine runs a built-in dialect (SELECT · INSERT · UPDATE · DELETE · JOIN · GROUP BY · CREATE/DROP TABLE). Views, sequences, and stored procedures are not supported.</div>
-    </div>`;
+    lastSqlResult = null;
+    $('#sqlExportCsv').hidden = true;
+    $('#sqlExportJson').hidden = true;
+    if (e.state === STATES.IDLE) {
+      setBadge(status, STATES.IDLE, 'cancelled');
+      $('#sqlMeta').textContent = '';
+      $('#sqlOut').innerHTML = '<div class="state-banner info"><div>'
+        + '<div class="state-title">Query cancelled</div>'
+        + '<div><strong>Did data change?</strong> The client stopped waiting; a statement already '
+        + 'executing server-side may still complete. Reload the affected data to confirm.</div>'
+        + '</div></div>';
+      return;
+    }
+    setBadge(status, e.state || STATES.BACKEND);
+    $('#sqlOut').innerHTML = errorBanner(e, {
+      title: 'SQL statement failed',
+      learnMore: 'the built-in dialect supports SELECT · INSERT · UPDATE · DELETE · JOIN · GROUP BY · '
+        + 'CREATE/DROP TABLE with PRIMARY KEY · UNIQUE · NOT NULL · FOREIGN KEY · CHECK. Views, sequences, '
+        + 'stored procedures, triggers, functions, and CREATE INDEX are not supported.',
+    });
+    if (e.data && e.data.message && e.data.message !== e.message) {
+      $('#sqlOut').insertAdjacentHTML('beforeend',
+        `<div class="state-banner info" style="margin-top:8px"><div><div class="state-title">Engine detail</div>${esc(e.data.message)}</div></div>`);
+    }
+  } finally {
+    sqlController = null;
+    $('#sqlCancel').hidden = true;
   }
 }
 
 function renderSqlResult(res) {
   if (!res.columns || !res.columns.length) {
-    $('#sqlOut').innerHTML = '<div class="empty">Statement executed — no result set</div>';
+    $('#sqlOut').innerHTML = '<div class="state-banner ok"><div>'
+      + '<div class="state-title">✔ Statement executed</div>'
+      + '<div>No result set was returned (this is a write or a DDL statement). '
+      + 'Check the Audit Trail panel for the recorded change.</div></div></div>';
+    return;
+  }
+  if (!res.rows || res.rows.length === 0) {
+    $('#sqlOut').innerHTML = '<div class="state-banner warn"><div>'
+      + '<div class="state-title">Result set is empty</div>'
+      + `<div>The statement ran successfully but matched no rows, so there is nothing to show or export. `
+      + `Columns requested: <code>${esc(res.columns.join(', '))}</code>.</div></div></div>`;
     return;
   }
   $('#sqlOut').innerHTML = `<div class="tbl-wrap">${tbl(res.columns,
     res.rows.map((r) => res.columns.map((c) => esc(r[c] ?? 'NULL'))))}</div>`;
+}
+
+/* --- result export (from the last result set, no re-run) --- */
+function csvCell(v) {
+  if (v == null) return '';
+  const s = typeof v === 'object' ? JSON.stringify(v) : String(v);
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+function downloadText(filename, text, mime) {
+  const blob = new Blob([text], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function exportSql(format) {
+  if (!lastSqlResult) { toast('Run a query first — there is no result to export', 'err'); return; }
+  const cols = lastSqlResult.columns || [];
+  const rows = lastSqlResult.rows || [];
+  if (!rows.length && !cols.length) { toast('Statement produced no result set to export', 'err'); return; }
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  if (format === 'csv') {
+    if (!cols.length) { toast('Nothing to export as CSV — the statement returned no columns', 'err'); return; }
+    const text = [cols.map(csvCell).join(','),
+      ...rows.map((r) => cols.map((c) => csvCell(r[c])).join(','))].join('\n');
+    downloadText(`junifydb-result-${stamp}.csv`, text, 'text/csv');
+  } else {
+    downloadText(`junifydb-result-${stamp}.json`, JSON.stringify(rows, null, 2), 'application/json');
+  }
+  toast(`Exported ${rows.length} row${rows.length === 1 ? '' : 's'} as ${format.toUpperCase()}`, 'ok');
 }
 
 /* --- query history (localStorage) --- */
@@ -282,8 +645,12 @@ function saveHistory(sql) {
 function renderHistory() {
   let h = [];
   try { h = JSON.parse(localStorage.getItem(HKEY) || '[]'); } catch { /* ignore */ }
-  $('#sqlExamples').innerHTML = h.slice(0, 6).map((s) =>
-    `<button class="btn sm" data-sql="${esc(s)}">${esc(s.length > 46 ? s.slice(0, 46) + '…' : s)}</button>`).join('');
+  // Never leave the example strip blank: history first, then the built-in examples,
+  // so a first-time user always has something clickable to run.
+  const items = h.length ? h.slice(0, 6) : SQL_EXAMPLES;
+  const label = h.length ? '' : '<span class="hint" style="align-self:center">Try one:</span>';
+  $('#sqlExamples').innerHTML = label + items.map((s) =>
+    `<button class="btn sm" data-sql="${esc(s)}" title="${esc(s)}">${esc(s.length > 46 ? s.slice(0, 46) + '…' : s)}</button>`).join('');
 }
 
 /* ============================================================
@@ -298,6 +665,7 @@ async function loadCollection() {
   colDocs = Array.isArray(docs) ? docs : [];
   const fields = collectFields(colDocs);
   $('#colCount').textContent = `${colDocs.length} docs`;
+  setActiveContext(`collection ${name} · ${colDocs.length} doc${colDocs.length === 1 ? '' : 's'}`);
   $('#colTable').innerHTML = tbl(['id', ...fields, 'expires'], colDocs.map((d) =>
     [`<td><a href="#" class="mono" data-doc="${esc(d.id)}">${esc(d.id)}</a></td>`,
       ...fields.map((f) => `<td>${esc(d.fields?.[f] ?? '')}</td>`),
@@ -382,13 +750,52 @@ async function cleanupExpired() {
 
 async function dropDocs() {
   const col = $('#colSel').value.trim();
-  if (!col || !confirm(`Delete ALL documents in "${col}"?`)) return;
+  if (!col) { toast('Load a collection first', 'err'); return; }
   const docs = await api(`/collections/${encodeURIComponent(col)}`);
-  for (const d of (docs ?? [])) {
-    await api(`/collections/${encodeURIComponent(col)}/${encodeURIComponent(d.id)}`, { method: 'DELETE' });
+  const count = (docs ?? []).length;
+  if (count === 0) {
+    toast(`"${col}" is already empty — nothing to delete`, 'info');
+    return;
   }
-  toast('Collection emptied', 'ok');
-  loadCollection();
+  // Name the target and quantify the damage before deleting anything.
+  const ok = await confirmAction({
+    title: 'Delete every document',
+    target: `collection "${col}" (Non-Relational NoSQL Engine) — ${count} document${count === 1 ? '' : 's'}`,
+    impact: `Permanently deletes all ${count} document${count === 1 ? '' : 's'} in "${col}". `
+          + 'The collection itself remains and stays usable.',
+    irrecoverable: true,
+    confirmLabel: `Delete ${count} document${count === 1 ? '' : 's'}`,
+    hint: 'Use the Backup panel first if you need a way back.',
+  });
+  if (!ok) { toast('Deletion cancelled — nothing was changed', 'info'); return; }
+
+  const status = $('#colCount');
+  let deleted = 0;
+  const failures = [];
+  for (const d of docs) {
+    // Delete and re-verify each document, so partial failure is reported as partial
+    // rather than as an unqualified success.
+    try {
+      await api(`/collections/${encodeURIComponent(col)}/${encodeURIComponent(d.id)}`, { method: 'DELETE' });
+      deleted++;
+      if (status) status.textContent = `deleting… ${deleted}/${count}`;
+    } catch (e) {
+      failures.push({ id: d.id, err: e });
+    }
+  }
+  const remaining = await api(`/collections/${encodeURIComponent(col)}`).catch(() => null);
+  const left = Array.isArray(remaining) ? remaining.length : null;
+
+  if (failures.length) {
+    $('#colTable').insertAdjacentHTML('afterbegin', errorBanner(failures[0].err, {
+      title: `Deleted ${deleted} of ${count} documents — ${failures.length} failed`,
+    }));
+    toast(`Deleted ${deleted}/${count}; ${failures.length} failed`, 'err', 6000);
+  } else {
+    toast(`Deleted ${deleted} document${deleted === 1 ? '' : 's'} from "${col}"`
+      + (left != null ? ` — ${left} remaining` : ''), 'ok');
+  }
+  await loadCollection().catch(() => {});
 }
 
 /* ============================================================
@@ -588,6 +995,7 @@ async function txBegin() {
 async function idxList() {
   const r = await api(`/indexes/${encodeURIComponent($('#idxCol').value.trim())}`);
   const entries = Object.entries(r.indexes ?? {});
+  setActiveContext(`indexes on ${$('#idxCol').value.trim()}`);
   $('#idxOut').innerHTML = entries.length
     ? tbl(['Field', 'Type', 'Unique values', 'Entries'],
         entries.map(([f, i]) => [esc(f), esc(i.type ?? 'secondary'), i.uniqueValues ?? 0, i.totalIndexed ?? 0]))
@@ -634,12 +1042,34 @@ async function bkCreate() {
   bkRefresh();
 }
 async function bkRestore() {
-  const r = await api('/backup/restore', { method: 'POST', body: { backupFile: $('#bkFile').value.trim() } })
-    .catch((e) => ({ error: e.message }));
-  if (r.error) { toast(r.error, 'err'); return; }
-  $('#bkStatus').textContent = `restored from ${r.file ?? 'file'}`;
-  toast('Restore complete', 'ok');
-  bkRefresh();
+  const file = $('#bkFile').value.trim();
+  if (!file) { toast('Enter the path of the backup file to restore', 'err'); return; }
+  // Restoring overwrites live data, so it gets the same target + impact treatment
+  // as any other destructive action — this one is named for the whole database.
+  const ok = await confirmAction({
+    title: 'Restore from backup',
+    target: `database (Both Engines) from file "${file}"`,
+    impact: 'Restores the snapshot over the current data. Documents written since the snapshot may be replaced or lost.',
+    irrecoverable: true,
+    confirmLabel: 'Restore now',
+    hint: 'Create a fresh backup of the current state first if you may need it.',
+  });
+  if (!ok) { toast('Restore cancelled — nothing was changed', 'info'); return; }
+
+  $('#bkStatus').className = 'badge';
+  $('#bkStatus').textContent = 'restoring…';
+  try {
+    const r = await api('/backup/restore', { method: 'POST', body: { backupFile: file } });
+    $('#bkStatus').className = 'badge ok';
+    $('#bkStatus').textContent = `restored from ${r.file ?? 'file'}`;
+    toast('Restore complete', 'ok');
+    pollStatus();
+    bkRefresh();
+  } catch (e) {
+    $('#bkStatus').className = 'badge err';
+    $('#bkStatus').textContent = 'restore failed';
+    $('#bkInfo').insertAdjacentHTML('afterbegin', errorBanner(e, { title: 'Restore failed' }));
+  }
 }
 
 /* ============================================================
@@ -720,19 +1150,66 @@ function initTheme() {
   setTheme(t);
 }
 
-async function pollHealth() {
+/* ---------- status bar: orientation context that is always visible ---------- */
+let activeContextLabel = 'none';
+
+/** Records what the user is currently looking at (collection / schema / index). */
+function setActiveContext(label) {
+  activeContextLabel = label || 'none';
+  const el = $('#sbContext');
+  if (el) el.textContent = 'context: ' + activeContextLabel;
+}
+
+function sbItem(id, label, value, cls = '', title = '') {
+  const el = $('#' + id);
+  if (!el) return;
+  el.className = 'sb-item' + (cls ? ' ' + cls : '');
+  el.innerHTML = `${esc(label)} <b>${esc(value)}</b>`;
+  el.title = title || '';
+}
+
+/**
+ * Single reader for /api/health: drives the topbar chips AND the status bar, so the
+ * two can never disagree about engine, storage, or connection state.
+ */
+async function pollStatus() {
+  let h = null;
   try {
-    const h = await api('/health');
-    const chip = $('#chipHealth');
-    chip.className = 'topbar-chip ok';
-    $('#chipHealthText').textContent = h.status === 'ok' ? 'Healthy' : 'Degraded';
-    $('#chipEngine').textContent = h.engine ?? '—';
-    $('#chipUptime').textContent = 'up ' + fmtUptime(h.uptime ?? 0);
+    h = await api('/health');
   } catch (e) {
     const chip = $('#chipHealth');
     chip.className = 'topbar-chip err';
     $('#chipHealthText').textContent = e?.status === 401 ? 'Sign-in required' : 'Unreachable';
+    sbItem('sbConnection', 'connection', 'unreachable', 'err');
+    sbItem('sbTx', 'tx', 'unknown');
+    sbItem('sbUser', 'user', 'unknown');
+    return;
   }
+
+  const chip = $('#chipHealth');
+  chip.className = 'topbar-chip ok';
+  $('#chipHealthText').textContent = h.status === 'ok' ? 'Healthy' : 'Degraded';
+  $('#chipEngine').textContent = h.engine ?? '—';
+  $('#chipUptime').textContent = 'up ' + fmtUptime(h.uptime ?? 0);
+
+  const c = h.context || {};
+  sbItem('sbEngine', 'engine', c.engine ?? h.engine ?? '—', 'ok',
+    c.relationalEngine && c.nosqlEngine
+      ? `${c.relationalEngine} + ${c.nosqlEngine}` : '');
+  sbItem('sbStorage', 'storage', `${c.storageMode ?? '—'} · ${c.durability ?? 'durability unknown'}`,
+    c.storageMode === 'in-memory' ? 'warn' : '', c.durability || '');
+  sbItem('sbDatabase', 'database', c.database ?? '—', '',
+    c.dataDir ? 'data dir: ' + c.dataDir : 'in-memory — nothing is written to disk');
+  sbItem('sbConnection', 'connection', h.open ? 'online' : 'offline', h.open ? 'ok' : 'err');
+  const tx = c.activeTransactions ?? 0;
+  sbItem('sbTx', 'tx',
+    tx ? `${tx} active · console writes bypass tx` : 'none active · console writes bypass tx',
+    tx ? 'warn' : '', c.transactionScope || '');
+  sbItem('sbUser', 'user',
+    `${c.user ?? 'anonymous'}${c.authEnabled ? '' : ' (auth disabled)'}`,
+    c.authEnabled ? 'ok' : 'warn',
+    c.authEnabled ? 'Authenticated session' : 'Authentication is disabled on this server');
+  setActiveContext(activeContextLabel);
 }
 
 /* ============================================================
@@ -760,7 +1237,7 @@ function bind() {
 
   // topbar
   $('#btnTheme').onclick = () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
-  $('#btnRefreshAll').onclick = () => { refreshPanel(activePanel); pollHealth(); };
+  $('#btnRefreshAll').onclick = () => { refreshPanel(activePanel); pollStatus(); };
   $('#btnLogout').onclick = async () => {
     try { await api('/auth/logout', { method: 'POST' }); } catch { /* best-effort */ }
     try { localStorage.removeItem('apiKey'); sessionStorage.clear(); } catch { /* ignore */ }
@@ -769,16 +1246,36 @@ function bind() {
   };
 
   // SQL
-  $('#sqlRun').onclick = runSql;
-  $('#sqlClear').onclick = () => { $('#sqlInput').value = ''; $('#sqlOut').innerHTML = ''; $('#sqlMeta').textContent = ''; };
-  $('#sqlCopy').onclick = () => navigator.clipboard?.writeText($('#sqlInput').value).then(() => toast('Copied', 'ok'));
+  $('#sqlRun').onclick = () => runSql();
+  $('#sqlRunSel').onclick = () => runSql(true);
+  $('#sqlCancel').onclick = () => { if (sqlController) sqlController.abort(); };
+  $('#sqlExportCsv').onclick = () => exportSql('csv');
+  $('#sqlExportJson').onclick = () => exportSql('json');
+  $('#sqlClear').onclick = () => {
+    $('#sqlInput').value = '';
+    lastSqlResult = null;
+    $('#sqlExportCsv').hidden = true;
+    $('#sqlExportJson').hidden = true;
+    $('#sqlDestructive').hidden = true;
+    setBadge($('#sqlStatus'), STATES.IDLE);
+    $('#sqlOut').innerHTML = '<div class="empty"><svg class="empty-logo" aria-hidden="true"><use href="#brand-mark"/></svg><br>Editor cleared — write SQL above and press <kbd>Ctrl</kbd>+<kbd>Enter</kbd>.</div>';
+    $('#sqlMeta').textContent = '';
+    $('#sqlInput').focus();
+  };
+  $('#sqlCopy').onclick = () => navigator.clipboard?.writeText($('#sqlInput').value).then(() => toast('SQL copied', 'ok'));
+  // Warn as soon as a dangerous statement is typed, not only when Run is pressed.
+  $('#sqlInput').addEventListener('input', refreshDestructiveBadge);
   $('#sqlInput').addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); runSql(); }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      runSql(e.shiftKey);
+    }
   });
   $('#sqlExamples').addEventListener('click', (e) => {
     const b = e.target.closest('[data-sql]');
-    if (b) { $('#sqlInput').value = b.dataset.sql; runSql(); }
+    if (b) { $('#sqlInput').value = b.dataset.sql; refreshDestructiveBadge(); runSql(); }
   });
+  setBadge($('#sqlStatus'), STATES.IDLE);
 
   // collections
   $('#colLoad').onclick = () => loadCollection().catch((e) => toast(e.message, 'err'));
@@ -856,8 +1353,8 @@ function boot() {
     const id = location.hash.slice(1);
     if (PANELS.some((p) => p.id === id) && id !== activePanel) goto(id);
   });
-  pollHealth();
-  setInterval(pollHealth, 10000);
+  pollStatus();
+  setInterval(pollStatus, 10000);
   setInterval(() => { if (activePanel === 'overview') refreshOverview().catch(() => {}); }, 5000);
 }
 

@@ -84,7 +84,7 @@ product must **not** claim H2's relational completeness or MongoDB's distributio
 | Language | implementation-defined SQL dialect | fluent criteria + MongoDB-style JSON filter |
 | Parser/AST | `sql/parser`, `sql/ast` | `nosql/query` |
 | Verified surface | SELECT/INSERT/UPDATE/DELETE, WHERE, ORDER BY, GROUP BY, HAVING, LIMIT, OFFSET, INNER JOIN, CREATE/DROP TABLE, aggregations | document CRUD, nested docs, arrays, projections, sort/paging, KV(string/hash/list/set), TTL, B-tree + HNSW indexes, repositories |
-| **NOT implemented** | sequences, views, stored procedures, functions, triggers, query planner/EXPLAIN; JDBC is `PARTIAL` (no explicit transactions or schema reflection). (**Supported since 2026-09-23, R-74 + R-75 + R-76:** `PRIMARY KEY`, `UNIQUE`, `NOT NULL`, foreign key (`REFERENCES`, both directions) and `CHECK` — enforced and durable — plus a working JDBC driver) | full document-database breadth (aggregation pipelines, change streams beyond CDC, transactions at SQL surface granularity) |
+| **NOT implemented** | sequences, views, stored procedures, functions, triggers, query planner/EXPLAIN; SQL editor assistance (highlighting, autocomplete, formatting, saved queries, tabs); JDBC is `PARTIAL` (no explicit transactions or schema reflection). (**Supported since 2026-09-23, R-74 + R-75 + R-76:** `PRIMARY KEY`, `UNIQUE`, `NOT NULL`, foreign key (`REFERENCES`, both directions) and `CHECK` — enforced and durable — plus a working JDBC driver. **R-77…R-81:** the Console now states its orientation context, resolves every action to an explicit state, confirms destructive actions by name, and returns a correlation id on every response) | full document-database breadth (aggregation pipelines, change streams beyond CDC, transactions at SQL surface granularity), Console accessibility conformance |
 
 The shared substrate (storage, catalog, WAL, locking) is **intentional** (ADR-002) and
 **documented as a defect vector** where it leaks semantics between engines (the compensating
@@ -167,7 +167,10 @@ claim.
 - SQL dialect: query + CREATE/DROP TABLE.
 - Transactions (core + MVCC + savepoints) and TTL.
 - Four framework integrations, each with a runnable demo.
-- Embedded Console (22 API routes) with browser-verified workflows.
+- Embedded Console (22 API routes) with browser-verified workflows, a persistent orientation
+  status bar (engine · storage mode and its durability meaning · database · connection · tx ·
+  identity), explicit action states, a named confirmation dialog for destructive actions, and a
+  correlation id on every response.
 - Observability: events, metrics, CDC, audit trail.
 
 **Explicitly out of scope (post-release):**
@@ -175,6 +178,11 @@ claim.
 - JDBC explicit transactions, savepoints, batch execution and schema reflection (the driver is
   `PARTIAL`); sequences/views/procedures/functions/triggers; query planner/`EXPLAIN`; indexing of
   `UNIQUE`/foreign-key columns (currently O(n) scans).
+- **SQL editor assistance** (syntax highlighting, autocomplete, formatting, saved-query library,
+  multiple tabs) and a NoSQL document tree/form view — the Console is an admin surface, not a
+  full SQL IDE.
+- **Console accessibility conformance**: keyboard/ARIA behaviour for the confirmation dialog is in
+  place, but no screen-reader session or automated contrast audit has been run.
 - Per-engine artifact split (single-jar remains).
 - Maven Central publication (blocked on credentials).
 - Distributed/clustered operation; hardened internet-facing multi-tenant deployment.
@@ -186,10 +194,10 @@ claim.
 
 | Gate | Target | Current (2026-09-23) |
 |---|---|---|
-| Core tests | 100% pass, 0 skipped | **832 / 832 pass** ✅ |
-| Line coverage | ≥ 70% (coverage-check profile) | **75.5%** ✅ |
-| Branch coverage | reported | **59.2%** (informational) |
-| Core jar | < 5 MB | **3.12 MB** ✅ |
+| Core tests | 100% pass, 0 skipped | **879 / 879 pass** ✅ |
+| Line coverage | ≥ 70% (coverage-check profile) | **gate PASS** (`All coverage checks have been met.`); percentage not comparable across rounds (R-82) |
+| Branch coverage | reported | **57.6%** (informational) |
+| Core jar | < 5 MB | **3.17 MB** ✅ |
 | Console contract gate | PASS on FILE/LSM_TREE/B_TREE | PASS (prior round; not re-run this session) |
 | Demos | all pass from clean checkout | PASS (prior round) |
 | Reproducibility | byte-stable build | PASS (prior round) |

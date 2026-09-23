@@ -79,3 +79,53 @@ non-passing item (Maven Central verification) is still blocked on absent credent
 `final-go-no-go-decision.md` records. This round therefore **confirms** the canonical decision's
 `RELEASE APPROVED WITH EXPLICIT LIMITATIONS` verdict and refreshes its evidence, rather than
 overturning it.
+
+---
+
+## Slice 4 (same day): Console task-success layer (R-77 … R-81)
+
+Measured against the **Console UX quality and task-success requirements**, which the earlier
+verdict did not cover. The Console rendered *activity* but never *context, outcome or provenance*:
+no orientation context (an in-memory database was indistinguishable from a durable one),
+`window.confirm` for destructive actions, no correlation id anywhere, a 0-row result shown as
+success, and a stalled request with no state at all.
+
+| Metric | Slice 3 (JDBC) | Slice 4 (Console task success) |
+|---|---|---|
+| Tests | 872 | **879** (+7 `ConsoleTaskSuccessTest`) |
+| Coverage gate | not re-run | **PASS** — `All coverage checks have been met.` |
+| Measured line coverage | 74.4% (41,140 lines) | 75.4% (**8,728** measured lines) — see the caveat below |
+| Shaded jar | 3,164,082 B | **3,174,260 B** (SHA-1 `c5d037f2…`, still < 5 MB) |
+
+**Falsification.** The subject here is UI behaviour, so the falsification is different from the
+library slices: the seven new tests assert both the service contract and the *shipped static
+assets*, and the **pre-change server still listening on port 8081 was probed directly** —
+`NO context block present`, `HTTP/1.1 404` with no `X-Correlation-Id` header and no body id —
+while the rebuilt server returned both, with the header id equal to the body id. A browser
+journey then verified the user path and the store afterwards: the `DELETE FROM products` guard
+appeared before Run, Cancel left all **4** documents intact with state
+`idle · cancelled by user`, and a failed query reported `validation error`, "No data was
+changed", and `Correlation ID: b0ae7ff4`.
+
+**New measurement caveat (R-82, recorded not smoothed over).** Coverage percentages in this
+corpus have **no stable denominator**: the same plugin and profile reported 8,728 measured lines
+this round (181 classes), 41,140 lines last round, and 36,821 lines the round before. The 70%
+gate result is real and passes; the *trend* is not quotable until a round defines and publishes
+the measurement scope. The earlier columns above should therefore be read as superseded
+measurements rather than as a series.
+
+**Site and branding:** no website change was required — the site mentions the Console only as a
+shared engine component and makes no claim about it that is now false. Earlier rounds' `.html`
+edits (DDL, constraint, JDBC wording) remain as landed.
+
+**Honest limits recorded in `74-console-task-success-evidence.md`:** SQL editor assistance
+(highlighting, autocomplete, formatting, saved queries, multiple tabs, `EXPLAIN`) is
+`NOT IMPLEMENTED` (US-145); NoSQL editing is JSON-only; destructive-action rollback/backup is
+advisory rather than automatic; bulk deletion reports a counter rather than a cancelable progress
+bar; and no screen-reader or automated contrast audit was performed. Automated coverage of the
+Console JavaScript remains **structural** (presence of controls and vocabulary); the behavioural
+evidence is a manual browser journey, which CI cannot reproduce.
+
+The canonical decision remains **`RELEASE APPROVED WITH EXPLICIT LIMITATIONS`**; this slice
+strengthens the Console verdict and adds US-138…US-145 (story map: **145** stories, `VERIFIED`
+116, `PARTIAL` 22, `NOT IMPLEMENTED` 5, `NOT VERIFIED` 1, `EXPERIMENTAL` 1).

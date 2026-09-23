@@ -44,13 +44,18 @@ What is in scope for the first public release, and what is explicitly out of sco
 Add an aggregator/flatten POM strategy in a later minor release so `mvn verify` at root covers starters; publish a SUPPORTED-MATRIX page. The `maven-central` profile already supplies the source/javadoc/GPG plugins (doc 46, MC-01 fixed); Central publication itself remains gated on credentials (R-13).
 
 ## Current verification state (2026-09-23)
-**832/832** core tests + 4/4 CLI + 43/43 across nine demos; contract gate PASS on FILE,
+**879/879** core tests (832 at the start of the day; +14 keys, +13 referential/`CHECK`, +13 JDBC,
++7 Console task success) + 4/4 CLI + 43/43 across nine demos; coverage gate PASS
+(`All coverage checks have been met.` — the line-coverage *percentage* is not comparable across
+rounds; see R-82); contract gate PASS on FILE,
 LSM_TREE and B_TREE (**92 ok / 0 FAIL each**, including a **crash-durability block** that proves
 the server stopped, proves the replacement bound, and requires every acknowledged write back
 with its full body — 12 of 12 on all three engines); auth gate PASS;
 reproducibility gate PASS (`sha256 931f3862…`, identical across two clean builds — re-measured
 2026-09-23 after this round's engine changes); core jar
-**3,122,887 bytes** with three mandatory runtime dependencies — inside the <5 MB requirement.
+**3,174,260 bytes** with three mandatory runtime dependencies — inside the <5 MB requirement.
+The embedded Console now exposes a live orientation `context` block and returns an
+`X-Correlation-Id` on every response (R-77…R-81, evidence `74-console-task-success-evidence.md`).
 Baseline comparison and delta: `baseline/BASELINE-COMPARISON.md`.
 
 All three persistent engines (FILE, LSM_TREE, B_TREE) now make the same write-ahead guarantee,

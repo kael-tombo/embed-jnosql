@@ -46,6 +46,25 @@
       <button class="btn sm" id="btnLogout" title="End session and return to sign-in">Sign out</button>
     </div>
 
+    <!-- ================= Status bar (always visible) =================
+         Every label here is fed from GET /api/health `context`, which reads the
+         live configuration — never from a guess in the front end. -->
+    <div class="statusbar" id="statusbar" role="status" aria-label="Active database context">
+      <span class="sb-item" id="sbEngine" title="Storage engine type">engine —</span>
+      <span class="sb-sep" aria-hidden="true"></span>
+      <span class="sb-item" id="sbStorage" title="Storage mode and durability guarantee">storage —</span>
+      <span class="sb-sep" aria-hidden="true"></span>
+      <span class="sb-item" id="sbDatabase" title="Active database / data directory">database —</span>
+      <span class="sb-sep" aria-hidden="true"></span>
+      <span class="sb-item" id="sbConnection" title="Console-to-engine connection status">connection —</span>
+      <span class="sb-sep" aria-hidden="true"></span>
+      <span class="sb-item" id="sbTx" title="Active transactions and whether Console writes are transactional">tx —</span>
+      <span class="sb-sep" aria-hidden="true"></span>
+      <span class="sb-item" id="sbUser" title="Security context for the current session">user —</span>
+      <span class="sb-spacer"></span>
+      <span class="sb-item sb-context" id="sbContext" title="Active panel context (collection or schema)">context: none</span>
+    </div>
+
     <!-- ================= Sidebar ================= -->
     <nav class="nav" id="nav"></nav>
 
@@ -94,19 +113,29 @@
             <h2>Editor</h2>
             <div class="spacer"></div>
             <span class="badge" id="sqlStatus">idle</span>
+            <span class="badge" id="sqlDestructive" hidden></span>
+            <button class="btn sm" id="sqlCancel" hidden>Cancel</button>
             <button class="btn sm" id="sqlClear">Clear</button>
+            <button class="btn sm" id="sqlRunSel" title="Run only the highlighted statement">▹ Run selection</button>
             <button class="btn primary sm" id="sqlRun">▸ Run</button>
           </div>
           <div class="card-pad">
-            <textarea id="sqlInput" rows="7" spellcheck="false"
+            <label class="fld" for="sqlInput">Statement (one statement per run)</label>
+            <textarea id="sqlInput" rows="7" spellcheck="false" aria-describedby="sqlHint"
               placeholder="SELECT * FROM products WHERE price > 10 ORDER BY price DESC LIMIT 20"></textarea>
+            <div class="hint" id="sqlHint" style="margin-top:6px">
+              <kbd>Ctrl</kbd>+<kbd>Enter</kbd> runs everything; <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Enter</kbd> runs the selected text.
+              Destructive statements (DROP, DELETE/UPDATE without a WHERE clause) ask for confirmation first.
+            </div>
             <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap" id="sqlExamples"></div>
           </div>
           <div class="card-head" style="border-top:1px solid var(--line-0);border-bottom:0">
             <h2>Results</h2>
             <div class="spacer"></div>
             <span class="badge" id="sqlMeta"></span>
-            <button class="btn sm" id="sqlCopy">Copy JSON</button>
+            <button class="btn sm" id="sqlExportCsv" hidden>Export CSV</button>
+            <button class="btn sm" id="sqlExportJson" hidden>Export JSON</button>
+            <button class="btn sm" id="sqlCopy">Copy SQL</button>
           </div>
           <div class="card-pad" style="padding-top:0"><div id="sqlOut"><div class="empty"><svg class="empty-logo" aria-hidden="true"><use href="#brand-mark"/></svg><br>No query run yet — write SQL above and press <kbd>Ctrl</kbd>+<kbd>Enter</kbd>.</div></div></div>
         </div>
@@ -410,6 +439,26 @@
   </div>
 
   <div id="toasts"></div>
+
+  <!-- ================= Confirmation dialog =================
+       Destructive actions name their target, quantify the impact, and state what
+       cannot be undone before anything is sent to the engine. -->
+  <div class="modal-backdrop" id="confirmBackdrop" hidden>
+    <div class="modal" id="confirmDialog" role="dialog" aria-modal="true"
+         aria-labelledby="confirmTitle" aria-describedby="confirmBody">
+      <div class="modal-head">
+        <h2 id="confirmTitle">Confirm action</h2>
+      </div>
+      <div class="modal-body" id="confirmBody"></div>
+      <div class="modal-foot">
+        <span class="hint" id="confirmHint"></span>
+        <div class="spacer"></div>
+        <button class="btn sm" id="confirmCancel">Cancel</button>
+        <button class="btn sm danger" id="confirmAccept">Confirm</button>
+      </div>
+    </div>
+  </div>
+
   <script src="/js/console.js"></script>
 </body>
 </html>

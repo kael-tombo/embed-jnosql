@@ -4,11 +4,12 @@ Artifact: target/junify-db-core-1.0.0.jar = 3,122,887 bytes (3.12 MB < 5 MB requ
 SHA-1: b8ce7e551f50c25120749c0af8e55d1e0c7fc7d5
 Java: 23.0.1 / Maven: 3.9.6 / OS: Windows Server 2022 (MINGW64)
 
-Re-verified 2026-09-23 (this verification round), **then re-packaged after each constraint and
-JDBC slice**. Latest measurement: **3,164,082 bytes**, SHA-1
-323b098b299591cf5caf760cdf564ee6b3398054. History: 3,113,904 (2026-09-22) → 3,122,887
+Re-verified 2026-09-23 (this verification round), **then re-packaged after each constraint,
+JDBC and Console slice**. Latest measurement: **3,174,260 bytes**, SHA-1
+c5d037f2ca75034c8978b9af0a99182c11cc6f26 (from `mvn verify -Pcoverage-check`, i.e. the shaded jar
+that also carries the Console task-success assets). History: 3,113,904 (2026-09-22) → 3,122,887
 (pre-constraint) → 3,133,120 (R-74 keys) → 3,136,885 (R-75 referential + CHECK) → 3,164,082
-(R-76 JDBC driver). All under the 5 MB gate.
+(R-76 JDBC driver) → 3,174,260 (R-77…R-81 Console task-success layer). All under the 5 MB gate.
 
 Dependencies (compile): jackson-databind 2.17.0, jackson-datatype-jsr310 2.17.0, slf4j-api
 2.0.12; provided-optional: jakarta.enterprise.cdi-api 4.0.1, jnosql-mapping-api-core 1.1.8,

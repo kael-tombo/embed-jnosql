@@ -42,7 +42,7 @@ Personas: **P1** plain-Java developer · **P2** test engineer · **P3** framewor
 | E4 | NoSQL lifecycle | 19 | US-045…063 |
 | E5 | Both engines in one JVM | 6 | US-064…069 |
 | E6 | Engine health & metrics | 8 | US-070…077 |
-| E7 | Developer Console | 22 | US-078…099 |
+| E7 | Developer Console | 30 | US-078…099, US-138…145 |
 | E8 | Website, branding & accessibility | 10 | US-100…109 |
 | E9 | Framework & language integrations | 12 | US-110…121 |
 | E10 | Security, perf, demos, packaging & release | 16 | US-122…137 |
@@ -51,9 +51,9 @@ Personas: **P1** plain-Java developer · **P2** test engineer · **P3** framewor
 
 | Status | Count | Notable IDs |
 |---|---|---|
-| `VERIFIED` | 107 | US-001, US-022, US-031 (**PRIMARY KEY**), US-032 (**foreign key**), US-033 (**UNIQUE/NOT NULL/CHECK**), US-043, US-062, US-094, US-122 |
-| `PARTIAL` | 24 | US-034 (no SQL `CREATE INDEX`), US-036 (SQL transaction granularity), US-042 (**JDBC driver** — no transactions/schema reflection), US-120, US-127 |
-| `NOT IMPLEMENTED` | 4 | US-039/040/041 (procedures/functions/triggers), US-044 (`EXPLAIN`) |
+| `VERIFIED` | 116 | US-001, US-022, US-031 (**PRIMARY KEY**), US-032 (**foreign key**), US-033 (**UNIQUE/NOT NULL/CHECK**), US-043, US-062, US-093/095 (**explicit error and empty states**), US-094, US-122, US-138…144 (**Console task-success layer**) |
+| `PARTIAL` | 22 | US-034 (no SQL `CREATE INDEX`), US-036 (SQL transaction granularity), US-042 (**JDBC driver** — no transactions/schema reflection), US-120, US-127 |
+| `NOT IMPLEMENTED` | 5 | US-039/040/041 (procedures/functions/triggers), US-044 (`EXPLAIN`), US-145 (SQL syntax highlighting / autocomplete / formatting / saved queries / multi-tab / explain plan) |
 | `NOT VERIFIED` | 1 | US-128 (Maven Central — credentials absent) |
 | `EXPERIMENTAL` | 1 | US-074 (Kafka CDC connector) |
 | `RELEASE BLOCKER` | 0 | — (all blockers either fixed, external, or documented limitations) |
@@ -1547,7 +1547,7 @@ leaving **four**: procedures, functions, triggers and `EXPLAIN`.)* Every `PARTIA
 **Release impact:** honesty
 
 #### US-093 · Surface server logs and errors
-`E7 · P1 · PARTIAL · M`
+`E7 · P1 · VERIFIED · M`
 **Persona:** P4
 **Story:** As an operator, I want to see errors, so that I can diagnose failures.
 **Outcome:** Failed operations show a reason in the UI.
@@ -1557,9 +1557,9 @@ leaving **four**: procedures, functions, triggers and `EXPLAIN`.)* Every `PARTIA
 **Data:** — · **UI:** error toasts/panels · **Security:** no stack traces leaked by default · **Perf:** —
 **Negative:** generic "error" with no detail
 **G/W/T:** *Given* a failing operation, *When* it runs, *Then* the UI shows an actionable message and the API returns a non-500 code where applicable.
-**Test plan:** error-path UI test
-**Evidence:** screenshot + response code
-**DoD:** user errors are 400 with a message
+**Test plan:** `ConsoleTaskSuccessTest.correlationIdOnSuccessAndFailure`, `.failuresAreClassifiable`
+**Evidence:** `../release-audit/74-console-task-success-evidence.md` (error banner answers what/why/data-changed/how-to-fix/learn-more/correlation-id)
+**DoD:** user errors are 4xx with a message, a correlation id, and a data-safety answer
 **Release impact:** diagnosability
 
 #### US-094 · No fake success anywhere in the UI
@@ -1579,7 +1579,7 @@ leaving **four**: procedures, functions, triggers and `EXPLAIN`.)* Every `PARTIA
 **Release impact:** trust
 
 #### US-095 · Meaningful empty states
-`E7 · P2 · PARTIAL · S`
+`E7 · P2 · VERIFIED · S`
 **Persona:** P4
 **Story:** As an operator, I want empty states, so that I know when a collection is genuinely empty.
 **Outcome:** Empty collections render an explicit empty state.
@@ -1587,10 +1587,10 @@ leaving **four**: procedures, functions, triggers and `EXPLAIN`.)* Every `PARTIA
 **Files/modules:** Console panels
 **API:** — · **Data:** — · **UI:** empty states · **Security:** — · **Perf:** —
 **Negative:** indistinguishable empty vs failed
-**G/W/T:** *Given* an empty collection, *When* opened, *Then* an explicit empty state shows.
-**Test plan:** UI check
-**Evidence:** screenshot
-**DoD:** empty distinct from error
+**G/W/T:** *Given* an empty collection, *When* opened, *Then* an explicit empty state shows; *and* a 0-row result set renders the `empty` state rather than a success badge.
+**Test plan:** `ConsoleTaskSuccessTest.staticAssetsExposeRequiredAffordances` (state vocabulary includes `empty`)
+**Evidence:** `../release-audit/74-console-task-success-evidence.md`
+**DoD:** empty distinct from error and from success
 **Release impact:** UX
 
 #### US-096 · Responsive Console layout
@@ -1656,6 +1656,130 @@ leaving **four**: procedures, functions, triggers and `EXPLAIN`.)* Every `PARTIA
 **Release impact:** accessibility gate
 
 ---
+
+#### US-138 · Always show active engine, database, storage, connection, transaction and security context
+`E7 · P0 · VERIFIED · M`
+**Persona:** P4
+**Story:** As an operator, I want the Console to always state what I am connected to, so that I never act on the wrong engine, database, or durability assumption.
+**Outcome:** A persistent status bar shows engine, active database, storage mode, its durability meaning, connection state, transaction state, and identity.
+**Deps:** US-078
+**Files/modules:** `console/http/JunifyDBServer` (`/api/health` `context` block), `static/index.html` (`#statusbar`), `static/js/console.js` (`pollStatus`)
+**API:** `GET /api/health` → `context{engine, relationalEngine, nosqlEngine, storageMode, durability, database, dataDir, authEnabled, user, activeTransactions, transactionalConsoleWrites, transactionScope}`
+**Data:** read-only · **UI:** status bar · **Security:** identity shown; never invents one · **Perf:** one poll per 10s
+**Negative:** values are guessed in the front end and drift from the server; a memory database implies durability it does not have
+**G/W/T:** *Given* a running server, *When* any panel is open, *Then* the status bar lists all six context items with values read from `/api/health`; *and* an in-memory database states "no durability".
+**Test plan:** `ConsoleTaskSuccessTest.healthExposesOrientationContext`, `.fileEngineReportsDurabilityAndDataDir`, `.activeTransactionsAppearInContext`
+**Evidence:** `../release-audit/74-console-task-success-evidence.md`
+**DoD:** every item is server-sourced; no placeholder text
+**Release impact:** prevents operations against the wrong context
+
+#### US-139 · Explicit state for every action
+`E7 · P0 · VERIFIED · M`
+**Persona:** P4
+**Story:** As an operator, I want every action to end in a stated outcome, so that I can tell success from failure from "nothing happened".
+**Outcome:** Each action resolves to exactly one state: idle, loading, success, empty, validation error, backend error, timeout, permission denied, conflict, rate limited, or recovery required.
+**Deps:** US-094
+**Files/modules:** `static/js/console.js` (`STATES`, `setBadge`, `successOrEmpty`)
+**API:** status codes mapped to states
+**Data:** — · **UI:** badges, banners · **Security:** — · **Perf:** 20s client ceiling turns a stall into a timeout
+**Negative:** a 0-row result rendered as success; a hung request with no state
+**G/W/T:** *Given* a request that returns 0 rows, *When* it completes, *Then* the state is `empty`, not `success`; *and* a request exceeding the ceiling resolves to `timeout`.
+**Test plan:** `ConsoleTaskSuccessTest.failuresAreClassifiable`; asset assertions on the state vocabulary
+**Evidence:** `../release-audit/74-console-task-success-evidence.md`
+**DoD:** no silent failure and no unexplained blank panel
+**Release impact:** diagnosability and trust
+
+#### US-140 · Destructive actions name their target, impact and reversibility
+`E7 · P0 · VERIFIED · M`
+**Persona:** P4
+**Story:** As an operator, I want confirmation before destroying data, so that a mistyped statement cannot silently erase a table.
+**Outcome:** Drop, unqualified DELETE/UPDATE, collection-wide deletion and restore each require a dialog that names the target, states the impact, states reversibility, and states what changed afterwards.
+**Deps:** US-078, US-080
+**Files/modules:** `static/index.html` (`#confirmDialog`), `static/js/console.js` (`confirmAction`, `destructiveReason`)
+**API:** — · **Data:** prevents unintended mutation · **UI:** modal dialog · **Security:** — · **Perf:** —
+**Negative:** `window.confirm` cannot name a target or an impact; a cancelled confirmation deleting anyway
+**G/W/T:** *Given* `DELETE FROM products`, *When* Run is pressed, *Then* a dialog names `products`, states the statement has no WHERE clause, and nothing is sent; *and* choosing Cancel leaves the row count unchanged.
+**Test plan:** `ConsoleTaskSuccessTest.staticAssetsExposeRequiredAffordances` (dialog present; no bare `confirm(` call); live browser journey in the evidence doc
+**Evidence:** `../release-audit/74-console-task-success-evidence.md`
+**DoD:** no destructive path without a named confirmation; cancel is provably a no-op
+**Release impact:** data-loss prevention
+
+#### US-141 · Every error is reportable with a correlation id
+`E7 · P0 · VERIFIED · M`
+**Persona:** P4
+**Story:** As an operator, I want an id I can quote when something fails, so that a report can be matched to a server event.
+**Outcome:** Every response carries `X-Correlation-Id`; every error body repeats that id; the UI shows it with what failed, why, whether data changed, and how to fix it.
+**Deps:** US-093
+**Files/modules:** `console/http/JunifyDBServer` (`sendJson`, `withCorrelationId`), `static/js/console.js` (`errorBanner`)
+**API:** `X-Correlation-Id` request/response header; `correlationId` in error JSON
+**Data:** — · **UI:** error banner · **Security:** no stack traces; a caller-supplied id is echoed for tracing · **Perf:** —
+**Negative:** an opaque "error" with no id and no data-safety answer
+**G/W/T:** *Given* a failing request, *When* it returns, *Then* the header id equals the body id, the UI displays it, and the banner answers "Did data change?".
+**Test plan:** `ConsoleTaskSuccessTest.correlationIdOnSuccessAndFailure`, `.requestedCorrelationIdIsHonoured`
+**Evidence:** `../release-audit/74-console-task-success-evidence.md`
+**DoD:** no failure surface without an id and a data-safety answer
+**Release impact:** supportability
+
+#### US-142 · Run only the selected statement
+`E7 · P2 · VERIFIED · S`
+**Persona:** P4
+**Story:** As an operator, I want to run just the highlighted text, so that I do not re-run a whole scratchpad.
+**Outcome:** Run selection executes the highlighted text only; the shortcut is shown in the UI.
+**Deps:** US-084
+**Files/modules:** `static/index.html` (`#sqlRunSel`), `static/js/console.js` (`runSql(onlySelection)`)
+**API:** `POST /api/sql` · **Data:** may mutate · **UI:** SQL Studio · **Security:** same guardrails as Run · **Perf:** —
+**Negative:** selection silently ignored so the whole editor runs
+**G/W/T:** *Given* two statements with one highlighted, *When* Run selection is pressed, *Then* only the highlighted text is sent.
+**Test plan:** live browser journey (evidence doc); Control+Shift+Enter binding asserted in assets
+**Evidence:** `../release-audit/74-console-task-success-evidence.md`
+**DoD:** selection is honoured, or the full editor is run only when nothing is selected
+**Release impact:** usability
+
+#### US-143 · Cancel a running query
+`E7 · P1 · VERIFIED · S`
+**Persona:** P4
+**Story:** As an operator, I want to cancel a long query, so that a mistake does not block the panel.
+**Outcome:** A Cancel control appears while a query runs; cancelling reports a distinguishable cancelled state and states that a server-side statement may still complete.
+**Deps:** US-084, US-139
+**Files/modules:** `static/index.html` (`#sqlCancel`), `static/js/console.js` (AbortController in `runSql`)
+**API:** `POST /api/sql` with an aborted request · **Data:** possibly unchanged server-side — stated · **UI:** cancel button · **Security:** — · **Perf:** frees the UI
+**Negative:** a cancel that reports success; a cancel that claims nothing happened
+**G/W/T:** *Given* a running statement, *When* Cancel is pressed, *Then* the state is "cancelled" and the panel does not claim the statement was undone.
+**Test plan:** `ConsoleTaskSuccessTest.staticAssetsExposeRequiredAffordances` (control present); live journey for the cancelled/recovery wording
+**Evidence:** `../release-audit/74-console-task-success-evidence.md`
+**DoD:** cancellation is explicit and honest about server-side uncertainty
+**Release impact:** control over long operations
+
+#### US-144 · Export SQL results as CSV and JSON
+`E7 · P2 · VERIFIED · S`
+**Persona:** P4
+**Story:** As an operator, I want to export a result set, so that I can share or analyse it outside the Console.
+**Outcome:** The last result set downloads as CSV or JSON without re-running the query; export is offered only when there is something to export.
+**Deps:** US-085
+**Files/modules:** `static/index.html` (`#sqlExportCsv`, `#sqlExportJson`), `static/js/console.js` (`exportSql`, `csvCell`)
+**API:** — · **Data:** read-only · **UI:** export buttons · **Security:** escaping prevents CSV formula/quote breakage · **Perf:** client-side only
+**Negative:** an export button that produces an empty or misaligned file
+**G/W/T:** *Given* a 4-row result, *When* Export CSV is pressed, *Then* the file has 4 data rows plus a header, with values quoted where needed.
+**Test plan:** client-side check in the evidence doc (deliberately client-only: no server round trip to regress)
+**Evidence:** `../release-audit/74-console-task-success-evidence.md`
+**DoD:** export matches the rendered result set
+**Release impact:** interoperability
+
+#### US-145 · SQL editor assistance (highlighting, autocomplete, formatting, saved queries, tabs, explain plan)
+`E7 · P3 · NOT IMPLEMENTED · L`
+**Persona:** P4
+**Story:** As an operator, I want editor assistance, so that writing SQL is faster and errors are caught earlier.
+**Outcome:** Not present: syntax highlighting, autocomplete, SQL formatting, named saved-query library, multiple editor tabs, and `EXPLAIN`.
+**Deps:** US-084, US-044
+**Files/modules:** would touch `static/js/console.js` and a server-side plan endpoint
+**API:** `EXPLAIN` needs an engine plan API that does not exist
+**Data:** — · **UI:** SQL Studio · **Security:** — · **Perf:** —
+**Negative:** advertising assistance that does not work — the failure this story exists to prevent
+**G/W/T:** *Given* the SQL Studio, *When* inspected, *Then* these affordances are absent and are listed as limitations rather than implied by the UI.
+**Test plan:** none — no capability to test
+**Evidence:** documented absence in `../release-audit/74-console-task-success-evidence.md`
+**DoD:** remains on the published limitation list until implemented
+**Release impact:** must not be claimed as present
 
 ## Epic E8 — Website, branding & accessibility
 
