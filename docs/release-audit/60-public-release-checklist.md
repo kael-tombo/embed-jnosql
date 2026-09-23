@@ -16,6 +16,7 @@ The older `1.0.0` framing in the checklist lines below is preserved as history.
   - The earlier 2026-09-21 demos run also reported 43/43, which is exactly why the run was repeated before the tag: the older suite passed while a real catalog defect (R-59) was present but unexercised. Re-running from a clean install is the check that keeps this item meaningful
 - [x] **Reproducibility gate in CI** (2026-09-22): `scripts/reproducibility-check.sh` builds twice from clean and requires byte-identical artifacts, wired in as the CI `reproducibility` job; verified PASS (`sha256 e7fe3558…93f18`) and falsified to FAIL with the timestamp property removed
 - [x] **Core suite re-run after the R-61 change: 801/801** (+4/4 CLI), contract gate PASS on FILE, LSM_TREE and B_TREE (now including three CORS-policy assertions), auth gate PASS, reproducibility gate PASS (identical jar hashes across two clean builds)
+- [x] **Core suite after R-62/R-64/R-65/R-68: 821/821** (+4/4 CLI); contract gate PASS on FILE, LSM_TREE and B_TREE **with a new restart block** that creates an empty table, restarts the server on the same data dir and requires the table, its `0`-row `SELECT`, the row counts and the documents endpoint to agree afterwards — the check that found **R-68** (B_TREE lost every record written since startup, `.btree/` empty on disk) and that falsifies R-62/R-65 at the consumer level (pre-fix jar: `the empty table vanished across the restart: {"collections":[]}`); auth gate PASS; reproducibility gate PASS (`sha256 7c8b691e…`, 3,119,376 bytes); four defects fixed, each with pre-fix falsification and live verification (register R-62/R-64/R-65/R-68)
 - [x] CHANGELOG amended with audit fixes (P0-3) — committed `ed6da57`
 - [x] CI Docker job removed; benchmark job mainClass fixed (P0-4) — committed `ed6da57`
 
@@ -36,7 +37,7 @@ The older `1.0.0` framing in the checklist lines below is preserved as history.
 ### Release Mechanics
 - [x] Repo litter removed ($null/server.*)
 - [x] `mvnw` shell script (P1-3) — done 2026-09-21, round 1 (smoke-tested; CI dogfoods it)
-- [ ] GitHub Release: tag **`v0.9.0`** and attach the core jar — **pending**. The earlier `v1.0.0` draft note here is unverified in this environment and is superseded by the canonical decision; the current artifact is `target/junify-db-core-1.0.0.jar` at **3,113,904 bytes (3.11 MB)**, size-gated (the shade step replaces the plain jar in place). The earlier "2.89 MB" figure was stale
+- [ ] GitHub Release: tag **`v0.9.0`** and attach the core jar — **pending**. The earlier `v1.0.0` draft note here is unverified in this environment and is superseded by the canonical decision; the current artifact is `target/junify-db-core-1.0.0.jar` at **3,119,376 bytes (3.12 MB)** (`sha256 7c8b691e…`), size-gated (the shade step replaces the plain jar in place). The earlier "2.89 MB" and "3.11 MB" figures were stale
 - [x] Recommended version: **`v0.9.0`** per `final-go-no-go-decision.md` (was `1.0.0` / 47-VER-02 — revised because a 1.0 database is expected to ship JDBC and constraint enforcement, which this build does not)
 - [ ] Maven Central: blocked until 46 items (P2-1) — GitHub-first release is valid without it
 

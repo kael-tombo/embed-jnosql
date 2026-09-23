@@ -8,9 +8,10 @@ Clean, discoverable public API; SPI changes backward compatible; 1.0.0 as semver
 
 ## Current Implementation
 - Facade: `JunifyDB.inMemory()/temporary()/embed().build()/create(config)`, model accessors, `sql()`, `beginTransaction()`, console lifecycle.
-- SPI: `StorageEngine` (+ new default method `collectionNames()`), `WriteAheadLog`, `FileEnginePool`.
+- SPI: `StorageEngine` (+ new default methods `collectionNames()` and, from the R-62 fix, `ensureCollection(String)`), `WriteAheadLog`, `FileEnginePool`.
+  - **`ensureCollection(String)` (R-62, 2026-09-23):** called when a collection is *created* (SQL DDL, the console's create route, repository/annotation materialisation) so its existence is durable even with no records. Default: no-op returning `false`, so an existing external `StorageEngine` implementation keeps compiling and keeps its old semantics. Implementations: FILE writes an empty `{}` snapshot; LSM_TREE/B_TREE record the name in a `.collections` registry behind an atomic move (their identity is otherwise derived from `collection:key` records, so an empty collection has no key); IN_MEMORY lists it for the process lifetime and promises nothing beyond it.
 - Annotations adapters, `EntityQuery`, reactive API, JPA bridge.
-- Compatibility of audit changes: `MVCCManager.commit` 2-arg overload retained (4 pre-existing direct callers compile unchanged); `StorageEngine.collectionNames()` is a default method (external implementors unaffected); `Transaction` signature unchanged.
+- Compatibility of audit changes: `MVCCManager.commit` 2-arg overload retained (4 pre-existing direct callers compile unchanged); `StorageEngine.collectionNames()` and `ensureCollection()` are default methods (external implementors unaffected); `Transaction` signature unchanged; `BTreeEngine(Path)` and `BTreeEngine(Path,int)` are retained alongside the new 3-arg constructor that takes a flush interval (R-68).
 
 ## Validation Performed
 Full suite green post-change (677 tests) — including `DeepTransactionTest` which calls `mvcc.commit` directly; compile success of pre-fix-API test subset against post-fix code (overload intact).

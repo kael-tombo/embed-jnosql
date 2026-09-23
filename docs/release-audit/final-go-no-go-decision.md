@@ -87,15 +87,21 @@ DBMS.**
   database" and the code), primary/foreign/unique/check/not-null **constraints**, sequences,
   identity columns, views, stored procedures, functions, triggers, and any query planner or
   `EXPLAIN` (execution is interpretation).
-- **Durability caveat, measured (R-62):** `CREATE TABLE` reports success for a table whose
-  *existence* is not durable — an empty table leaves no collection on disk and disappears on
-  restart — while **rows are safe** (an `INSERT` persists the collection and survives the same
-  restart). The console's SQL workspace therefore says "success" for state that will not
-  persist; the fix needs a storage-SPI hook and is deferred with that decision recorded (B-7).
+- **Durability of DDL, measured and fixed (R-62):** `CREATE TABLE` used to report success for
+  a table whose *existence* was not durable — an empty table left no collection on disk and
+  disappeared on restart (`SELECT` → *"Table does not exist"*) while **rows were always safe**.
+  The console's SQL workspace was telling operators "success" for state that would not survive.
+  Fixed through a storage-SPI hook (`ensureCollection`, default no-op) honoured by all four
+  engines, and verified live on FILE, LSM_TREE and B_TREE: an empty table now has a snapshot or
+  registry entry on disk, survives a restart, and answers `rowCount:0`.
 - **Missing capability, not a false claim (R-63):** no collection-level delete exists
   (`DELETE /api/collections/{name}` → 405 for existing collections) and `DROP TABLE` empties a
   table without removing the collection, so catalogs can only be pruned outside the API. The
   REST documentation and the console UI claim neither, so no user-visible promise is broken.
+- **Read paths, measured and fixed (R-64):** `GET /api/indexes/{unknown}` used to **create**
+  the collection it was asked about (`200 {"indexes":{}}` plus a permanent catalog entry), so a
+  mistyped name in the console's Indexes panel added junk collections. Reads and DELETEs on an
+  unknown collection are now 404 with the catalog untouched; adding an index stays a write.
 - **Positioning:** valuable for embedded and admin workloads and for SQL-shaped querying of
   documents; must not be advertised as constraint-enforcing or JDBC-compatible.
 
@@ -110,10 +116,21 @@ surface were found and fixed (R-31…R-53), including query operators that silen
 wrong or over-permissive results, expired documents readable through every consumer, vector
 indexes lost on restart, and collections invisible after restart on LSM_TREE/B_TREE.
 
+**Fixed this round:** **R-65** — on `LSM_TREE` a row was read twice after a restart and a
+row deleted before the restart came back, because reads concatenated the memtable with the
+SSTables instead of resolving one newest version per key (measured: 25 records → 50, one row →
+2, a delete resurrected as `[{keep},{gone},{keep}]`, `count()` disagreeing with `SELECT`), and
+`recoverFromWal()` replayed the entire never-truncated log at every boot. **R-68** — `B_TREE`
+wrote its index only on an explicit flush, and in the server path nothing did, so terminating
+the server lost **every** record written since startup (found by the new restart block in the
+contract gate: `.btree/` empty on disk, row count 1 → 0 across a restart). It now runs the same
+periodic flusher as FILE.
+
 **Honest limits:** vector indexing is an auxiliary capability, **not a first-class vector
-database model** — it must not be marketed as one. `B_TREE` has no WAL (snapshot-on-flush;
-writes since the last flush are lost on hard kill) — registered and documented as D-02, and
-verified to behave exactly as documented.
+database model** — it must not be marketed as one. `B_TREE` still has **no WAL**: durability is
+"as of the last flush", now an actual background flush (default 1 s, visible in `stats()`) plus
+`close()`, so a hard kill can lose up to one interval of writes — documented as D-02 and, since
+R-68, finally true of the running server rather than only of the engine class.
 
 ## Console Verdict
 
@@ -160,7 +177,7 @@ identical semantics. Audit detail: `44-brand-and-design-system.md`, `45-website-
 
 ## Footprint Verdict
 
-**PASS.** Shaded core jar **3,113,904 bytes (3.11 MB)** plus **three** mandatory runtime
+**PASS.** Shaded core jar **3,119,376 bytes (3.12 MB)** plus **three** mandatory runtime
 dependencies (`jackson-databind`, `jackson-datatype-jsr310`, `slf4j-api`) — combined runtime
 **under 5 MB**.
 
@@ -171,8 +188,9 @@ The <5 MB claim must always be published with this scope attached.
 
 ## Test-Quality Verdict
 
-**PASS.** **795/795** core, **4/4** CLI, **4/4** cross-engine demo, both Console gates PASS on
-three engines, and CI runs the contract gate across FILE/LSM_TREE/B_TREE.
+**PASS.** **821/821** core, **4/4** CLI, **43/43** across nine demos, both Console gates PASS on
+three engines (each contract-gate run now includes a **restart-durability block**), and CI runs
+the contract gate across FILE/LSM_TREE/B_TREE.
 
 Tests are not trusted merely for existing: every fix in this session was **falsified** — its
 new tests were executed against the pre-fix commit in a throwaway worktree and required to
@@ -224,6 +242,8 @@ not a documented limitation.
 |---|---|---|
 | R-13 | Maven Central credentials absent | **External** — GitHub-first release instead (ADR-007); Central availability unclaimed |
 | R-20 | Mixed-writer limitation | **Documented fundamental limitation** of the storage design; stated in README and doc 16 |
+| R-66 | The WAL is never truncated and only `wal.log` is replayed (`truncate()` has zero callers; rotation archives) | **Not a blocker, needs measurement** — unbounded growth is code-evident, a lost-tail window after rotation is `NOT VERIFIED` and requires a kill-during-rotation test before any claim is made |
+| R-67 | `--sync`/`--async` are inverted in effect (the flag is passed to engines as `asyncEnabled`), and `LSM_TREE`/`B_TREE` ignore it while the banner prints one meaning for all | **Not a blocker, needs a decision** — the *name and banner* overstate what the code does; changing `--sync` to mean flush-on-write is a durability-contract change per engine. The limitation must be stated on the release page |
 
 ## Required Fixes (before pushing the release tag)
 
@@ -231,9 +251,9 @@ not a documented limitation.
    no old branding or false claim remains live.
 2. **State the limitation list** on the release page and in the README: no JDBC driver, no
    constraints, no sequences/views/procedures/triggers, no planner; SQL is a query layer over
-   the document store; an empty `CREATE TABLE` is session-scoped until it has rows (R-62);
-   there is no collection-level delete and `DROP TABLE` only empties (R-63); the <5 MB scope;
-   `B_TREE` has no WAL; vectors are an auxiliary index.
+   the document store; there is no collection-level delete and `DROP TABLE` only empties (R-63);
+   the <5 MB scope; `B_TREE` has no WAL (durability = last background flush, default 1 s);
+   `--sync`/`--async` do not switch flush-on-write (R-67); vectors are an auxiliary index.
 3. **Tag `v0.9.0`** and attach the shaded jar, sources, and javadoc to the GitHub release.
 
 ## Deferred Work (safe post-release)
@@ -241,7 +261,8 @@ not a documented limitation.
 Splitting `junify-db-core` into per-engine artifacts (ADR-001, ADR-002) · a real JDBC driver ·
 constraint enforcement (PK/FK/unique/check/not-null) · sequences, views, procedures, and
 triggers · a query planner and `EXPLAIN` · persisting HNSW indexes for `IN_MEMORY` decision
-review · WAL for `B_TREE` (D-02) · Maven Central publication once credentials exist (R-13) ·
+review · WAL for `B_TREE` (D-02) · the `--sync`/`--async` semantics decision and a crash test
+for the untruncated WAL (R-67, R-66) · Maven Central publication once credentials exist (R-13) ·
 a stress/soak benchmark programme (doc 24).
 
 ## Documentation-Integrity Verdict
@@ -263,7 +284,7 @@ execution backs it — that rule now applies to the corpus itself.
 | Baseline snapshot + validation | `docs/release-audit/baseline/` |
 | Deep codebase assessment | `00-current-codebase-assessment.md` |
 | Architecture decisions | `67-architecture-decision-records.md` |
-| Defect register (R-31…R-63; every fix falsified against its pre-fix commit) | `53-defect-register.md` |
+| Defect register (R-31…R-68; every fix falsified against its pre-fix commit) | `53-defect-register.md` |
 | Release-blocker register (only R-13 + R-20 open, both non-blocking) | `54-release-blocker-register.md` |
 | Maven Central evidence (MC-02 still `NOT VERIFIED`; MC-04 records the false-claim correction) | `46-maven-central-readiness.md` |
 | Release checklist at `v0.9.0` | `60-public-release-checklist.md` |
@@ -274,7 +295,7 @@ execution backs it — that rule now applies to the corpus itself.
 | Browser network traces | `docs/browser-testing/evidence/network/` |
 | Footprint bytes | `02-size-and-footprint-audit.md` |
 | Gates | `scripts/console-contract-gate.sh`, `scripts/console-auth-gate.sh`, `.github/workflows/ci.yml` |
-| Live verification premise | 801 + 4 + 4 green; gates PASS on FILE, LSM_TREE, B_TREE (CORS assertions included); reproducibility gate PASS; 43/43 demo tests on nine demos |
+| Live verification premise | 821 + 4 + 43 green; gates PASS on FILE, LSM_TREE, B_TREE (CORS assertions plus a restart-durability block included); reproducibility gate PASS; 43/43 demo tests on nine demos |
 | R-61 before/after browser proof | hostile page on `127.0.0.1:8099` read the catalog pre-fix (`READ SUCCESS`) and is `BLOCKED` post-fix |
 | R-62 measured repro (empty table not durable; rows survive) | live `--sync` FILE server create → restart → `SELECT` |
 
@@ -292,7 +313,7 @@ execution backs it — that rule now applies to the corpus itself.
 | Procedures/functions/triggers implemented or explicitly unsupported | ✅ explicitly unsupported |
 | NoSQL engine independently validated | ✅ 14 defects fixed, live-verified |
 | Core footprint under 5 MB | ✅ 3.11 MB + 3 mandatory deps |
-| Tests and demos pass from a clean checkout | ✅ 801 + 4 + 4 (43/43 across nine demos) |
+| Tests and demos pass from a clean checkout | ✅ 821 + 4 + 43 (nine demos) |
 | Console browser-tested | ✅ 22 routes, gates on 3 engines |
 | Website accurately reflects the product | ✅ after corrections — **remote push still pending** |
 | Website and Console share the yellow/white identity | ✅ |

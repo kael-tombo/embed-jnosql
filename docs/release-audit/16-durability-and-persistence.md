@@ -11,7 +11,7 @@ Each engine's persistence behavior is accurately documented; no engine claims di
 |---|---|---|---|
 | IN_MEMORY | none | none | none (by design) |
 | FILE | `<collection>.json` snapshots + `.wal/wal.log` | fsync'd WAL per write; async/sync snapshot flush | all acknowledged writes recoverable |
-| B_TREE | snapshot file(s) | snapshot on flush (no WAL) | writes since last flush lost — documented limitation |
+| B_TREE | snapshot file(s) | snapshot on the background flusher (default 1s) **or** an explicit flush/close (no WAL) | writes since the last flush lost — documented limitation, now actually reachable (**R-68**: the flusher did not exist, so in the server path nothing was ever written) |
 | LSM_TREE | `.sst/*.dat` + `.wal/wal.log` | fsync'd WAL per write; memtable flush | all acknowledged writes recoverable |
 
 ## Validation Performed
@@ -24,7 +24,7 @@ Engine stats endpoints (`/api/engines`), FileEngine restart in live preview, LSM
 | ID | Status | Severity | Description |
 |---|---|---|---|
 | D-01 | CONFIRMED (fixed) | Critical | FILE and LSM durability contracts were decorative pre-fix (see 15). Now real. |
-| D-02 | CONFIRMED | Medium | B_TREE has no WAL: durability = last flush. README comparison table now says "B-Tree is heap-resident" and 17/18 document per-mode guarantees. |
+| D-02 | CONFIRMED (revised 2026-09-23) | Medium | B_TREE has no WAL: durability = last flush. README comparison table now says "B-Tree is heap-resident" and 17/18 document per-mode guarantees. **R-68 correction:** "the last flush" was unreachable in practice — nothing flushed, so a terminated server lost everything since startup. `BTreeEngine` now runs the same 1s background flusher as FILE, so the documented guarantee is finally the one that holds; the flusher interval is visible in `stats()`. |
 | D-03 | CONFIRMED | Medium | README's "B-Tree page store" implication (handles >RAM datasets) is false for all engines: all are heap-resident. Claim removed/corrected. |
 | D-04 | ACCEPTABLE | Low | LSM compaction ordering corrected in this audit (newest-wins); regression covered indirectly by `LSMTreeEngineTest` + ordering design note in code. |
 
