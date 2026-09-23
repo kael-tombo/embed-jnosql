@@ -132,6 +132,17 @@ public class JunifyDB implements Closeable {
             eventBus.emit(EventBus.EventType.COLLECTION_CREATED, n);
             var collection = new DocumentCollection(n, engine, eventBus, metrics, null, config.dataDir());
             collection.loadIndexes();
+            // R-62: a collection's existence is durable from the moment it is created, so
+            // `CREATE TABLE t (id INT)` is still there after a restart even though it holds
+            // no rows. Engines with no empty-collection identity (see the SPI contract) are
+            // reported by ensureCollection() returning false, which costs the collection its
+            // durability but is stated in the defect register rather than hidden.
+            try {
+                engine.ensureCollection(n);
+            } catch (Exception e) {
+                System.err.println("[JunifyDB] could not persist the existence of collection '"
+                        + n + "': " + e.getMessage());
+            }
             return collection;
         });
         metrics.updateCollectionSize(name, col.count());

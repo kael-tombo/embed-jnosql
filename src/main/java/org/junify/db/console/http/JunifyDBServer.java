@@ -2267,6 +2267,20 @@ public class JunifyDBServer {
                 return;
             }
             var collectionName = parts[3];
+
+            // R-64: `documentCollection(name)` auto-creates, so listing or dropping an index
+            // on a mistyped name created the collection — `GET /api/indexes/typo` returned
+            // 200 {} and left `typo` in the catalog for good. That is R-55's rule (resolving
+            // a collection is not a write) applied to the index routes, and it matters more
+            // now that a created collection's existence is durable (R-62). Adding an index
+            // (POST) remains a write and may still auto-create, matching the documented
+            // schemaless workflow.
+            boolean addsIndex = "POST".equals(exchange.getRequestMethod());
+            if (!addsIndex && !db.getCollectionNames().contains(collectionName)) {
+                sendJson(exchange, 404, Map.of("error", "Collection not found: " + collectionName));
+                return;
+            }
+
             var collection = db.documentCollection(collectionName);
             
             if ("GET".equals(exchange.getRequestMethod())) {

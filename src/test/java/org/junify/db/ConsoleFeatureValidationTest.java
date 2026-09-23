@@ -342,6 +342,13 @@ public class ConsoleFeatureValidationTest {
     void testIndexesInspector() throws Exception {
         loginAdmin();
 
+        // R-64: listing indexes no longer creates the collection it is asked about, so seed
+        // a real collection. Asking about a name that does not exist is now a 404; before the
+        // fix this call auto-created `products` and returned 200 {}, which is why the test
+        // passed without one.
+        db.documentCollection("products").insert(
+                org.junify.db.nosql.document.Document.of("name", "Keyboard"));
+
         Response idxResp = execute("GET", "/api/indexes/products", null, null, cookie);
         assertEquals(200, idxResp.code);
         System.out.println("[TEST EVIDENCE] Indexes inspector verified: " + idxResp.body);

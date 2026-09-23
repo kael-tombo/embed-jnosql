@@ -34,6 +34,8 @@ public class LSMTreeEngine implements StorageEngine {
     private final List<SSTable> sstables;
     private final long maxSstableSize;
     private final BloomFilter bloomFilter;
+    /** R-62: persisted identity for collections that hold no records yet. */
+    private final CollectionRegistry collectionRegistry;
     private volatile boolean closed;
 
     public LSMTreeEngine(Path dataDir) {
@@ -59,6 +61,7 @@ public class LSMTreeEngine implements StorageEngine {
         this.scheduler = Executors.newSingleThreadScheduledExecutor();
         this.closed = false;
         this.bloomFilter = new BloomFilter(0.01, 100000);
+        this.collectionRegistry = new CollectionRegistry(dataDir);
 
         try {
             Files.createDirectories(sstDir);
@@ -185,33 +188,40 @@ public class LSMTreeEngine implements StorageEngine {
     public List<String> scan(String collection) {
         checkOpen();
         String prefix = collection + ":";
-        List<String> results = new ArrayList<>();
-        
+
+        // R-65: each key is read once, at its newest version, across the memtable and every
+        // SSTable. The previous implementation concatenated the memtable's values with the
+        // newest SSTable value per key, so a key present in both was returned twice, and a
+        // memtable tombstone failed to shadow the SSTable value — resurrecting deleted rows.
+        // Both were reachable in practice because WAL replay re-applies every historical PUT
+        // and DELETE to the memtable, so after a restart a single row was read twice by
+        // findAll()/SELECT while count() (which resolves through keys()) still reported one.
+        var resolved = new java.util.LinkedHashMap<String, String>();
+        var decided = new java.util.HashSet<String>();
+
         memtableLock.readLock().lock();
         try {
             for (var entry : memtable.entrySet()) {
-                if (entry.getKey().startsWith(prefix) && !isTombstone(entry.getValue())) {
-                    results.add(entry.getValue());
+                if (!entry.getKey().startsWith(prefix) || !decided.add(entry.getKey())) continue;
+                if (!isTombstone(entry.getValue())) {
+                    resolved.put(entry.getKey(), entry.getValue());
                 }
             }
         } finally {
             memtableLock.readLock().unlock();
         }
-        
-        // Newest-wins across SSTables: iterate newest -> oldest and keep the
-        // first value seen for each composite key.
+
         var tableSnapshot = new ArrayList<>(sstables);
-        var newestFirst = new java.util.LinkedHashMap<String, String>();
         for (int i = tableSnapshot.size() - 1; i >= 0; i--) {
             for (var e : tableSnapshot.get(i).data.entrySet()) {
-                if (e.getKey().startsWith(prefix) && !isTombstone(e.getValue())) {
-                    newestFirst.putIfAbsent(e.getKey(), e.getValue());
+                if (!e.getKey().startsWith(prefix) || !decided.add(e.getKey())) continue;
+                if (!isTombstone(e.getValue())) {
+                    resolved.put(e.getKey(), e.getValue());
                 }
             }
         }
-        results.addAll(newestFirst.values());
-        
-        return results;
+
+        return new ArrayList<>(resolved.values());
     }
 
     @Override
@@ -223,27 +233,41 @@ public class LSMTreeEngine implements StorageEngine {
     public Set<String> keys(String collection) {
         checkOpen();
         String prefix = collection + ":";
-        Set<String> keys = new HashSet<>();
-        
+        Set<String> keys = new java.util.LinkedHashSet<>();
+
+        // R-65: the newest version of each key decides whether it exists. A memtable
+        // tombstone (including one replayed from the WAL) must shadow the same key's value
+        // in an SSTable, otherwise a deleted record reappears in keys()/count() after a
+        // restart — the same layered-resolution defect fixed in scan().
+        var decided = new java.util.HashSet<String>();
+
         memtableLock.readLock().lock();
         try {
             for (var entry : memtable.entrySet()) {
-                if (entry.getKey().startsWith(prefix) && !isTombstone(entry.getValue())) {
+                if (!entry.getKey().startsWith(prefix) || !decided.add(entry.getKey())) continue;
+                if (!isTombstone(entry.getValue())) {
                     keys.add(extractKey(entry.getKey()));
                 }
             }
         } finally {
             memtableLock.readLock().unlock();
         }
-        
-        // SSTable.keys(prefix) returns raw composite keys ("collection:key");
-        // extract the logical key so the union with memtable keys matches.
-        for (SSTable sstable : sstables) {
-            for (String composite : sstable.keys(prefix)) {
-                keys.add(extractKey(composite));
+
+        // Newest table first, so the first version seen for a key decides its existence.
+        // Iterate the raw entries rather than SSTable.keys(prefix): that helper already
+        // hides tombstones, which would stop a newer tombstone from shadowing an older
+        // value and let the value resurface. `data` holds raw composite keys
+        // ("collection:key"), so the logical key is extracted for the result set.
+        var tableSnapshot = new ArrayList<>(sstables);
+        for (int i = tableSnapshot.size() - 1; i >= 0; i--) {
+            for (var e : tableSnapshot.get(i).data.entrySet()) {
+                if (!e.getKey().startsWith(prefix) || !decided.add(e.getKey())) continue;
+                if (!isTombstone(e.getValue())) {
+                    keys.add(extractKey(e.getKey()));
+                }
             }
         }
-        
+
         return keys;
     }
 
@@ -273,7 +297,23 @@ public class LSMTreeEngine implements StorageEngine {
             }
         }
 
+        // R-62: a collection created with no records has no key to derive a name from,
+        // so its existence is recorded separately and unioned in here.
+        collections.addAll(collectionRegistry.names());
+
         return collections;
+    }
+
+    /**
+     * R-62: records the collection's existence so an empty collection survives a restart.
+     * LSM_TREE addresses data by {@code collection:key}, so a collection with no records is
+     * otherwise invisible to {@link #collections()} after the process exits.
+     */
+    @Override
+    public boolean ensureCollection(String collection) {
+        if (collection == null || collection.isBlank()) return false;
+        collectionRegistry.mark(collection);
+        return true;
     }
 
     /** Inverse of {@link #compositeKey(String, String)}: the part before the first ':'. */

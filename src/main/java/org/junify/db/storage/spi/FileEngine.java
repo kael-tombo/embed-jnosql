@@ -166,6 +166,26 @@ public class FileEngine implements StorageEngine {
         return col != null ? Set.copyOf(col.keySet()) : Set.of();
     }
 
+    /**
+     * R-62: an empty collection gets its own (empty) snapshot file, so
+     * {@code CREATE TABLE t (id INT)} survives a restart instead of vanishing.
+     *
+     * <p>The engine writes one {@code <collection>.json} per collection in {@code store},
+     * and {@code loadAll()} rediscovers collections from those files — so registering the
+     * collection here is what makes an empty table durable. {@code dirty} is set in async
+     * mode because the periodic flusher returns early when nothing is dirty, which is
+     * exactly how an empty collection would otherwise be skipped.</p>
+     */
+    @Override
+    public boolean ensureCollection(String collection) {
+        if (collection == null || collection.isBlank()) return false;
+        store.computeIfAbsent(collection, k -> new ConcurrentHashMap<>());
+        if (asyncEnabled) {
+            dirty.set(true);
+        }
+        return true;
+    }
+
     @Override
     public void flush() {
         if (asyncEnabled) {

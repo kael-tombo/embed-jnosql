@@ -89,8 +89,12 @@ class EngineRestartDiscoveryTest {
     }
 
     @Test
-    @DisplayName("R-53: a collection that exists only as an auto-created empty (no docs) does not materialize")
-    void emptyCollectionDoesNotMaterialize() {
+    @DisplayName("R-62: a collection that exists only as a created empty (no docs) still materializes")
+    void emptyCollectionMaterializes() {
+        // This assertion was previously inverted: it asserted that an empty collection left
+        // "no engine-side trace to discover", which was the R-62 defect stated as a contract.
+        // A created collection is now durable on every persistent engine (`CREATE TABLE t`
+        // used to answer success and then vanish on restart), so it must be rediscovered here.
         JunifyDBConfig config = JunifyDBConfig.builder()
                 .storageEngine(JunifyDBConfig.StorageEngineType.LSM_TREE)
                 .dataDir(tempDir.resolve("lsempty"))
@@ -99,8 +103,11 @@ class EngineRestartDiscoveryTest {
             db.documentCollection("never_written");
         }
         try (var db = JunifyDB.create(config)) {
-            assertFalse(db.getCollectionNames().contains("never_written"),
-                    "a collection with zero records leaves no engine-side trace to discover");
+            assertTrue(db.getCollectionNames().contains("never_written"),
+                    "a created collection with zero records must be rediscovered after a restart, "
+                            + "found: " + db.getCollectionNames());
+            assertEquals(0, db.documentCollection("never_written").count(),
+                    "it comes back empty, not repopulated");
         }
     }
 }

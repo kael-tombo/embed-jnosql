@@ -101,6 +101,18 @@ public class InMemoryEngine implements StorageEngine {
         return Set.copyOf(store.keySet());
     }
 
+    /**
+     * R-62: an empty collection is listed for the lifetime of the process, so backup and
+     * catalog surfaces see it. An in-memory engine makes no durability claim, so nothing
+     * is promised beyond that (see {@link StorageEngine#ensureCollection(String)}).
+     */
+    @Override
+    public boolean ensureCollection(String collection) {
+        if (collection == null || collection.isBlank()) return false;
+        store.computeIfAbsent(collection, k -> new ConcurrentHashMap<>());
+        return true;
+    }
+
     @Override
     public void flush() {
     }
