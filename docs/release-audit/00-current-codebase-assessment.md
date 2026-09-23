@@ -142,7 +142,8 @@ the JDBC driver as *not included*).
 | Aggregations, expressions, CAST | PARTIALLY VERIFIED | doc 08 |
 | Transactions / savepoints over SQL | PARTIALLY VERIFIED | shares `core` transaction machinery; doc 13 |
 | **JDBC driver** | **NOT IMPLEMENTED** | **zero** occurrences of `java.sql.Driver` in main sources |
-| Primary keys / foreign keys / unique / check / not-null constraints | NOT IMPLEMENTED | doc 05 |
+| Primary key / unique / not-null constraints | **ENFORCED** (2026-09-23, R-74; inline + table-level, durable) | doc 71 |
+| Foreign key / check constraints | NOT IMPLEMENTED | doc 05 |
 | Indexes (SQL-managed, `CREATE INDEX`) | NOT IMPLEMENTED (probe-level indexes exist) | doc 12 |
 | Sequences, identity columns, views, procedures, functions, triggers | NOT IMPLEMENTED | parser has no keywords for them |
 | Query planner / cost estimation / EXPLAIN | NOT IMPLEMENTED | execution is interpretation, not planning |

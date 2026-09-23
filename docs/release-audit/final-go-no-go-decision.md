@@ -4,6 +4,24 @@
 `63-final-go-no-go-decision.md` (the round-3 internal verdict, which referenced v1.0.0) —
 see ADR-008.
 **Date:** 2026-09-22
+**Re-verified:** 2026-09-23 — see `70-final-verification-round-2026-09-23.md`.
+
+The decision below stands. On 2026-09-23 the release-critical gates were re-run on commit
+`81a511c`: **`mvn clean test` → 832/832 green, 0 skipped**, shaded jar
+**3,122,887 bytes (3.12 MB)**, line coverage **75.5%**, and a **live embedded-server probe**
+(health, metrics, Console, document round-trip, wildcard-CORS check) all passed. The
+deliverables `docs/product/PRODUCT_BLUEPRINT.md` and `docs/product/USER_STORY_MAP.md`
+(**137** stories / 10 epics) were added. Nothing was discarded; the concurrent session's
+modified files were left untouched. No gate changed direction.
+
+**Same day, after that re-run, one release-blocking limitation was removed (R-74).** Column
+constraints are now declared and enforced: **`PRIMARY KEY`, `UNIQUE` and `NOT NULL`** (inline
+and table-level) are parsed, enforced on INSERT/UPDATE, and durable across restart on
+FILE/LSM_TREE/B_TREE. The suite is now **846/846**, coverage **76.1%**, jar **3,133,120 bytes**.
+The `NOT IMPLEMENTED` limitation set shrinks from 8 to 7 items (foreign keys, `CHECK`,
+procedures/functions/triggers, JDBC, `EXPLAIN` remain). Full evidence:
+`71-constraint-enforcement-evidence.md`; the `NOT IMPLEMENTED` claim in the checklist below is
+superseded for PK/UNIQUE/NOT NULL only.
 
 ---
 
@@ -84,9 +102,15 @@ DBMS.**
   reads no longer create collections, `DROP` on a missing table errors (404) instead of
   reporting false success (R-48, R-49).
 - **Not implemented:** **JDBC driver** (none exists — the largest gap between the words "SQL
-  database" and the code), primary/foreign/unique/check/not-null **constraints**, sequences,
+  database" and the code), **foreign-key and `CHECK` constraints**, sequences,
   identity columns, views, stored procedures, functions, triggers, and any query planner or
   `EXPLAIN` (execution is interpretation).
+- **Constraints, added 2026-09-23 (R-74):** inline and table-level **PRIMARY KEY**, **UNIQUE**
+  and **NOT NULL** are now parsed and **enforced** on INSERT and UPDATE for tables created with
+  rules, and the rules survive a restart on FILE/LSM_TREE/B_TREE. Before this, a duplicate
+  primary key silently overwrote the row and a `NULL` could be written into any column
+  (measured against the pre-change jar: duplicate PK accepted, `NULL` accepted into `NOT NULL`).
+  Foreign keys and `CHECK` remain unsupported and stay in the limitation list.
 - **Durability of DDL, measured and fixed (R-62):** `CREATE TABLE` used to report success for
   a table whose *existence* was not durable — an empty table left no collection on disk and
   disappeared on restart (`SELECT` → *"Table does not exist"*) while **rows were always safe**.
@@ -180,8 +204,10 @@ been client-derived since R-19), and — found during this assessment, after gre
 instead of trusting the docs — **"no DDL" in both the README and the website engine card**
 (R-54), while `parseCreate`/`parseDrop` genuinely implement `CREATE TABLE`/`DROP TABLE`. The
 corrected wording now states the exact surface: `CREATE/DROP TABLE` only, with no `ALTER`, no
-`CREATE INDEX`, no constraints, views, sequences, procedures, or JDBC. The Console's SQL error
-hint was corrected to match. The README gained the previously
+`CREATE INDEX`, views, sequences, procedures, or JDBC. The Console's SQL error hint was
+corrected to match. (Superseded on the constraint point by R-74 on 2026-09-23: inline
+`PRIMARY KEY`, `UNIQUE` and `NOT NULL` are now enforced; foreign-key and `CHECK` constraints
+remain unsupported.) The README gained the previously
 **undocumented** NoSQL JSON query API (operator list, `$regex` substring semantics, `$and`/`$or`
 behaviour, and the reads-never-create 404 contract), and the CHANGELOG gained an Unreleased
 section covering the entire correctness cluster.
@@ -275,7 +301,8 @@ not a documented limitation.
 1. **Push the corrected commits** so GitHub Pages serves the corrected website, and confirm
    no old branding or false claim remains live.
 2. **State the limitation list** on the release page and in the README: no JDBC driver, no
-   constraints, no sequences/views/procedures/triggers, no planner; SQL is a query layer over
+   foreign-key or `CHECK` constraints (inline `PRIMARY KEY`/`UNIQUE`/`NOT NULL` **are**
+   enforced), no sequences/views/procedures/triggers, no planner; SQL is a query layer over
    the document store; there is no collection-level delete and `DROP TABLE` only empties (R-63);
    the <5 MB scope; `--sync`/`--async` do not switch flush-on-write and the banner
    overstates them (R-67); vectors are an auxiliary index. **All three persistent engines now
@@ -286,8 +313,9 @@ not a documented limitation.
 ## Deferred Work (safe post-release)
 
 Splitting `junify-db-core` into per-engine artifacts (ADR-001, ADR-002) · a real JDBC driver ·
-constraint enforcement (PK/FK/unique/check/not-null) · sequences, views, procedures, and
-triggers · a query planner and `EXPLAIN` · persisting HNSW indexes for `IN_MEMORY` decision
+**foreign-key and `CHECK`** constraint enforcement (inline `PRIMARY KEY`/`UNIQUE`/`NOT NULL`
+shipped 2026-09-23, R-74) · indexing of `UNIQUE` columns (currently an O(n) scan) · sequences,
+views, procedures, and triggers · a query planner and `EXPLAIN` · persisting HNSW indexes for `IN_MEMORY` decision
 review · the `--sync`/`--async` semantics decision (R-67) · Maven Central publication once
 credentials exist (R-13) ·
 a stress/soak benchmark programme (doc 24).
@@ -308,7 +336,11 @@ execution backs it — that rule now applies to the corpus itself.
 
 | Evidence | Location |
 |---|---|
-| Baseline snapshot + validation | `docs/release-audit/baseline/` |
+| Baseline snapshot + validation (refreshed 2026-09-23: 832 tests, 3.12 MB) | `docs/release-audit/baseline/` |
+| Product blueprint | `docs/product/PRODUCT_BLUEPRINT.md` |
+| 137-story user story map with status roll-up | `docs/product/USER_STORY_MAP.md` |
+| Final verification round (2026-09-23) | `70-final-verification-round-2026-09-23.md` |
+| Constraint enforcement (PRIMARY KEY/UNIQUE/NOT NULL) evidence | `71-constraint-enforcement-evidence.md` |
 | Deep codebase assessment | `00-current-codebase-assessment.md` |
 | Architecture decisions | `67-architecture-decision-records.md` |
 | Defect register (R-31…R-68; every fix falsified against its pre-fix commit) | `53-defect-register.md` |
@@ -334,7 +366,7 @@ execution backs it — that rule now applies to the corpus itself.
 | Current codebase deeply assessed | ✅ `00-current-codebase-assessment.md` |
 | SQL and NoSQL genuinely separate engines | ✅ separate parsers/ASTs/pipelines/languages; shared storage **documented honestly** (ADR-002) |
 | SQL supported feature set honestly documented | ✅ website, README, Console hint, doc 05 |
-| Relational constraints enforced | ⚠️ **not implemented — stated as a limitation, not claimed** |
+| Relational constraints enforced | ✅ **PRIMARY KEY / UNIQUE / NOT NULL** enforced (2026-09-23); foreign key + `CHECK` stated as limitations |
 | Indexes functional and tested | ✅ B-tree + HNSW, in-memory and persistent |
 | Transactions verified | ✅ core/MVCC + savepoints; SQL surface PARTIAL and stated |
 | Procedures/functions/triggers implemented or explicitly unsupported | ✅ explicitly unsupported |

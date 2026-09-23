@@ -3,8 +3,11 @@ package org.junify.db.sql.engine;
 import org.junify.db.JunifyDB;
 import org.junify.db.nosql.document.Document;
 import org.junify.db.nosql.document.DocumentCollection;
+import org.junify.db.sql.SqlConstraintViolationException;
 import org.junify.db.sql.SqlResultSet;
 import org.junify.db.sql.SqlRow;
+import org.junify.db.sql.SqlSchemaCatalog;
+import org.junify.db.sql.SqlTableSchema;
 import org.junify.db.sql.ast.*;
 import org.junify.db.sql.ast.Expression.*;
 import org.junify.db.sql.ast.SqlStatement.*;
@@ -16,9 +19,11 @@ import java.util.stream.Collectors;
 public class SqlEngine {
 
     private final JunifyDB db;
+    private final SqlSchemaCatalog schemaCatalog;
 
     public SqlEngine(JunifyDB db) {
         this.db = db;
+        this.schemaCatalog = new SqlSchemaCatalog(db);
     }
 
     public SqlResultSet execute(String sql, Object... params) {
@@ -323,36 +328,58 @@ public class SqlEngine {
     }
 
     private SqlResultSet executeInsert(InsertStatement insert, List<Object> params) {
-        DocumentCollection col = db.documentCollection(insert.getTableName());
+        String tableName = insert.getTableName();
+        DocumentCollection col = db.documentCollection(tableName);
+        SqlTableSchema schema = schemaCatalog.get(tableName);
         int count = 0;
+        List<Document> inserted = new ArrayList<>();
 
-        for (List<Expression> rowExprs : insert.getRowsOfValues()) {
-            Document doc = new Document();
-            doc.add("_entity", insert.getTableName());
+        try {
+            for (List<Expression> rowExprs : insert.getRowsOfValues()) {
+                Document doc = new Document();
+                doc.add("_entity", tableName);
+                // Distinguishes an explicitly supplied NULL primary key (a violation) from an
+                // omitted one (auto-generated id). Without this, the auto-id branch below would
+                // quietly paper over INSERT ... VALUES (NULL, ...) on a NOT NULL / PRIMARY KEY id.
+                boolean idExplicitlyNull = false;
 
-            if (insert.getColumns().isEmpty()) {
-                // Without column names, map by index col_0, col_1...
-                for (int i = 0; i < rowExprs.size(); i++) {
-                    doc.add("col_" + i, rowExprs.get(i).evaluate(Collections.emptyMap(), params));
-                }
-            } else {
-                for (int i = 0; i < insert.getColumns().size() && i < rowExprs.size(); i++) {
-                    String colName = insert.getColumns().get(i);
-                    Object val = rowExprs.get(i).evaluate(Collections.emptyMap(), params);
-                    if ("id".equalsIgnoreCase(colName)) {
-                        doc.id(val != null ? val.toString() : null);
-                    } else {
-                        doc.add(colName, val);
+                if (insert.getColumns().isEmpty()) {
+                    // Without column names, map by index col_0, col_1...
+                    for (int i = 0; i < rowExprs.size(); i++) {
+                        doc.add("col_" + i, rowExprs.get(i).evaluate(Collections.emptyMap(), params));
+                    }
+                } else {
+                    for (int i = 0; i < insert.getColumns().size() && i < rowExprs.size(); i++) {
+                        String colName = insert.getColumns().get(i);
+                        Object val = rowExprs.get(i).evaluate(Collections.emptyMap(), params);
+                        if ("id".equalsIgnoreCase(colName)) {
+                            if (val == null) idExplicitlyNull = true;
+                            doc.id(val != null ? val.toString() : null);
+                        } else {
+                            doc.add(colName, val);
+                        }
                     }
                 }
-            }
 
-            if (doc.getId() == null) {
-                doc.id(UUID.randomUUID().toString());
-            }
+                if (doc.getId() == null && !idExplicitlyNull) {
+                    doc.id(UUID.randomUUID().toString());
+                }
 
-            col.insert(doc);
-            count++;
+                // Constraint enforcement (only for tables that declared constraints).
+                // Checked before the row is stored so a violation never leaves data behind.
+                enforceConstraints(tableName, schema, doc, null);
+
+                col.insert(doc);
+                inserted.add(doc);
+                count++;
+            }
+        } catch (RuntimeException e) {
+            // Statement atomicity: a multi-row INSERT that violates a constraint on a
+            // later row must not leave the earlier rows of the same statement applied.
+            for (Document d : inserted) {
+                col.deleteById(d.getId());
+            }
+            throw e;
         }
 
         return SqlResultSet.ofUpdate(count, "INSERT");
@@ -366,7 +393,9 @@ public class SqlEngine {
         // R-48: a write against a table that does not exist used to auto-create
         // an empty collection as a side effect (updateCount 0 either way). SQL
         // semantics: error. Only INSERT (and CREATE TABLE) create tables.
-        DocumentCollection col = existingCollection(update.getTableName(), "UPDATE");
+        String tableName = update.getTableName();
+        DocumentCollection col = existingCollection(tableName, "UPDATE");
+        SqlTableSchema schema = schemaCatalog.get(tableName);
         int count = 0;
 
         for (Document doc : col.findAll()) {
@@ -375,6 +404,22 @@ public class SqlEngine {
             doc.getFields().forEach(ctx::put);
 
             if (update.getWhereClause() == null || Boolean.TRUE.equals(update.getWhereClause().evaluate(ctx, params))) {
+                // Validate the post-update state before mutating: a violation must
+                // leave the row exactly as it was.
+                Document candidate = new Document();
+                candidate.id(doc.getId());
+                doc.getFields().forEach(candidate::add);
+                for (Map.Entry<String, Expression> assign : update.getAssignments().entrySet()) {
+                    String colName = assign.getKey();
+                    Object newVal = assign.getValue().evaluate(ctx, params);
+                    if ("id".equalsIgnoreCase(colName)) {
+                        candidate.id(newVal != null ? newVal.toString() : null);
+                    } else {
+                        candidate.add(colName, newVal);
+                    }
+                }
+                enforceConstraints(tableName, schema, candidate, doc.getId());
+
                 // Apply assignments
                 for (Map.Entry<String, Expression> assign : update.getAssignments().entrySet()) {
                     String colName = assign.getKey();
@@ -423,7 +468,88 @@ public class SqlEngine {
 
     private SqlResultSet executeCreateTable(CreateTableStatement create) {
         db.documentCollection(create.getTableName());
+        // Persist constraints only when the statement declared at least one enforceable rule
+        // (PRIMARY KEY / UNIQUE / NOT NULL). A bare CREATE TABLE, or one that lists columns with
+        // no constraints, keeps the original schemaless behaviour and writes no metadata — so
+        // existing databases are byte-identical and no reserved collection appears for them.
+        if (create.getColumns() != null && !create.getColumns().isEmpty()) {
+            List<SqlTableSchema.ColumnRule> rules = new ArrayList<>();
+            for (SqlStatement.ColumnDefinition def : create.getColumns()) {
+                rules.add(new SqlTableSchema.ColumnRule(
+                        def.getName(), def.isNotNull(), def.isPrimaryKey(), def.isUnique()));
+            }
+            SqlTableSchema schema = new SqlTableSchema(create.getTableName(), rules);
+            if (schema.hasConstraints()) {
+                schemaCatalog.save(schema);
+            }
+        }
         return SqlResultSet.ofUpdate(0, "CREATE_TABLE");
+    }
+
+    /**
+     * Enforces PRIMARY KEY, UNIQUE and NOT NULL for a table that declared constraints.
+     * No-op for schemaless tables (schema == null), preserving the original behaviour for
+     * collections created by INSERT or the NoSQL API.
+     *
+     * <p>{@code excludeId} is the id of the row being replaced by an UPDATE, so a row does not
+     * conflict with its own pre-existing values.</p>
+     */
+    private void enforceConstraints(String tableName, SqlTableSchema schema, Document candidate, String excludeId) {
+        if (schema == null || !schema.hasConstraints()) return;
+        DocumentCollection col = db.documentCollection(tableName);
+        for (SqlTableSchema.ColumnRule rule : schema.getColumns()) {
+            String column = rule.getName();
+            Object value = readColumn(candidate, column);
+
+            if (rule.isNotNull() && value == null) {
+                throw new SqlConstraintViolationException(
+                        "NOT NULL constraint violated on " + tableName + "." + column);
+            }
+
+            if (rule.isUniqueEnforced() && value != null) {
+                String existingId = findExistingId(col, column, value, excludeId);
+                if (existingId != null) {
+                    throw new SqlConstraintViolationException(
+                            (rule.isPrimaryKey() ? "PRIMARY KEY" : "UNIQUE")
+                                    + " constraint violated on " + tableName + "." + column
+                                    + ": value '" + value + "' already exists");
+                }
+            }
+        }
+    }
+
+    /** Reads a column from a candidate row, treating {@code id} as the document id. */
+    private static Object readColumn(Document doc, String column) {
+        if ("id".equalsIgnoreCase(column)) return doc.getId();
+        Object value = doc.getFields().get(column);
+        if (value != null) return value;
+        for (Map.Entry<String, Object> e : doc.getFields().entrySet()) {
+            if (e.getKey().equalsIgnoreCase(column)) return e.getValue();
+        }
+        return null;
+    }
+
+    /** Returns the id of a row that already holds {@code value} in {@code column}, or null. */
+    private static String findExistingId(DocumentCollection col, String column, Object value, String excludeId) {
+        if ("id".equalsIgnoreCase(column)) {
+            String id = value.toString();
+            if (id.equals(excludeId)) return null;
+            return col.exists(id) ? id : null;
+        }
+        for (Document d : col.findAll()) {
+            if (excludeId != null && excludeId.equals(d.getId())) continue;
+            Object v = d.getFields().get(column);
+            if (v == null) {
+                for (Map.Entry<String, Object> e : d.getFields().entrySet()) {
+                    if (e.getKey().equalsIgnoreCase(column)) {
+                        v = e.getValue();
+                        break;
+                    }
+                }
+            }
+            if (v != null && v.equals(value)) return d.getId();
+        }
+        return null;
     }
 
     private SqlResultSet executeDropTable(DropTableStatement drop) {
@@ -434,6 +560,7 @@ public class SqlEngine {
         for (Document d : col.findAll()) {
             col.deleteById(d.getId());
         }
+        schemaCatalog.drop(drop.getTableName());
         return SqlResultSet.ofUpdate(0, "DROP_TABLE");
     }
 

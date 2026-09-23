@@ -1,4 +1,15 @@
 Command: mvn test
-Result: Tests run: 785, Failures: 0, Errors: 0, Skipped: 0
-cli/: 4/4 | demo end-to-end-validation: 4/4
-Gates: console-contract PASS (FILE, LSM_TREE, B_TREE); console-auth PASS
+Result: Tests run: 846, Failures: 0, Errors: 0, Skipped: 0
+History: 785 (2026-09-22) → 832 (durability round) → **846** (after the constraint slice R-74,
+which added 14 tests in `SqlConstraintTest`). Java: 23.0.1 / Maven: 3.9.6.
+
+Coverage (JaCoCo, line): covered 28,908 / missed 9,094 = **76.1%**. The 70% line gate is
+satisfied. Branch coverage is reported separately and is not gated; the gate lives in the
+`coverage-check` profile and is not enforced by the default `mvn test`.
+
+cli/: 4/4 (verified in the prior round; not re-run this round)
+demo end-to-end-validation: 4/4 (prior round)
+Gates: console-contract PASS (FILE, LSM_TREE, B_TREE); console-auth PASS (prior round;
+not re-run this round)
+
+Raw log: `_mvn-test-raw.log`.

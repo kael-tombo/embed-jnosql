@@ -1,5 +1,16 @@
 Command: mvn -DskipTests clean package
 Result: BUILD SUCCESS (shaded jar replaces original)
-Artifact: target/junify-db-core-1.0.0.jar = 3,113,904 bytes (3.11 MB < 5 MB requirement)
-Java: 23.0.1 / Maven: 3.9.15 / OS: Windows Server 2022
-Dependencies (compile): jackson-databind 2.17.0, jackson-datatype-jsr310 2.17.0, slf4j-api 2.0.12; provided-optional: jakarta.enterprise.cdi-api 4.0.1
+Artifact: target/junify-db-core-1.0.0.jar = 3,122,887 bytes (3.12 MB < 5 MB requirement)
+SHA-1: b8ce7e551f50c25120749c0af8e55d1e0c7fc7d5
+Java: 23.0.1 / Maven: 3.9.6 / OS: Windows Server 2022 (MINGW64)
+
+Re-verified 2026-09-23 (this verification round), **then re-packaged after the constraint slice
+(R-74)**. Latest measurement: 3,133,120 bytes, SHA-1 227e31802b40941c22b41c097fbbc4c78b2ca1ca.
+History: 3,113,904 bytes (2026-09-22) → 3,122,887 (pre-constraint) → 3,133,120 (post-constraint).
+All under the 5 MB gate.
+
+Dependencies (compile): jackson-databind 2.17.0, jackson-datatype-jsr310 2.17.0, slf4j-api
+2.0.12; provided-optional: jakarta.enterprise.cdi-api 4.0.1, jnosql-mapping-api-core 1.1.8,
+jakarta.persistence-api 3.1.0, hibernate-core 6.4.4.Final. Three mandatory runtime deps.
+
+Raw logs: `_mvn-package-raw.log` (package), `_mvn-test-raw.log` (test).

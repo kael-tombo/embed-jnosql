@@ -144,9 +144,34 @@ public interface SqlStatement {
         public void setWhereClause(Expression whereClause) { this.whereClause = whereClause; }
     }
 
+    /**
+     * A column declared in {@code CREATE TABLE t (name TYPE [constraints], ...)} and the
+     * constraints attached to it. Only the constraints the dialect can enforce are captured
+     * (PRIMARY KEY, UNIQUE, NOT NULL); anything else is ignored by the parser.
+     */
+    class ColumnDefinition {
+        private final String name;
+        private final boolean notNull;
+        private final boolean primaryKey;
+        private final boolean unique;
+
+        public ColumnDefinition(String name, boolean notNull, boolean primaryKey, boolean unique) {
+            this.name = name;
+            this.notNull = notNull;
+            this.primaryKey = primaryKey;
+            this.unique = unique;
+        }
+
+        public String getName() { return name; }
+        public boolean isNotNull() { return notNull; }
+        public boolean isPrimaryKey() { return primaryKey; }
+        public boolean isUnique() { return unique; }
+    }
+
     class CreateTableStatement implements SqlStatement {
         private String tableName;
         private boolean ifNotExists;
+        private final List<ColumnDefinition> columns = new ArrayList<>();
 
         @Override
         public StatementType getStatementType() { return StatementType.CREATE_TABLE; }
@@ -155,6 +180,7 @@ public interface SqlStatement {
         public void setTableName(String tableName) { this.tableName = tableName; }
         public boolean isIfNotExists() { return ifNotExists; }
         public void setIfNotExists(boolean ifNotExists) { this.ifNotExists = ifNotExists; }
+        public List<ColumnDefinition> getColumns() { return columns; }
     }
 
     class DropTableStatement implements SqlStatement {

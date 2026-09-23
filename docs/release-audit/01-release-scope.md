@@ -24,7 +24,7 @@ What is in scope for the first public release, and what is explicitly out of sco
 | CLI shell | `cli/` |
 
 ## Out of Scope (explicitly not claimed)
-- Full ANSI:92 SQL grammar. **DDL is limited to `CREATE TABLE` / `DROP TABLE`** — no `ALTER`, no `CREATE INDEX`, no constraints, views, sequences, stored procedures, or full type system. (Corrected 2026-09-22: this line previously said "no DDL", which was false — the parser implements `parseCreate`/`parseDrop`; see R-54.)
+- Full ANSI:92 SQL grammar. **DDL is limited to `CREATE TABLE` / `DROP TABLE`** — no `ALTER`, no `CREATE INDEX`, no foreign-key or `CHECK` constraints, no views, sequences, stored procedures, or full type system. Inline/table-level `PRIMARY KEY`, `UNIQUE` and `NOT NULL` **are** parsed and enforced (2026-09-23, R-74; see doc 71). (Corrected 2026-09-22: this line previously said "no DDL", which was false — the parser implements `parseCreate`/`parseDrop`; see R-54.)
 - JDBC driver. `27-jdbc-and-sql-compatibility.md` documents the absence.
 - SQL-file B-Tree page store; `BTreeEngine` is heap-resident with snapshot persistence only.
 - Cryptographically tamper-evident audit log; the audit trail is an in-memory ring buffer.

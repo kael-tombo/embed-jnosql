@@ -238,19 +238,107 @@ public class SqlParser {
         }
         stmt.setTableName(consumeIdentifierOrKeyword());
 
-        // Optional table schema column definitions: (...)
+        // Optional column definitions with constraints: (col TYPE [PRIMARY KEY|UNIQUE|NOT NULL], ...)
         if (matchSymbol("(")) {
-            int depth = 1;
-            while (!isAtEnd() && depth > 0) {
-                if (checkSymbol("(")) depth++;
-                else if (checkSymbol(")")) depth--;
-                if (depth > 0) advance();
-            }
+            parseColumnDefinitions(stmt);
             consumeSymbol(")");
         }
 
         matchSymbol(";");
         return stmt;
+    }
+
+    /**
+     * Parses the parenthesised body of a {@code CREATE TABLE}, splitting it into top-level
+     * comma-separated segments (each a column definition or a table-level constraint) and
+     * recording the constraints this dialect can enforce. Nested parentheses — as in
+     * {@code VARCHAR(50)} or {@code CHECK (x > 0)} — are tracked by depth so a comma inside
+     * them is never treated as a segment boundary.
+     */
+    private void parseColumnDefinitions(CreateTableStatement stmt) {
+        while (!isAtEnd() && !checkSymbol(")")) {
+            List<SqlLexer.Token> segment = new ArrayList<>();
+            int depth = 0;
+            while (!isAtEnd()) {
+                if (checkSymbol("(")) {
+                    depth++;
+                } else if (checkSymbol(")")) {
+                    if (depth == 0) break;
+                    depth--;
+                } else if (checkSymbol(",") && depth == 0) {
+                    break;
+                }
+                segment.add(advance());
+            }
+            applyColumnSegment(stmt, segment);
+            if (!matchSymbol(",")) break;
+        }
+    }
+
+    private void applyColumnSegment(CreateTableStatement stmt, List<SqlLexer.Token> segment) {
+        if (segment.isEmpty()) return;
+        String first = segment.get(0).getValue();
+        if (first == null) return;
+        String upper = first.toUpperCase(Locale.ROOT);
+
+        // Table-level constraints: PRIMARY KEY (col) | UNIQUE (col) | CONSTRAINT name PRIMARY KEY (col)
+        if (upper.equals("PRIMARY") || upper.equals("UNIQUE") || upper.equals("CONSTRAINT")) {
+            applyTableLevelConstraint(stmt, segment);
+            return;
+        }
+
+        List<String> words = new ArrayList<>();
+        for (int i = 1; i < segment.size(); i++) {
+            String v = segment.get(i).getValue();
+            if (v != null) words.add(v.toUpperCase(Locale.ROOT));
+        }
+        boolean primaryKey = hasSequence(words, "PRIMARY", "KEY");
+        boolean notNull = hasSequence(words, "NOT", "NULL");
+        boolean unique = words.contains("UNIQUE");
+        stmt.getColumns().add(new ColumnDefinition(first, notNull, primaryKey, unique));
+    }
+
+    private void applyTableLevelConstraint(CreateTableStatement stmt, List<SqlLexer.Token> segment) {
+        for (int i = 0; i < segment.size(); i++) {
+            String v = segment.get(i).getValue();
+            if (v == null) continue;
+            String u = v.toUpperCase(Locale.ROOT);
+            boolean pk = u.equals("PRIMARY") && i + 1 < segment.size()
+                    && "KEY".equalsIgnoreCase(String.valueOf(segment.get(i + 1).getValue()));
+            if (!pk && !u.equals("UNIQUE")) continue;
+
+            int j = pk ? i + 2 : i + 1;
+            if (j < segment.size() && "(".equals(segment.get(j).getValue())) {
+                for (int k = j + 1; k < segment.size(); k++) {
+                    String col = segment.get(k).getValue();
+                    if (col == null || ")".equals(col) || ",".equals(col) || "(".equals(col)) continue;
+                    markColumn(stmt, col, pk, !pk);
+                }
+            }
+        }
+    }
+
+    private void markColumn(CreateTableStatement stmt, String colName, boolean primaryKey, boolean unique) {
+        List<ColumnDefinition> cols = stmt.getColumns();
+        for (int i = 0; i < cols.size(); i++) {
+            ColumnDefinition existing = cols.get(i);
+            if (existing.getName().equalsIgnoreCase(colName)) {
+                cols.set(i, new ColumnDefinition(
+                        existing.getName(),
+                        existing.isNotNull() || primaryKey,
+                        existing.isPrimaryKey() || primaryKey,
+                        existing.isUnique() || unique));
+                return;
+            }
+        }
+        cols.add(new ColumnDefinition(colName, primaryKey, primaryKey, unique));
+    }
+
+    private static boolean hasSequence(List<String> words, String first, String second) {
+        for (int i = 0; i + 1 < words.size(); i++) {
+            if (words.get(i).equals(first) && words.get(i + 1).equals(second)) return true;
+        }
+        return false;
     }
 
     private DropTableStatement parseDrop() {

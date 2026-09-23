@@ -70,7 +70,7 @@ var db = JunifyDB.create(JunifyDB.embed()
 Most databases force you to choose a paradigm. JunifyDB does not. The same data collection is simultaneously accessible via:
 
 - **Fluent NoSQL API** — document queries, criteria builders, key-value ops
-- **Built-in SQL engine** — `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `GROUP BY`, `JOIN`, `BETWEEN`, `LIKE`, plus `CREATE TABLE` / `DROP TABLE` (an implementation-defined dialect, not a full ANSI:92 grammar — no `ALTER`, no `CREATE INDEX`, no sequences, no views, no constraints, no JDBC driver)
+- **Built-in SQL engine** — `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `GROUP BY`, `JOIN`, `BETWEEN`, `LIKE`, plus `CREATE TABLE` / `DROP TABLE` with inline `PRIMARY KEY`, `UNIQUE` and `NOT NULL` enforcement (an implementation-defined dialect, not a full ANSI:92 grammar — no `ALTER`, no `CREATE INDEX`, no foreign-key or `CHECK` constraints, no sequences, no views, no JDBC driver)
 
 Both engines share the same in-memory or disk storage substrate. Switch paradigms mid-query. Mix freely.
 

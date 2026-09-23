@@ -1,0 +1,15 @@
+=== ENVIRONMENT ===
+--- date ---
+Wed Sep 23 06:44:03 UTC 2026
+--- java ---
+java version "23.0.1" 2024-10-15
+Java(TM) SE Runtime Environment (build 23.0.1+11-39)
+Java HotSpot(TM) 64-Bit Server VM (build 23.0.1+11-39, mixed mode, sharing)
+--- maven ---
+Apache Maven 3.9.6 (bc0240f3c744dd6b6ec2920b3cd08dcc295161ae)
+--- node ---
+v24.15.0
+--- npm ---
+11.12.1
+--- os ---
+MINGW64_NT-10.0-20348 mgpextwb03 3.6.6-1cdd4371.x86_64 2026-01-15 22:20 UTC x86_64 Msys

@@ -70,3 +70,35 @@ this directory is a working copy — it is evidence and recovery material.
 | `source-snapshot.tar.gz` | Full archive of the tracked tree at `b10b6cd` (991 entries) |
 | `uncommitted-tracked-changes.patch` | Unified diff of the 29 modified files |
 | `untracked-files.txt` | List of untracked files at capture |
+
+---
+
+## Re-verification round — 2026-09-23
+
+This session re-ran the build, the full test suite, and a live runtime probe, and refreshed the
+baseline evidence files with current measurements. Nothing was reset, discarded, or overwritten
+in the working tree; the concurrent session's 29 modified files are untouched.
+
+| File | Purpose |
+|---|---|
+| `REPOSITORY-STATUS.txt` | **Refreshed 2026-09-23** — branch/commit/remotes/tags/porcelain at this round |
+| `BUILD-BASELINE.txt` | **Refreshed 2026-09-23** — `mvn -DskipTests clean package` SUCCESS, jar **3,122,887 bytes**, SHA-1 `b8ce7e55…` |
+| `TEST-BASELINE.txt` | **Refreshed 2026-09-23** — **832/832** green, 0 skipped; line coverage **75.5%** |
+| `RUNTIME-BASELINE.txt` | **New** — live embedded-server probe (health, metrics, Console, document round-trip, CORS check) |
+| `_environment.txt` | Java 23.0.1 / Maven 3.9.6 / Node 24.15.0 / Windows Server 2022 |
+| `_mvn-test-raw.log` | Raw `mvn clean test` output for 2026-09-23 — **local only** (`*.log` is gitignored); reproduce with `./mvnw -B -ntp clean test` |
+| `_mvn-package-raw.log` | Raw `mvn package` output for 2026-09-23 — **local only**; reproduce with `./mvnw -B -ntp -DskipTests clean package` |
+
+The summarized, tracked evidence is `BUILD-BASELINE.txt`, `TEST-BASELINE.txt`, and
+`RUNTIME-BASELINE.txt`. The raw logs are kept on disk for inspection but are not committed.
+
+Delta vs the 2026-09-22 capture: tests **785 → 832**, jar **3,113,904 → 3,122,887 bytes**,
+Maven **3.9.15 → 3.9.6**. Both values stay inside their gates (0 failures; jar < 5 MB).
+
+## Product deliverables added this round
+
+| File | Purpose |
+|---|---|
+| `docs/product/PRODUCT_BLUEPRINT.md` | Canonical product blueprint (vision, engines, modules, deps, footprint, scope, gates) |
+| `docs/product/USER_STORY_MAP.md` | **137** implementation-ready stories across 10 epics, with status roll-up |
+| `docs/release-audit/70-final-verification-round-2026-09-23.md` | This round's re-verification record |

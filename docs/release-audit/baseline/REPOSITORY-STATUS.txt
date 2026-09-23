@@ -1,51 +1,47 @@
-== git branch --show-current ==
+=== BASELINE CAPTURE 2026-09-23T06:44:01Z ===
+--- BRANCH ---
 main
-
-== git log -1 --oneline ==
-b10b6cd docs: align public claims with the audited behavior
-
-== git remote -v ==
+--- HEAD COMMIT ---
+81a511c4d592e4d21fe2e9ebab14dbbaf5bda495
+Judicael Ratombotiana ADM
+Wed Sep 23 09:28:01 2026 +0300
+Re-measure the artifact after the durability round
+--- REMOTES ---
 origin	https://github.com/armand-ratombotiana/JunifyDB.git (fetch)
 origin	https://github.com/armand-ratombotiana/JunifyDB.git (push)
-
-== git tag ==
+--- TAGS ---
 v0.1.0-package-migration
 v0.2.0-mvcc-kernel
-
-== git status --short ==
- M ../../../.github/workflows/pages.yml
- M ../../admin-console/CONSOLE-UI-VALIDATION-PROOF.md
- M ../../browser-testing/evidence/network/trace-DELETE-api_collections_products_prod-browser-01.json
- M ../../browser-testing/evidence/network/trace-GET-.json
- M ../../browser-testing/evidence/network/trace-GET-api_audit_logs.json
- M ../../browser-testing/evidence/network/trace-GET-api_backup.json
- M ../../browser-testing/evidence/network/trace-GET-api_cdc.json
- M ../../browser-testing/evidence/network/trace-GET-api_collections.json
- M ../../browser-testing/evidence/network/trace-GET-api_collections_products_prod-browser-01.json
- M ../../browser-testing/evidence/network/trace-GET-api_columns_inventory_item-browser-01.json
- M ../../browser-testing/evidence/network/trace-GET-api_health.json
- M ../../browser-testing/evidence/network/trace-GET-api_indexes.json
- M ../../browser-testing/evidence/network/trace-GET-api_kv_price_cache_item-browser-01.json
- M ../../browser-testing/evidence/network/trace-GET-api_metrics.json
- M ../../browser-testing/evidence/network/trace-GET-login.html.json
- M ../../browser-testing/evidence/network/trace-GET-logo.svg.json
- M ../../browser-testing/evidence/network/trace-POST-api_auth_login.json
- M ../../browser-testing/evidence/network/trace-POST-api_auth_logout.json
- M ../../browser-testing/evidence/network/trace-POST-api_collections_products.json
- M ../../browser-testing/evidence/network/trace-POST-api_collections_products_query.json
- M ../../browser-testing/evidence/network/trace-POST-api_columns_inventory_item-browser-01.json
- M ../../browser-testing/evidence/network/trace-POST-api_kv_hashes_user_hash_user-01_hset.json
- M ../../browser-testing/evidence/network/trace-POST-api_kv_lists_cart_queue_cart-01_rpush.json
- M ../../browser-testing/evidence/network/trace-POST-api_kv_sets_user_tags_user-01_sadd.json
- M ../../browser-testing/evidence/network/trace-POST-api_schema_orders.json
- M ../../browser-testing/evidence/network/trace-POST-api_vectors_embeddings_search.json
- M ../../browser-testing/evidence/network/trace-POST-api_vectors_embeddings_vec-browser-01.json
- M ../../browser-testing/evidence/network/trace-PUT-api_collections_products_prod-browser-01.json
- M ../../browser-testing/evidence/network/trace-PUT-api_kv_price_cache_item-browser-01.json
-?? ./
-
-== git status summary ==
-modified: 29, untracked: 1
-
-== baseline branch ==
-  junifydb-baseline-before-public-release-audit-20260922
+--- STATUS PORCELAIN ---
+ M .github/workflows/pages.yml
+ M docs/admin-console/CONSOLE-UI-VALIDATION-PROOF.md
+ M docs/browser-testing/evidence/network/trace-DELETE-api_collections_products_prod-browser-01.json
+ M docs/browser-testing/evidence/network/trace-GET-.json
+ M docs/browser-testing/evidence/network/trace-GET-api_audit_logs.json
+ M docs/browser-testing/evidence/network/trace-GET-api_backup.json
+ M docs/browser-testing/evidence/network/trace-GET-api_cdc.json
+ M docs/browser-testing/evidence/network/trace-GET-api_collections.json
+ M docs/browser-testing/evidence/network/trace-GET-api_collections_products_prod-browser-01.json
+ M docs/browser-testing/evidence/network/trace-GET-api_columns_inventory_item-browser-01.json
+ M docs/browser-testing/evidence/network/trace-GET-api_health.json
+ M docs/browser-testing/evidence/network/trace-GET-api_indexes.json
+ M docs/browser-testing/evidence/network/trace-GET-api_kv_price_cache_item-browser-01.json
+ M docs/browser-testing/evidence/network/trace-GET-api_metrics.json
+ M docs/browser-testing/evidence/network/trace-GET-login.html.json
+ M docs/browser-testing/evidence/network/trace-GET-logo.svg.json
+ M docs/browser-testing/evidence/network/trace-POST-api_auth_login.json
+ M docs/browser-testing/evidence/network/trace-POST-api_auth_logout.json
+ M docs/browser-testing/evidence/network/trace-POST-api_collections_products.json
+ M docs/browser-testing/evidence/network/trace-POST-api_collections_products_query.json
+ M docs/browser-testing/evidence/network/trace-POST-api_columns_inventory_item-browser-01.json
+ M docs/browser-testing/evidence/network/trace-POST-api_kv_hashes_user_hash_user-01_hset.json
+ M docs/browser-testing/evidence/network/trace-POST-api_kv_lists_cart_queue_cart-01_rpush.json
+ M docs/browser-testing/evidence/network/trace-POST-api_kv_sets_user_tags_user-01_sadd.json
+ M docs/browser-testing/evidence/network/trace-POST-api_schema_orders.json
+ M docs/browser-testing/evidence/network/trace-POST-api_vectors_embeddings_search.json
+ M docs/browser-testing/evidence/network/trace-POST-api_vectors_embeddings_vec-browser-01.json
+ M docs/browser-testing/evidence/network/trace-PUT-api_collections_products_prod-browser-01.json
+ M docs/browser-testing/evidence/network/trace-PUT-api_kv_price_cache_item-browser-01.json
+ M docs/release-audit/baseline/REPOSITORY-STATUS.txt
+--- COMMITS AHEAD OF ORIGIN ---
+27
