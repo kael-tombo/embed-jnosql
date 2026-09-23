@@ -25,7 +25,9 @@ What is in scope for the first public release, and what is explicitly out of sco
 
 ## Out of Scope (explicitly not claimed)
 - Full ANSI:92 SQL grammar. **DDL is limited to `CREATE TABLE` / `DROP TABLE`** — no `ALTER`, no `CREATE INDEX`, no views, sequences, stored procedures, or full type system. Inline/table-level `PRIMARY KEY`, `UNIQUE`, `NOT NULL`, `REFERENCES` (foreign key) and `CHECK` **are** parsed and enforced (2026-09-23, R-74 + R-75; see docs 71/72). (Corrected 2026-09-22: this line previously said "no DDL", which was false — the parser implements `parseCreate`/`parseDrop`; see R-54.)
-- JDBC driver. `27-jdbc-and-sql-compatibility.md` documents the absence.
+- JDBC **compliance**. A working driver ships (2026-09-23, R-76) but is explicitly `PARTIAL`:
+  `jdbcCompliant() == false`, with no explicit transactions or schema reflection.
+  `27-jdbc-and-sql-compatibility.md` documents the boundary.
 - SQL-file B-Tree page store; `BTreeEngine` is heap-resident with snapshot persistence only.
 - Cryptographically tamper-evident audit log; the audit trail is an in-memory ring buffer.
 - Cluster/distributed operation; single-process embedded only.

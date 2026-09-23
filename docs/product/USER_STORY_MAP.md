@@ -52,16 +52,17 @@ Personas: **P1** plain-Java developer · **P2** test engineer · **P3** framewor
 | Status | Count | Notable IDs |
 |---|---|---|
 | `VERIFIED` | 107 | US-001, US-022, US-031 (**PRIMARY KEY**), US-032 (**foreign key**), US-033 (**UNIQUE/NOT NULL/CHECK**), US-043, US-062, US-094, US-122 |
-| `PARTIAL` | 23 | US-034 (no SQL `CREATE INDEX`), US-036 (SQL transaction granularity), US-120 (Jakarta NoSQL subset), US-127 (demo staleness trap) |
-| `NOT IMPLEMENTED` | 5 | US-039/040/041 (procedures/functions/triggers), US-042 (**JDBC**), US-044 (`EXPLAIN`) |
+| `PARTIAL` | 24 | US-034 (no SQL `CREATE INDEX`), US-036 (SQL transaction granularity), US-042 (**JDBC driver** — no transactions/schema reflection), US-120, US-127 |
+| `NOT IMPLEMENTED` | 4 | US-039/040/041 (procedures/functions/triggers), US-044 (`EXPLAIN`) |
 | `NOT VERIFIED` | 1 | US-128 (Maven Central — credentials absent) |
 | `EXPERIMENTAL` | 1 | US-074 (Kafka CDC connector) |
 | `RELEASE BLOCKER` | 0 | — (all blockers either fixed, external, or documented limitations) |
 
 Every `NOT IMPLEMENTED` story is a capability the product does not have and **must appear in the
-published limitation list**. *(Correction 2026-09-23: the row above listing `NOT IMPLEMENTED` as
-7 after the first constraint slice was a miscount — six IDs remained; the two referential
-stories have since moved to `VERIFIED`, leaving five.)* Every `PARTIAL` story carries a documented gap. No story is marked
+published limitation list**. *(Correction trail 2026-09-23: the row above listing `NOT IMPLEMENTED`
+as 7 after the first constraint slice was a miscount — six IDs remained; the referential and
+`CHECK` stories then moved to `VERIFIED`, and US-042 became a working `PARTIAL` JDBC driver,
+leaving **four**: procedures, functions, triggers and `EXPLAIN`.)* Every `PARTIAL` story carries a documented gap. No story is marked
 `VERIFIED` without execution-backed evidence referenced in `../release-audit/evidence/`.
 
 ---
@@ -121,7 +122,7 @@ stories have since moved to `VERIFIED`, leaving five.)* Every `PARTIAL` story ca
 `E1 · P0 · VERIFIED · S`
 **Persona:** P5 Evaluator
 **Story:** As an evaluator, I want the README to state what the SQL engine does *not* do, so that I do not adopt it under a false assumption.
-**Outcome:** No-JDBC / no-constraints / no-procedures limitations are visible before the first API call.
+**Outcome:** The remaining limitations (no routines, no `EXPLAIN`, JDBC is `PARTIAL`) are visible before the first API call.
 **Deps:** —
 **Files/modules:** `README.md`, `docs/index.html`
 **API:** — · **Data:** — · **UI:** website · **Security:** — · **Perf:** —
@@ -722,19 +723,20 @@ stories have since moved to `VERIFIED`, leaving five.)* Every `PARTIAL` story ca
 **Release impact:** limitation list
 
 #### US-042 · JDBC driver
-`E3 · P0 · NOT IMPLEMENTED · XL`
+`E3 · P0 · PARTIAL · XL`
 **Persona:** P1
 **Story:** As a Java developer, I want a JDBC driver, so that existing tools and ORMs can connect.
-**Outcome:** (target) `DriverManager.getConnection("jdbc:junifydb:...")` works.
+**Outcome:** `DriverManager.getConnection("jdbc:junifydb:...")` works, with `Statement`/`PreparedStatement` and a forward-only read-only `ResultSet`; transactions and schema reflection are not implemented.
 **Deps:** US-023
-**Files/modules:** none
-**API:** none · **Data:** — · **UI:** — · **Security:** — · **Perf:** —
-**Negative:** the words "SQL database" imply JDBC compatibility that does not exist (largest gap)
-**G/W/T:** *Given* the JDBC URL, *When* a connection opens and a `PreparedStatement` runs, *Then* rows return. *(Not implemented.)*
-**Test plan:** JDBC suite (blocked)
-**Evidence:** explicit "no JDBC driver" statement on release page
-**DoD:** limitation stated prominently; Central/release claims make no JDBC promise
-**Release impact:** RELEASE BLOCKER for any JDBC claim; otherwise a stated limitation
+**Files/modules:** `org.junify.db.jdbc` (Driver, Connection/Statement/ResultSet/DatabaseMetaData handlers), `META-INF/services/java.sql.Driver`
+**API:** `jdbc:junifydb:memory:` and `jdbc:junifydb:file:<dir>`; `Driver.jdbcCompliant()` returns **false**
+**Data:** per URL · **UI:** — · **Security:** parameters bound by the engine, never string-concatenated · **Perf:** unsupported calls throw rather than degrade silently
+**Negative:** claiming JDBC compliance; `DriverManager` discovering the driver class but never registering it (found and fixed)
+**G/W/T:** *Given* the JDBC URL, *When* a `PreparedStatement` binds `?` and executes, *Then* rows return and constraint violations surface as `SQLException`.
+**Test plan:** `JdbcDriverTest` (13 tests) + a compiled-consumer run against the shaded jar
+**Evidence:** 13/13 green; ServiceLoader discovery proven on a real consumer classpath; falsified against the pre-change jar (`No suitable driver found`)
+**DoD:** supported surface works; unsupported surface throws `SQLFeatureNotSupportedException`; docs state the `PARTIAL` boundary
+**Release impact:** removes the largest gap as a *blocker*; JDBC compliance still **not** claimed
 
 #### US-043 · SQL data survives restart
 `E3 · P0 · VERIFIED · M`
@@ -2117,7 +2119,7 @@ stories have since moved to `VERIFIED`, leaving five.)* Every `PARTIAL` story ca
 **Deps:** —
 **Files/modules:** `CHANGELOG.md`, `README.md`
 **API:** — · **Data:** — · **UI:** — · **Security:** — · **Perf:** —
-**Negative:** a 1.0 label implies JDBC/constraints that do not exist
+**Negative:** a 1.0 label implies JDBC compliance and stored routines that do not exist
 **G/W/T:** *Given* the release version, *When* read, *Then* it signals pre-1.0 maturity.
 **Test plan:** review
 **Evidence:** `47-versioning-and-backward-compatibility.md`

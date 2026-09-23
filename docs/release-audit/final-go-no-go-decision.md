@@ -14,14 +14,14 @@ deliverables `docs/product/PRODUCT_BLUEPRINT.md` and `docs/product/USER_STORY_MA
 (**137** stories / 10 epics) were added. Nothing was discarded; the concurrent session's
 modified files were left untouched. No gate changed direction.
 
-**Same day, after that re-run, one release-blocking limitation was removed (R-74).** Column
-constraints are now declared and enforced: **`PRIMARY KEY`, `UNIQUE` and `NOT NULL`** (inline
-and table-level) are parsed, enforced on INSERT/UPDATE, and durable across restart on
-FILE/LSM_TREE/B_TREE. The suite is now **846/846**, coverage **76.1%**, jar **3,133,120 bytes**.
-The `NOT IMPLEMENTED` limitation set shrinks from 8 to 7 items (foreign keys, `CHECK`,
-procedures/functions/triggers, JDBC, `EXPLAIN` remain). Full evidence:
-`71-constraint-enforcement-evidence.md`; the `NOT IMPLEMENTED` claim in the checklist below is
-superseded for PK/UNIQUE/NOT NULL only.
+**Same day, three further slices landed (R-74, R-75, R-76).** (1) `PRIMARY KEY`, `UNIQUE` and
+`NOT NULL` are declared and enforced; (2) `REFERENCES` (foreign key, in both directions) and
+`CHECK` are enforced; (3) a working **JDBC driver** ships (`jdbc:junifydb:...`), explicitly
+`PARTIAL` — `Driver.jdbcCompliant()` is `false`, and explicit transactions and schema reflection
+are not implemented. The suite is now **872/872**, coverage **74.4%**, jar **3,164,082 bytes**.
+The `NOT IMPLEMENTED` limitation set is down to **4** (procedures, functions, triggers, `EXPLAIN`);
+JDBC is `PARTIAL`. Full evidence: `71-constraint-enforcement-evidence.md`,
+`72-referential-constraint-evidence.md`, `73-jdbc-driver-evidence.md`.
 
 ---
 
@@ -101,8 +101,7 @@ DBMS.**
 - **Verified this session:** unknown-table semantics are now correct and non-destructive —
   reads no longer create collections, `DROP` on a missing table errors (404) instead of
   reporting false success (R-48, R-49).
-- **Not implemented:** **JDBC driver** (none exists — the largest gap between the words "SQL
-  database" and the code), sequences, identity columns, views, stored procedures, functions,
+- **Not implemented:** sequences, identity columns, views, stored procedures, functions,
   triggers, and any query planner or `EXPLAIN` (execution is interpretation).
 - **Constraints, added 2026-09-23 (R-74):** inline and table-level **PRIMARY KEY**, **UNIQUE**
   and **NOT NULL** are now parsed and **enforced** on INSERT and UPDATE for tables created with
@@ -112,6 +111,13 @@ DBMS.**
   **Extended 2026-09-23 (R-75):** `REFERENCES` (foreign key) and `CHECK` are now enforced too —
   an orphan child row is rejected on INSERT/UPDATE, a referenced parent cannot be removed by
   DELETE or DROP TABLE, and `CHECK` predicates (column- and table-level) are evaluated per row.
+  **Added 2026-09-23 (R-76):** a working JDBC driver now ships under `org.junify.db.jdbc`,
+  discoverable via `META-INF/services/java.sql.Driver`. It is `PARTIAL` and **not**
+  JDBC-compliant (`jdbcCompliant()` returns `false`): explicit transactions, savepoints, batch
+  execution and `DatabaseMetaData` schema reflection are not implemented and throw
+  `SQLFeatureNotSupportedException`. The build caught a real defect here — the service file alone
+  does not register a driver with `DriverManager`, only its static initializer does, so the first
+  version answered *"No suitable driver found"*; fixed and falsified against the pre-change jar.
   The remaining unsupported relational features are sequences, views, procedures, functions,
   triggers and a query planner.
 - **Durability of DDL, measured and fixed (R-62):** `CREATE TABLE` used to report success for
@@ -130,7 +136,8 @@ DBMS.**
   mistyped name in the console's Indexes panel added junk collections. Reads and DELETEs on an
   unknown collection are now 404 with the catalog untouched; adding an index stays a write.
 - **Positioning:** valuable for embedded and admin workloads and for SQL-shaped querying of
-  documents; must not be advertised as constraint-enforcing or JDBC-compatible.
+  documents; must not be advertised as JDBC-**compliant** or as a full relational DBMS (no
+  `ALTER`, no `CREATE INDEX`, no views/sequences/routines, no query planner).
 
 ## NoSQL DBMS Verdict
 
@@ -208,9 +215,10 @@ instead of trusting the docs — **"no DDL" in both the README and the website e
 (R-54), while `parseCreate`/`parseDrop` genuinely implement `CREATE TABLE`/`DROP TABLE`. The
 corrected wording now states the exact surface: `CREATE/DROP TABLE` only, with no `ALTER`, no
 `CREATE INDEX`, views, sequences, procedures, or JDBC. The Console's SQL error hint was
-corrected to match. (Superseded on the constraint point by R-74 on 2026-09-23: inline
-`PRIMARY KEY`, `UNIQUE` and `NOT NULL` are now enforced; foreign-key and `CHECK` constraints
-remain unsupported.) The README gained the previously
+corrected to match. (Superseded on 2026-09-23 by three slices, in order — R-74 enforced inline
+`PRIMARY KEY`/`UNIQUE`/`NOT NULL`, R-75 enforced `REFERENCES` and `CHECK` in both directions,
+and R-76 shipped a working `PARTIAL` JDBC driver — so the current wording is "no `ALTER`, no
+`CREATE INDEX`, no views, no sequences, no routines" plus a `PARTIAL` JDBC driver.) The README gained the previously
 **undocumented** NoSQL JSON query API (operator list, `$regex` substring semantics, `$and`/`$or`
 behaviour, and the reads-never-create 404 contract), and the CHANGELOG gained an Unreleased
 section covering the entire correctness cluster.
@@ -251,10 +259,11 @@ fail there (observed: 9/11, 4/9, 9/9, 3, 2/4). Two tests were caught **codifying
 expected behaviour** and inverted. One mid-round case saw the suite catch an *incomplete fix*
 of mine (UPDATE/DELETE still auto-creating after I had guarded only SELECT/JOIN/DROP).
 
-**Weak spots, stated honestly:** no JDBC suite (no driver to test), constraint enforcement
-untestable (not implemented), and `demo/` projects resolve a stale installed `junify-db-core`
-unless `mvn install` is run first — a trap that once produced a false-negative demo run and is
-now documented in `35-demo-project-audit.md`.
+**Weak spots, stated honestly:** the JDBC driver covers a `PARTIAL` surface (no explicit
+transactions or schema reflection) and relies on reflective dispatch for `ResultSet`/
+`DatabaseMetaData`; and `demo/` projects resolve a stale installed `junify-db-core` unless
+`mvn install` is run first — a trap that once produced a false-negative demo run and is now
+documented in `35-demo-project-audit.md`.
 
 ## Security Verdict
 
@@ -303,7 +312,8 @@ not a documented limitation.
 
 1. **Push the corrected commits** so GitHub Pages serves the corrected website, and confirm
    no old branding or false claim remains live.
-2. **State the limitation list** on the release page and in the README: no JDBC driver, no
+2. **State the limitation list** on the release page and in the README: no JDBC **compliance**
+   (a `PARTIAL` driver ships), no explicit JDBC transactions or schema reflection, no
    sequences/views/procedures/triggers, no planner (`PRIMARY KEY`/`UNIQUE`/`NOT NULL`/`FOREIGN
    KEY`/`CHECK` **are** enforced); SQL is a query layer over
    the document store; there is no collection-level delete and `DROP TABLE` only empties (R-63);
@@ -315,7 +325,8 @@ not a documented limitation.
 
 ## Deferred Work (safe post-release)
 
-Splitting `junify-db-core` into per-engine artifacts (ADR-001, ADR-002) · a real JDBC driver ·
+Splitting `junify-db-core` into per-engine artifacts (ADR-001, ADR-002) · JDBC explicit
+transactions, savepoints, batch execution and schema reflection (the driver is `PARTIAL`) ·
 indexing of `UNIQUE` and foreign-key columns (currently O(n) scans) · sequences, views,
 procedures, and triggers · a query planner and `EXPLAIN` · persisting HNSW indexes for `IN_MEMORY` decision
 review · the `--sync`/`--async` semantics decision (R-67) · Maven Central publication once
@@ -344,6 +355,7 @@ execution backs it — that rule now applies to the corpus itself.
 | Final verification round (2026-09-23) | `70-final-verification-round-2026-09-23.md` |
 | Constraint enforcement (PRIMARY KEY/UNIQUE/NOT NULL) evidence | `71-constraint-enforcement-evidence.md` |
 | Referential + CHECK constraint evidence | `72-referential-constraint-evidence.md` |
+| JDBC driver evidence (PARTIAL) | `73-jdbc-driver-evidence.md` |
 | Deep codebase assessment | `00-current-codebase-assessment.md` |
 | Architecture decisions | `67-architecture-decision-records.md` |
 | Defect register (R-31…R-68; every fix falsified against its pre-fix commit) | `53-defect-register.md` |

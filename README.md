@@ -70,7 +70,7 @@ var db = JunifyDB.create(JunifyDB.embed()
 Most databases force you to choose a paradigm. JunifyDB does not. The same data collection is simultaneously accessible via:
 
 - **Fluent NoSQL API** — document queries, criteria builders, key-value ops
-- **Built-in SQL engine** — `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `GROUP BY`, `JOIN`, `BETWEEN`, `LIKE`, plus `CREATE TABLE` / `DROP TABLE` with inline and table-level `PRIMARY KEY`, `UNIQUE`, `NOT NULL`, `REFERENCES` (foreign key) and `CHECK` constraint enforcement (an implementation-defined dialect, not a full ANSI:92 grammar — no `ALTER`, no `CREATE INDEX`, no sequences, no views, no stored procedures, no JDBC driver)
+- **Built-in SQL engine** — `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `GROUP BY`, `JOIN`, `BETWEEN`, `LIKE`, plus `CREATE TABLE` / `DROP TABLE` with inline and table-level `PRIMARY KEY`, `UNIQUE`, `NOT NULL`, `REFERENCES` (foreign key) and `CHECK` constraint enforcement, and a working **JDBC driver** (an implementation-defined dialect, not a full ANSI:92 grammar — no `ALTER`, no `CREATE INDEX`, no sequences, no views, no stored procedures)
 
 Both engines share the same in-memory or disk storage substrate. Switch paradigms mid-query. Mix freely.
 
@@ -276,6 +276,41 @@ db.transactionManager().inTransaction(() -> {
     // Both writes commit atomically — or both roll back on any error
 });
 ```
+
+---
+
+### JDBC
+
+A JDBC driver is bundled. It is discovered automatically (`META-INF/services/java.sql.Driver`),
+so no `Class.forName` is needed:
+
+```java
+try (var conn = DriverManager.getConnection("jdbc:junifydb:memory:")) {
+    try (var st = conn.createStatement()) {
+        st.executeUpdate("CREATE TABLE products (id VARCHAR(20) PRIMARY KEY, name VARCHAR(50) NOT NULL)");
+    }
+    try (var ps = conn.prepareStatement("INSERT INTO products (id, name) VALUES (?, ?)")) {
+        ps.setString(1, "p1");
+        ps.setString(2, "Keyboard");
+        ps.executeUpdate();
+    }
+    try (var rs = conn.createStatement().executeQuery("SELECT * FROM products")) {
+        while (rs.next()) System.out.println(rs.getString("id") + " -> " + rs.getString("name"));
+    }
+}
+// URL forms: jdbc:junifydb:memory:  |  jdbc:junifydb:file:<dir>
+```
+
+Constraint violations arrive as `SQLException` (e.g. *"PRIMARY KEY constraint violated on
+products.id"*), and parameters are bound by the engine, never spliced into SQL text.
+
+**Honest scope.** This is a working driver for the SQL surface that exists, **not** a
+JDBC-compliant one — `Driver.jdbcCompliant()` returns `false`. Supported: `Statement`,
+`PreparedStatement` with `?` binding, forward-only read-only `ResultSet` navigation and typed
+getters, and basic metadata. **Not** supported: explicit transactions (`setAutoCommit(false)` /
+`commit()` / `rollback()`), savepoints, batch execution, updatable result sets, and schema
+reflection (`DatabaseMetaData.getTables`/`getColumns`). Unsupported calls throw
+`SQLFeatureNotSupportedException` rather than silently succeeding.
 
 ---
 

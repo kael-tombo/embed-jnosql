@@ -15,7 +15,7 @@ Overall honest market position for the public release.
 
 **Weaknesses (verified)**:
 - Single-process only; all engines heap-resident (16-D-03).
-- SQL is a dialect, no JDBC (27).
+- SQL is a dialect with enforced constraints and a PARTIAL JDBC driver (27).
 - Durability recovered from dead code in this audit; maturity unproven in production (15).
 - Framework starter modules lack CI verification (29–32, 44).
 

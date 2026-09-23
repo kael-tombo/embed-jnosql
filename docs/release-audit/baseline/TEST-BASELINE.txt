@@ -1,12 +1,15 @@
 Command: mvn test
-Result: Tests run: 859, Failures: 0, Errors: 0, Skipped: 0
+Result: Tests run: 872, Failures: 0, Errors: 0, Skipped: 0
 History: 785 (2026-09-22) → 832 (durability round) → 846 (R-74 keys: +14 `SqlConstraintTest`)
-→ **859** (R-75 referential + CHECK: +13 `SqlReferentialConstraintTest`).
+→ 859 (R-75 referential + CHECK: +13 `SqlReferentialConstraintTest`)
+→ **872** (R-76 JDBC driver: +13 `JdbcDriverTest`).
 Java: 23.0.1 / Maven: 3.9.6.
 
-Coverage (JaCoCo, line): covered 29,647 / missed 9,123 = **76.5%**. The 70% line gate is
-satisfied. Branch coverage is reported separately and is not gated; the gate lives in the
-`coverage-check` profile and is not enforced by the default `mvn test`.
+Coverage (JaCoCo, line): covered 30,625 / missed 10,515 = **74.4%**. The 70% line gate is
+satisfied. Coverage fell from 76.5% because the JDBC driver's reflective dispatch adds many
+untested paths (including the deliberately unsupported ones); branch coverage is reported
+separately and is not gated; the gate lives in the `coverage-check` profile and is not enforced
+by the default `mvn test`.
 
 cli/: 4/4 (verified in the prior round; not re-run this round)
 demo end-to-end-validation: 4/4 (prior round)

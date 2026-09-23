@@ -49,9 +49,10 @@ not add a new execution to them:
    what `--sync` means is a durability-contract change per engine.
 4. **The product-deliverable gap is closed.** `docs/product/PRODUCT_BLUEPRINT.md` and
    `docs/product/USER_STORY_MAP.md` (137 stories, 10 epics) now exist. The story map labels every
-   capability honestly: 5 `NOT IMPLEMENTED` (JDBC, procedures/functions/triggers, `EXPLAIN`),
-   23 `PARTIAL`, 1 `NOT VERIFIED` (Maven Central), 1 `EXPERIMENTAL` (Kafka CDC). (Counted after
-   both constraint slices below; at the moment of the table above the split was 8 / 23.)
+   capability honestly: 4 `NOT IMPLEMENTED` (procedures/functions/triggers, `EXPLAIN`),
+   24 `PARTIAL` (JDBC is one of them), 1 `NOT VERIFIED` (Maven Central), 1 `EXPERIMENTAL`
+   (Kafka CDC). (Counted after all three slices below; at the moment of the table above the
+   split was 8 / 23.)
 5. **Nothing was discarded.** No `reset`, `checkout --`, or `clean -fd`. The concurrent session's
    29 modified files were left untouched.
 
@@ -61,14 +62,15 @@ After the table above was captured, the JDBC/constraint follow-up began with the
 slice (R-74): `PRIMARY KEY`, `UNIQUE` and `NOT NULL` are now parsed and enforced, durable
 across restart. This changed the numbers quoted above:
 
-| Metric | Before slices | After slice 1 (keys) | After slice 2 (referential + CHECK) |
-|---|---|---|---|
-| Tests | 832 | 846 (+14 `SqlConstraintTest`) | **859** (+13 `SqlReferentialConstraintTest`) |
-| Line coverage | 75.5% | 76.1% | **76.5%** |
-| Shaded jar | 3,122,887 B | 3,133,120 B | re-packaged (still < 5 MB) |
+| Metric | Before slices | Slice 1 (keys) | Slice 2 (referential + CHECK) | Slice 3 (JDBC) |
+|---|---|---|---|---|
+| Tests | 832 | 846 (+14 `SqlConstraintTest`) | 859 (+13 `SqlReferentialConstraintTest`) | **872** (+13 `JdbcDriverTest`) |
+| Line coverage | 75.5% | 76.1% | 76.5% | **74.4%** (proxy dispatch adds uncovered branches) |
+| Shaded jar | 3,122,887 B | 3,133,120 B | 3,136,885 B | **3,164,082 B** (still < 5 MB) |
 
-Full records: `71-constraint-enforcement-evidence.md` and `72-referential-constraint-evidence.md`.
-The JDBC driver remains the largest open gap.
+Full records: `71-constraint-enforcement-evidence.md`,
+`72-referential-constraint-evidence.md`, `73-jdbc-driver-evidence.md`. The JDBC driver remains
+`PARTIAL` (no explicit transactions or schema reflection).
 
 ## Impact on the release decision
 

@@ -125,12 +125,11 @@ and lifecycle. All are legitimately shared — none erases the SQL/NoSQL semanti
 **Surface:** 8 files (`SqlLexer`, `SqlParser`, AST, `SqlEngine`, `SqlResultSet`, `SqlRow`,
 `SqlUnknownTableException`).
 
-**Note on JDBC:** a repository-wide search finds **no `java.sql` reference anywhere in main
-sources and no JDBC-named package or class**. The `jpa/` and `adapter/` packages provide
-JPA-style and repository-style mapping; they do **not** provide a JDBC driver. Anywhere this
-project implies JDBC support, that implication is false — see
-`27-jdbc-and-sql-compatibility.md` and the corrected website claim (the site correctly lists
-the JDBC driver as *not included*).
+**Note on JDBC (updated 2026-09-23, R-76):** a JDBC driver now ships under
+`org.junify.db.jdbc` and is discoverable through `META-INF/services/java.sql.Driver`. It is
+**not** JDBC-compliant — `Driver.jdbcCompliant()` returns `false` — and does not implement
+explicit transactions, savepoints, batch execution, or schema reflection. See
+`27-jdbc-and-sql-compatibility.md` and `73-jdbc-driver-evidence.md`.
 
 | Capability | Status | Evidence |
 |---|---|---|
@@ -141,17 +140,19 @@ the JDBC driver as *not included*).
 | ALTER TABLE / CREATE INDEX / CREATE VIEW / CREATE SEQUENCE | NOT IMPLEMENTED | parser contains only the `TABLE` DDL keyword — no `ALTER`, `INDEX`, `VIEW`, or `SEQUENCE` tokens |
 | Aggregations, expressions, CAST | PARTIALLY VERIFIED | doc 08 |
 | Transactions / savepoints over SQL | PARTIALLY VERIFIED | shares `core` transaction machinery; doc 13 |
-| **JDBC driver** | **NOT IMPLEMENTED** | **zero** occurrences of `java.sql.Driver` in main sources |
+| **JDBC driver** | **PARTIAL** (2026-09-23, R-76) | `org.junify.db.jdbc` + `META-INF/services/java.sql.Driver`; `JdbcDriverTest` (13) + compiled-consumer run |
 | Constraints: PRIMARY KEY / UNIQUE / NOT NULL / FOREIGN KEY / CHECK | **ENFORCED** (2026-09-23, R-74 + R-75; inline + table-level, durable, both FK directions) | docs 71, 72 |
 | Indexes (SQL-managed, `CREATE INDEX`) | NOT IMPLEMENTED (probe-level indexes exist) | doc 12 |
 | Sequences, identity columns, views, procedures, functions, triggers | NOT IMPLEMENTED | parser has no keywords for them |
 | Query planner / cost estimation / EXPLAIN | NOT IMPLEMENTED | execution is interpretation, not planning |
 
 **Honest positioning:** this is a **SQL query dialect + execution layer over a document
-store**, valuable for embedded and admin workloads, and **not** a relational DBMS with
-constraint enforcement, JDBC, or a planner. `docs/release-audit/05-relational-engine-audit.md`
-and the corrected website/Console copy already state this. **The absence of a JDBC driver
-is the single largest gap between the words "SQL database" and the implementation.**
+store**, valuable for embedded and admin workloads, and **not** a full relational DBMS. As of
+2026-09-23 the key/null/referential/`CHECK` constraints **are** enforced and a **PARTIAL JDBC
+driver** exists; what remains absent is a query planner/`EXPLAIN`, sequences, views, procedures,
+functions and triggers, and JDBC's transactional/schema-reflection surface.
+`docs/release-audit/05-relational-engine-audit.md` and the corrected website/Console copy state
+this.
 
 ### 3.1 Non-relational (NoSQL) engine
 
@@ -232,10 +233,10 @@ persistence), 2/4 (engine discovery). Two tests were found to have **codified de
 expected behaviour** (`queryParser_unknownOperatorIgnored`, the TTL "expired docs are
 readable" assertion) and were inverted.
 
-**Weak spots recorded honestly:** no JDBC test suite (no JDBC driver); constraint
-enforcement untestable (not implemented); `demo/` projects resolve a **stale installed
-`junify-db-core`** unless `mvn install` is run first — documented in doc 35 after it caused
-a false-negative demo run.
+**Weak spots recorded honestly:** the JDBC driver covers a `PARTIAL` surface (no explicit
+transactions or schema reflection) and records a discovery defect found and fixed this round
+(R-76); `demo/` projects resolve a **stale installed `junify-db-core`** unless `mvn install` is
+run first — documented in doc 35 after it caused a false-negative demo run.
 
 ---
 
@@ -285,7 +286,7 @@ mature, tested, honestly-limited embedded database — which is exactly what exi
 | Baseline recoverable | **PASS** (see `baseline/`) |
 | Architecture coherence | **PASS with one documented gap** (single module vs. modular vision — ADR-001) |
 | Engine separation | **PASS as multi-model over shared substrate**, not as independently deployable engines |
-| SQL engine | **PARTIAL** — real query dialect; no JDBC, constraints, planner, or routines |
+| SQL engine | **PARTIAL** — real query dialect with enforced constraints and a PARTIAL JDBC driver; no planner or routines |
 | NoSQL engine | **PASS** — genuinely implemented and now behaviourally honest (R-31…R-53) |
 | Console | **PASS** — 22 routes traced end-to-end, 23 fake-success/correctness defects fixed |
 | Website | **PASS after this round's corrections**; remote deploy pending |
