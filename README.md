@@ -154,7 +154,7 @@ Alternatively, download the shaded jar from the GitHub Release and put it on you
 Maven pulls these in automatically; they are the only mandatory runtime dependencies:
 `jackson-databind`, `jackson-datatype-jsr310`, and `slf4j-api`. Everything else — Spring,
 Quarkus, Micronaut, Jakarta CDI, Hibernate, Micrometer — is optional (`provided` or `optional`
-scope) and absent unless you add it. The shaded jar is **3.11 MB** (core + those three).
+scope) and absent unless you add it. The shaded jar is **3.12 MB** (core + those three).
 
 ```xml
 <dependency>
