@@ -18,6 +18,10 @@ import java.util.stream.Collectors;
  * {@link org.embeddedjnosql.db.adapter.jnosql.EclipseDocumentTemplate}) to translate
  * Hibernate/JPA-annotated entities to documents and back, exactly as a consumer wiring the
  * Jakarta NoSQL-style template into Spring would.
+ *
+ * <p>Collections are resolved <b>per operation</b>, never cached in a field: a cached collection
+ * captured outside a transaction would silently bypass the transaction routing of the
+ * auto-configured database bean — the same rule {@code EmbedRepository} follows internally.</p>
  */
 @Service
 class HibernateOrderService {
@@ -25,12 +29,18 @@ class HibernateOrderService {
     private static final String ORDERS = "hibernate_orders";
     private static final String AUDIT = "hibernate_audit";
 
-    private final DocumentCollection orders;
-    private final DocumentCollection audit;
+    private final EmbedJNoSQLTemplate template;
 
     HibernateOrderService(EmbedJNoSQLTemplate template) {
-        this.orders = template.documents(ORDERS);
-        this.audit = template.documents(AUDIT);
+        this.template = template;
+    }
+
+    private DocumentCollection orders() {
+        return template.documents(ORDERS);
+    }
+
+    private DocumentCollection audit() {
+        return template.documents(AUDIT);
     }
 
     // ------------------------------------------------------------------
@@ -100,18 +110,18 @@ class HibernateOrderService {
     // ------------------------------------------------------------------
 
     Map<String, Object> rawColumnsOf(String id) {
-        Document doc = orders.findById(id);
+        Document doc = orders().findById(id);
         return doc == null ? Map.of() : doc.fields();
     }
 
-    private DocumentCollection collection() { return orders; }
+    private DocumentCollection collection() { return orders(); }
 
     private org.embeddedjnosql.db.adapter.jnosql.EclipseDocumentTemplate template() {
-        return org.embeddedjnosql.db.adapter.jnosql.EclipseDocumentTemplate.of(orders);
+        return org.embeddedjnosql.db.adapter.jnosql.EclipseDocumentTemplate.of(orders());
     }
 
     private Document findDocument(String id) {
-        return orders.findById(id);
+        return orders().findById(id);
     }
 
     /** Feed a detached snapshot into a live instance WITHOUT the template (pure EntityMapper path). */
@@ -154,12 +164,12 @@ class HibernateOrderService {
     }
 
     private org.embeddedjnosql.db.adapter.jnosql.EclipseDocumentTemplate auditTemplate() {
-        return org.embeddedjnosql.db.adapter.jnosql.EclipseDocumentTemplate.of(audit);
+        return org.embeddedjnosql.db.adapter.jnosql.EclipseDocumentTemplate.of(audit());
     }
 
     /** Count documents in the raw audit collection, independent of the template. */
     long auditCount() {
-        return audit.count();
+        return audit().count();
     }
 
     /** Group order ids by priority straight from storage (aggregation over stored enum names). */
@@ -171,7 +181,7 @@ class HibernateOrderService {
     }
 
     private List<Document> findAllDocuments() {
-        return orders.findAll();
+        return orders().findAll();
     }
 
     /** Utility exposing the collection for direct asserts (raw column names, ttl, etc.). */

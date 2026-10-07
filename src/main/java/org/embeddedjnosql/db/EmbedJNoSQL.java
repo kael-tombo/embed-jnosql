@@ -38,7 +38,10 @@ public class EmbedJNoSQL implements Closeable {
     private volatile boolean closed;
     private EmbedJNoSQLServer server;
 
-    private EmbedJNoSQL(EmbedJNoSQLConfig config) {
+    // protected rather than private: the Spring Boot starter routes this class through a
+    // CGLIB proxy for @Transactional support, and Spring's Enhancer requires a visible
+    // superclass constructor. Factory methods remain the public creation API.
+    protected EmbedJNoSQL(EmbedJNoSQLConfig config) {
         this.config = config;
         this.engine = config.storageEngine().create(config.dataDir(), config.autoFlush(), config.flushIntervalMs());
         this.mvcc = new MVCCManager();

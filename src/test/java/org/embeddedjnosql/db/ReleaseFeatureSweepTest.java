@@ -734,6 +734,12 @@ class ReleaseFeatureSweepTest {
         assertEquals("Effective Java", roundTrip.getTitle());
         assertEquals(45.0, roundTrip.getPrice(), 0.0001);
 
+        // id-field type resolution (used by Spring to build EmbedRepository<T, ID> bean targets)
+        assertEquals(String.class, EntityMapper.getIdFieldType(Book.class),
+                "the @Id field's declared type must be resolvable");
+        assertEquals(Object.class, EntityMapper.getIdFieldType(Object.class),
+                "classes without an id field resolve to Object");
+
         // mapping alone must not persist anything
         assertTrue(EntityMapper.getCollectionName(Book.class) != null && db.getCollectionNames().isEmpty(),
                 "mapping a class must not create a collection; only writes materialize it");

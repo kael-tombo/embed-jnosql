@@ -146,8 +146,9 @@ genuinely needs `JOIN`/`GROUP BY` to a relational database.
 | Transactions | `TransactionTest`, `deep/DeepTransactionTest`, `TransactionalCatalogVisibilityTest` | PASS |
 | Durability across restart | `EngineRestartDiscoveryTest`, `CheckpointRaceDurabilityTest`, `WalRotationAndCheckpointTest`, `CollectionExistenceDurabilityTest` | PASS |
 | Jakarta NoSQL adapter | `jnosql/EmbedRepositoryTest` + annotation demo suite | PASS |
-| Demos and adapters | `mvn -B -o test` per module after `mvn install` of the core | PASS — spring-boot-demo 28 (6 app + **22 Hibernate-integration**), advanced-queries-demo 5, annotation-showcase-demo 5, spring-boot-starter 12, cli 4 (0 failures, 0 errors each); quarkus runtime/deployment and micronaut-integration built green |
+| Demos and adapters | `mvn -B -o test` per module after `mvn install` of the core | PASS — spring-boot-demo 36 (6 app + **22 Hibernate-integration** + **8 H2-parity**), advanced-queries-demo 5, annotation-showcase-demo 5, spring-boot-starter **29** (10 auto-config + 7 parity toggles + 7 Spring-context parity + 3 tx-routing unit + 2 console), cli 4 (0 failures, 0 errors each); quarkus runtime/deployment and micronaut-integration built green |
 | Hibernate integration inside Spring Boot (deep) | `HibernateIntegrationTest` (22 tests, real `@SpringBootTest`) | PASS — log: [demo-spring-hibernate.log](demo-spring-hibernate.log). Hibernate/JPA-annotated entities drive a template-backed `@Service` through auto-configured beans: `@Table` collection naming (and the lowercase-simple-name fallback), `@UuidGenerator` id backfill (36-char UUID) vs. explicit `@Id`, `@PrePersist`/`@PostLoad`, `@CreationTimestamp`/`@UpdateTimestamp` columns, derived `@Formula` recomputed on load and tracking inputs after update, `@Column(name=…)` alias as the stored key, `@Enumerated(STRING)` stored as names and queryable via `Query.eq`, `@Transient` excluded from documents, `java.util.Date`↔ISO-string write/read symmetry, raw `EntityMapper` remap agreeing with the template, batch `insertAll`, `sortByDesc`+`limit(offset)` windowing, storage-level enum-name grouping, `@Immutable` update refusal on an audit entity, `@NaturalId` recognition, and a whole-stack column audit. First run surfaced and fixed a real core bug: `EntityMapper.convertValue` wrote `java.util.Date` as an ISO string but threw on read; the read now parses symmetrically 
+| H2-parity Spring Boot integration (deep) | starter `EmbedJNoSQLHibernateParityTest` (7, real nested `@SpringBootApplication`) + `EmbedJNoSQLParityTogglesTest` (7, toggle matrix) + `EmbedTxRoutingTest` (3, no-context unit suite); demo `HibernateParityIntegrationTest` (8) | PASS — logs: [starter-h2-parity.log](starter-h2-parity.log), [demo-spring-hibernate.log](demo-spring-hibernate.log). The full H2 experience with zero manual wiring: auto-configured `EmbedJNoSQLTransactionManager` makes `@Transactional` stage-and-discard over the MVCC layer; the auto-configured database bean is wrapped in a transaction-routing proxy so `documentCollection()` returns a `TransactionAwareDocumentCollection` (staged mutations, read-your-own-writes via the staged overlay, TTL inserts rejected inside transactions, index DDL immediate); `REQUIRES_NEW` suspends/resumes; every scanned `@Entity` gets an auto-registered, fully-parameterized `EmbedRepository<T, ID>` bean injectable by type (user beans win); entity collections materialize at startup. Three real wiring bugs were found and fixed en route (see §4a) |
 | Website JS syntax | `node --check` on the extracted inline script | PASS |
 | Website DOM (local preview) | `preview_evaluate` on the registered page | PASS — title `EmbedJNoSQL — The Embedded NoSQL Database for Java`, H1 "One Embedded Engine. Zero Infrastructure.", one playground tab, real-API sample, two data-model cards + four storage modes |
 | Gate scripts | `bash -n scripts/console-contract-gate.sh`, `bash -n scripts/console-auth-gate.sh` | PASS (syntax), and **executed end-to-end**: contract gate **95/95 checks PASS** ([contract-gate-run.log](contract-gate-run.log)) incl. restart and kill -9 WAL recovery and 4 shipped-jar picker checks; auth gate **36/36 PASS** ([auth-gate-run.log](auth-gate-run.log)); deep test **90/90 PASS** ([deep-test-run.log](deep-test-run.log)) |
@@ -171,6 +172,36 @@ valid test was deleted to make the suite green.
 **NoSQL replacements for the removed gates:** the contract gate now asserts that a query on an
 unknown collection answers 404 and creates nothing, that a delete of an unknown collection creates
 nothing, and that a document query returns the same count after a restart (exactly-once survival).
+
+### 4a. H2-parity round: three wiring bugs found, fixed, and pinned by tests
+
+The H2-parity build-out (auto transaction manager, tx-routed collections, auto-registered
+repositories) surfaced three real defects — all reproduced, diagnosed with instrumented probes,
+fixed, and now pinned by tests:
+
+1. **Repositories were injectable by name only.** Supplier-based bean definitions are raw unless a
+   target type is set, so `@Autowired EmbedRepository<Order, String>` failed with
+   `NoSuchBeanDefinitionException` while `getBean("orderRepository")` worked. Fix: the registrar
+   registers a `RootBeanDefinition` with `setTargetType(EmbedRepository<entity, idType>)` using the
+   new `EntityMapper.getIdFieldType(Class)`. Pinned by the by-type injection probe in
+   `EmbedJNoSQLParityTogglesTest` and every parity test.
+2. **The transaction holder was keyed inconsistently.** The transaction manager bound the MVCC
+   transaction under the *proxied* database bean, but Spring's `MethodInvocation.getThis()` hands
+   the interceptor the *raw target*, so the routing lookup always missed and every write went
+   straight to the store — `@Transactional` silently became a no-op. Fix: both sides key on the
+   unwrapped raw bean (`Advised.getTargetSource()` in the manager, the captured target in the
+   interceptor). Pinned by `EmbedTxRoutingTest` (routing assertion + rollback discard + unwrap).
+3. **`doGetTransaction` did not reflect the thread-bound transaction.** APTM therefore never saw an
+   existing transaction: REQUIRED re-began and crashed with "Already value bound to thread", and
+   REQUIRES_NEW never suspended the outer transaction. Fix: `doGetTransaction` reads the bound MVCC
+   transaction (the `DataSourceTransactionManager` pattern). Pinned by the REQUIRES_NEW unit test
+   and the demo's `requiresNewCommitsIndependentlyOfOuterRollback`.
+
+A fourth finding was a test-design defect, not a product bug: the starter's parity app originally
+lived in the same package as the auto-configuration, so `@SpringBootApplication`'s component scan
+swept the starter's own nested `@Configuration` classes past their root condition. The parity app
+now lives in its own sub-package (`…spring.boot.parity`), mirroring a real `com.example.app`
+layout; a real application is structurally unaffected.
 
 ---
 

@@ -12,8 +12,41 @@ public class EmbedJNoSQLProperties {
     private boolean autoFlush = true;
     private int flushIntervalMs = 1000;
 
+    /** Spring {@code @Transactional} support: MVCC transaction manager + tx-routed collections. */
+    private boolean transactionsEnabled = true;
+
+    /** Auto-register an {@code EmbedRepository} bean for every scanned {@code @Entity}. */
+    private boolean repositoriesEnabled = true;
+
+    /** Materialize entity collections at startup (ddl-auto=update parity for a document store). */
+    private boolean autoCreateCollections = true;
+
     private ConsoleProperties console = new ConsoleProperties();
     private SecurityProperties security = new SecurityProperties();
+
+    public boolean isTransactionsEnabled() {
+        return transactionsEnabled;
+    }
+
+    public void setTransactionsEnabled(boolean transactionsEnabled) {
+        this.transactionsEnabled = transactionsEnabled;
+    }
+
+    public boolean isRepositoriesEnabled() {
+        return repositoriesEnabled;
+    }
+
+    public void setRepositoriesEnabled(boolean repositoriesEnabled) {
+        this.repositoriesEnabled = repositoriesEnabled;
+    }
+
+    public boolean isAutoCreateCollections() {
+        return autoCreateCollections;
+    }
+
+    public void setAutoCreateCollections(boolean autoCreateCollections) {
+        this.autoCreateCollections = autoCreateCollections;
+    }
 
     public boolean isEnabled() {
         return enabled;

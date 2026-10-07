@@ -127,6 +127,55 @@ public class Transaction implements AutoCloseable {
         operations.add(new Operation(Operation.Type.DELETE, collection, key, null));
     }
 
+    /**
+     * Returns the most recent value staged for the given key by THIS transaction, or
+     * {@link Optional#empty()} when the latest staged operation for the key is a DELETE or when
+     * nothing is staged at all. Use {@link #isBufferedDeleted(String, String)} to distinguish a
+     * staged delete from an untouched key, and {@link #bufferedKeys(String)} to enumerate the
+     * staged surface of a collection. This is the read-your-own-writes overlay that
+     * transaction-aware facades merge on top of committed query results.
+     */
+    public java.util.Optional<String> bufferedPut(String collection, String key) {
+        checkOpen();
+        for (int i = operations.size() - 1; i >= 0; i--) {
+            var op = operations.get(i);
+            if (op.collection().equals(collection) && op.key().equals(key)) {
+                return op.type() == Operation.Type.DELETE ? java.util.Optional.empty()
+                        : java.util.Optional.of(op.value());
+            }
+        }
+        return java.util.Optional.empty();
+    }
+
+    /**
+     * True when the latest staged operation for the key in this transaction is a DELETE.
+     */
+    public boolean isBufferedDeleted(String collection, String key) {
+        checkOpen();
+        for (int i = operations.size() - 1; i >= 0; i--) {
+            var op = operations.get(i);
+            if (op.collection().equals(collection) && op.key().equals(key)) {
+                return op.type() == Operation.Type.DELETE;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * The set of keys with staged operations in the given collection (both staged writes and
+     * staged deletes). Unmodifiable copy; the live set is the operations list.
+     */
+    public java.util.Set<String> bufferedKeys(String collection) {
+        checkOpen();
+        var keys = new java.util.LinkedHashSet<String>();
+        for (var op : operations) {
+            if (op.collection().equals(collection)) {
+                keys.add(op.key());
+            }
+        }
+        return java.util.Collections.unmodifiableSet(keys);
+    }
+
     public String id() {
         return id;
     }

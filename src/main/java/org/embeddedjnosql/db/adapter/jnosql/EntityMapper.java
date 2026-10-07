@@ -225,6 +225,19 @@ public class EntityMapper {
     }
 
     /**
+     * Returns the declared type of the designated ID field for the given class —
+     * e.g. {@code String.class} for a {@code @Id String id} field — so that tools building
+     * typed handles (Spring {@code ResolvableType} bean targets, codegen, etc.) can construct
+     * fully-parameterized {@code EmbedRepository<T, ID>} references.
+     *
+     * @return the ID field's declared type, or {@code Object.class} when no ID field exists.
+     */
+    public static Class<?> getIdFieldType(Class<?> clazz) {
+        Field idField = findDesignatedIdField(getAllFields(clazz));
+        return idField != null ? idField.getType() : Object.class;
+    }
+
+    /**
      * Resolves the mapped document field/column name for a field.
      */
     public static String resolveColumnName(Field field) {
