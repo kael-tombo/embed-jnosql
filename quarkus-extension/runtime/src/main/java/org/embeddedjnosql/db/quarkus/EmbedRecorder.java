@@ -9,9 +9,9 @@ import org.embeddedjnosql.db.EmbedJNoSQL;
  * Manages database initialization and clean shutdown lifecycle during runtime init.
  */
 @Recorder
-public class JembedRecorder {
+public class EmbedRecorder {
 
-    public RuntimeValue<EmbedJNoSQL> createDatabase(JembedConfig config) {
+    public RuntimeValue<EmbedJNoSQL> createDatabase(EmbedConfig config) {
         var db = EmbedJNoSQL.create(
                 EmbedJNoSQL.embed()
                         .storageEngine(config.getEngine())

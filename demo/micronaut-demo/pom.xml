@@ -58,6 +58,15 @@
             <artifactId>micronaut-serde-jackson</artifactId>
         </dependency>
 
+        <!-- YAML config source: without it application.yml is silently ignored
+             and the app runs on @Property(defaultValue) fallbacks. -->
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>2.2</version>
+            <scope>runtime</scope>
+        </dependency>
+
         <!-- Logging -->
         <dependency>
             <groupId>ch.qos.logback</groupId>

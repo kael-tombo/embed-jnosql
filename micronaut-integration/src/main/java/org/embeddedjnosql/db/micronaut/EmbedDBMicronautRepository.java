@@ -17,14 +17,14 @@ import java.util.concurrent.CompletionStage;
 
 
 @Singleton
-public class EmbedJNoSQLMicronautRepository<T, ID> {
+public class EmbedDBMicronautRepository<T, ID> {
 
     private final Class<T> entityClass;
     private final Class<ID> idClass;
     private final EmbedJNoSQL embeddedjnosqlDB;
     private final DocumentCollection collection;
 
-    public EmbedJNoSQLMicronautRepository(EmbedJNoSQL embeddedjnosqlDB, Class<T> entityClass, Class<ID> idClass) {
+    public EmbedDBMicronautRepository(EmbedJNoSQL embeddedjnosqlDB, Class<T> entityClass, Class<ID> idClass) {
         this.embeddedjnosqlDB = embeddedjnosqlDB;
         this.entityClass = entityClass;
         this.idClass = idClass;

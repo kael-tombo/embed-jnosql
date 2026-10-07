@@ -26,13 +26,13 @@ import java.util.stream.Collectors;
  * {@link #getDatabase()}.
  */
 @Singleton
-public class EmbedJNoSQLEntityManager {
+public class EmbedDBEntityManager {
 
     private final EmbedJNoSQL db;
     private final String persistenceUnit;
     private boolean open = true;
 
-    public EmbedJNoSQLEntityManager(EmbedJNoSQL db, String persistenceUnit) {
+    public EmbedDBEntityManager(EmbedJNoSQL db, String persistenceUnit) {
         this.db = db;
         this.persistenceUnit = persistenceUnit;
     }

@@ -10,7 +10,7 @@ import java.util.Optional;
  * Quarkus SmallRye Config mapping for the {@code embedjnosql.*} configuration prefix.
  */
 @ConfigMapping(prefix = "embedjnosql")
-public interface JembedConfig {
+public interface EmbedConfig {
 
     @WithDefault("IN_MEMORY")
     StorageEngineType engine();

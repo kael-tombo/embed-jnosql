@@ -146,9 +146,10 @@ genuinely needs `JOIN`/`GROUP BY` to a relational database.
 | Transactions | `TransactionTest`, `deep/DeepTransactionTest`, `TransactionalCatalogVisibilityTest` | PASS |
 | Durability across restart | `EngineRestartDiscoveryTest`, `CheckpointRaceDurabilityTest`, `WalRotationAndCheckpointTest`, `CollectionExistenceDurabilityTest` | PASS |
 | Jakarta NoSQL adapter | `jnosql/EmbedRepositoryTest` + annotation demo suite | PASS |
-| Demos and adapters | `mvn -B -o test` per module after `mvn install` of the core | PASS — spring-boot-demo 36 (6 app + **22 Hibernate-integration** + **8 H2-parity**), advanced-queries-demo 5, annotation-showcase-demo 5, spring-boot-starter **29** (10 auto-config + 7 parity toggles + 7 Spring-context parity + 3 tx-routing unit + 2 console), cli 4 (0 failures, 0 errors each); quarkus runtime/deployment and micronaut-integration built green |
+| Demos and adapters | `mvn -B -o test` per module after `mvn install` of the core | PASS — spring-boot-demo 36 (6 app + **22 Hibernate-integration** + **8 H2-parity**), advanced-queries-demo 5, annotation-showcase-demo 5, spring-boot-starter **29** (10 auto-config + 7 parity toggles + 7 Spring-context parity + 3 tx-routing unit + 2 console), cli 4, **quarkus-demo 13 (4 e-commerce + 9 framework-integration), micronaut-demo 11 (4 + 7), vertx-demo 11 (4 + 7)** (0 failures, 0 errors each); quarkus runtime/deployment and micronaut-integration build green (two rename-sweep breakages fixed, see §4a) |
 | Hibernate integration inside Spring Boot (deep) | `HibernateIntegrationTest` (22 tests, real `@SpringBootTest`) | PASS — log: [demo-spring-hibernate.log](demo-spring-hibernate.log). Hibernate/JPA-annotated entities drive a template-backed `@Service` through auto-configured beans: `@Table` collection naming (and the lowercase-simple-name fallback), `@UuidGenerator` id backfill (36-char UUID) vs. explicit `@Id`, `@PrePersist`/`@PostLoad`, `@CreationTimestamp`/`@UpdateTimestamp` columns, derived `@Formula` recomputed on load and tracking inputs after update, `@Column(name=…)` alias as the stored key, `@Enumerated(STRING)` stored as names and queryable via `Query.eq`, `@Transient` excluded from documents, `java.util.Date`↔ISO-string write/read symmetry, raw `EntityMapper` remap agreeing with the template, batch `insertAll`, `sortByDesc`+`limit(offset)` windowing, storage-level enum-name grouping, `@Immutable` update refusal on an audit entity, `@NaturalId` recognition, and a whole-stack column audit. First run surfaced and fixed a real core bug: `EntityMapper.convertValue` wrote `java.util.Date` as an ISO string but threw on read; the read now parses symmetrically 
 | H2-parity Spring Boot integration (deep) | starter `EmbedJNoSQLHibernateParityTest` (7, real nested `@SpringBootApplication`) + `EmbedJNoSQLParityTogglesTest` (7, toggle matrix) + `EmbedTxRoutingTest` (3, no-context unit suite); demo `HibernateParityIntegrationTest` (8) | PASS — logs: [starter-h2-parity.log](starter-h2-parity.log), [demo-spring-hibernate.log](demo-spring-hibernate.log). The full H2 experience with zero manual wiring: auto-configured `EmbedJNoSQLTransactionManager` makes `@Transactional` stage-and-discard over the MVCC layer; the auto-configured database bean is wrapped in a transaction-routing proxy so `documentCollection()` returns a `TransactionAwareDocumentCollection` (staged mutations, read-your-own-writes via the staged overlay, TTL inserts rejected inside transactions, index DDL immediate); `REQUIRES_NEW` suspends/resumes; every scanned `@Entity` gets an auto-registered, fully-parameterized `EmbedRepository<T, ID>` bean injectable by type (user beans win); entity collections materialize at startup. Three real wiring bugs were found and fixed en route (see §4a) |
+| Framework integrations (Quarkus/Micronaut/Vert.x demos, deep) | demo `ProductCatalogIntegrationTest` (9, `@QuarkusTest`), `MicronautIntegrationCoverageTest` (7, `@MicronautTest`), `VertxIntegrationCoverageTest` (7, `VertxExtension`) | PASS — logs: [demo-quarkus-final.log](demo-quarkus-final.log), [demo-micronaut-final.log](demo-micronaut-final.log), [demo-vertx-final.log](demo-vertx-final.log). Quarkus: seeded-catalog CRUD round trip, explicit MVCC commit/rollback around the HTTP layer (order flow deducts 29/30, oversubscribed order → 400 with stock intact), TTL document metadata (`getExpiresAt`, `ttlStats.withTtl`), storage-level URL-hostile id round trip + HTTP-level unicode/whitespace id, extension CDI producer (`@Inject EmbedJNoSQL` open with seeded collections), SmallRye Config resolution of `embedjnosql.*`. Micronaut: APT bean graph resolution (`EmbedJNoSQL` bean + injected controller), `embedjnosql.*` property binding from `application.yml` (yml was silently dead without snakeyaml — real bug fixed in the demo pom), `@SerdeImport` record round trip, read consistency, 404/400 error edges via `HttpClientResponseException`, two-collection atomic commit. Vert.x: server-generated ids, order persist-then-list, 8-way `Future.all` concurrent reads, async tx rollback keeps stock intact, 4-way concurrent order placement serializes exactly 100−4×10=60, 404 routes. Two build breakages fixed en route: `quarkus-extension` and `micronaut-integration` public type names diverged from their file names during a rename sweep (neither module compiled) |
 | Website JS syntax | `node --check` on the extracted inline script | PASS |
 | Website DOM (local preview) | `preview_evaluate` on the registered page | PASS — title `EmbedJNoSQL — The Embedded NoSQL Database for Java`, H1 "One Embedded Engine. Zero Infrastructure.", one playground tab, real-API sample, two data-model cards + four storage modes |
 | Gate scripts | `bash -n scripts/console-contract-gate.sh`, `bash -n scripts/console-auth-gate.sh` | PASS (syntax), and **executed end-to-end**: contract gate **95/95 checks PASS** ([contract-gate-run.log](contract-gate-run.log)) incl. restart and kill -9 WAL recovery and 4 shipped-jar picker checks; auth gate **36/36 PASS** ([auth-gate-run.log](auth-gate-run.log)); deep test **90/90 PASS** ([deep-test-run.log](deep-test-run.log)) |
@@ -163,7 +164,7 @@ family plus the experimental-label contract assertion for
 `ConsoleWorkspaceEndpointsTest` (Redis-style list/set/hash routes, `/api/stats`, and the
 retired-route 404s), and `TextIndexPhraseTest` (11 — the positional phrase-search contract after
 the sweep's `searchPhrases` finding was fixed). The demo layer adds another 22: the
-Spring Boot demo's `HibernateIntegrationTest` (see the deep row above). One further core test, `testNoHttpServerByDefault`, pins the console-opt-in guarantee above.
+Spring Boot demo's `HibernateIntegrationTest` (see the deep row above), and a further **23 framework-integration tests** (9 Quarkus + 7 Micronaut + 7 Vert.x, see the framework row and §4b). One further core test, `testNoHttpServerByDefault`, pins the console-opt-in guarantee above.
 Three assertions in `FullFeatureTest` that accepted “200, 400, 404 or 503” on removed relational
 routes were **tightened** to require 404, and `GET /api/schema/collections` (a path that never
 existed) was replaced with a real `GET /api/schema` listing check. No assertion was weakened and no
@@ -215,6 +216,41 @@ lived in the same package as the auto-configuration, so `@SpringBootApplication`
 swept the starter's own nested `@Configuration` classes past their root condition. The parity app
 now lives in its own sub-package (`…spring.boot.parity`), mirroring a real `com.example.app`
 layout; a real application is structurally unaffected.
+
+### 4b. Framework-integration round (Quarkus/Micronaut/Vert.x demos): two build breakages, two demo defects
+
+Driving the non-Spring framework demos to parity coverage surfaced four more real defects —
+none of them in the core engine, all fixed and now pinned by the new demo tests:
+
+1. **`quarkus-extension` and `micronaut-integration` did not compile.** A branding rename sweep
+   updated the file names (`EmbedConfig.java`, `EmbedDBFactory.java`, …) but not the public type
+   inside them (`JembedConfig`, `EmbedJNoSQLFactory`, …), so `javac` rejected every file with
+   "public type X should be declared in its own file". Because the demos resolve these artifacts
+   from the local repository, the failure surfaced only as "artifact not downloaded" during the
+   demo builds — the modules were green-claimed in the previous sweep without a successful
+   compile on the final state. Fix: types renamed to match their files (`EmbedConfig`,
+   `EmbedRecorder`, `EmbedExtensionProcessor`, `EmbedDBEntityManager`, `EmbedDBFactory`,
+   `EmbedDBMicronautRepository`, `EmbedDBRepositoryFactory`); all references were internal to
+   the two modules. Pinned by: both modules now build/install green and the Quarkus/Micronaut
+   demos resolve and run against the installed artifacts.
+2. **The Micronaut demo's `application.yml` was silently dead config.** Without a YAML config
+   source on the runtime classpath, Micronaut ignores `application.yml`; the demo's
+   `embedjnosql.*` settings (engine, data dir, flush) never bound and the app ran wholly on
+   `@Property(defaultValue = …)` fallbacks — indistinguishable from a working yml because the
+   values coincided. Fix: `snakeyaml` (2.2, offline-cached version) added to the demo pom as a
+   runtime dependency. Pinned by `MicronautIntegrationCoverageTest` asserting the environment
+   reports the yml values.
+3. **Test-lesson (contract, not product): staged writes must go through `tx.documentCollection(...)`.**
+   The engine contract is that a `db.documentCollection(...)` handle operates outside any
+   transaction; inside a MVCC transaction, writes route through the transaction-scoped collection
+   and TTL inserts are only rejected through the Spring routing layer, not the raw engine. The
+   first Quarkus draft asserted un-committed semantics that the engine never promised and was
+   corrected to the verified `TransactionTest` contract (commit persists, staged delete+rollback
+   discards, TTL metadata reports `getExpiresAt`/`ttlStats.withTtl`).
+4. **Framework assertion idioms differ.** Micronaut's blocking client surfaces 4xx as
+   `HttpClientResponseException` (catch it, then assert `getStatus()`); Vert.x composes with
+   `Future.all` (assert each sub-result's status rather than assuming the port-8082/8083 defaults
+   duplicated the test servers' 18084+). Both idioms are now demonstrated in the demo suites.
 
 ---
 

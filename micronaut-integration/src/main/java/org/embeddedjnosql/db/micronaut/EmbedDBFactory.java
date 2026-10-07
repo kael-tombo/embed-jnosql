@@ -18,7 +18,7 @@ import jakarta.annotation.PreDestroy;
  * Micronaut {@link Factory} that creates and manages the {@link EmbedJNoSQL} singleton.
  */
 @Factory
-public class EmbedJNoSQLFactory {
+public class EmbedDBFactory {
 
     @Nullable
     private EmbedJNoSQL embeddedjnosqlDB;

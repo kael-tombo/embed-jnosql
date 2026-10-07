@@ -6,9 +6,9 @@ import io.quarkus.deployment.annotations.ExecutionTime;
 import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.NativeImageResourceBuildItem;
-import org.embeddedjnosql.db.quarkus.JembedConfig;
+import org.embeddedjnosql.db.quarkus.EmbedConfig;
 import org.embeddedjnosql.db.quarkus.EmbedDBProducer;
-import org.embeddedjnosql.db.quarkus.JembedRecorder;
+import org.embeddedjnosql.db.quarkus.EmbedRecorder;
 
 import java.util.List;
 
@@ -18,7 +18,7 @@ import java.util.List;
  * <p>Registers {@link EmbedDBProducer} as an unremovable CDI bean, records the
  * database initialization for the runtime-init phase, and configures native image resources.
  */
-class JembedExtensionProcessor {
+class EmbedExtensionProcessor {
 
     private static final String FEATURE = "embedjnosql-embed";
 
@@ -34,7 +34,7 @@ class JembedExtensionProcessor {
 
     @BuildStep
     @Record(ExecutionTime.RUNTIME_INIT)
-    void initialize(JembedRecorder recorder, JembedConfig config) {
+    void initialize(EmbedRecorder recorder, EmbedConfig config) {
         recorder.createDatabase(config);
     }
 

@@ -19,7 +19,7 @@ import org.embeddedjnosql.db.nosql.kv.SetBucket;
  * CDI producer for EmbedJNoSQL beans in a Quarkus application.
  *
  * <p>Produces a singleton {@link EmbedJNoSQL} instance configured from
- * {@link JembedConfig}, plus convenience beans for document collections,
+ * {@link EmbedConfig}, plus convenience beans for document collections,
  * key-value buckets, Redis-style data structures, column families, event bus,
  * and database metrics.
  *
@@ -30,7 +30,7 @@ import org.embeddedjnosql.db.nosql.kv.SetBucket;
 public class EmbedDBProducer {
 
     @Inject
-    JembedConfig config;
+    EmbedConfig config;
 
     @Produces
     @Singleton
