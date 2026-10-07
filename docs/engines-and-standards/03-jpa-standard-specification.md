@@ -1,17 +1,17 @@
-# JunifyDB Deep Assessment: Jakarta Persistence (JPA) Specification Support
+# EmbedJNoSQL Deep Assessment: Jakarta Persistence (JPA) Specification Support
 
-**Subsystem**: `org.junify.db.jpa`  
-**Components**: `JunifyEntityManager`, `JunifyEntityManagerFactory`, `JunifyEntityTransaction`, `JunifyPersistence`, `JunifyTypedQuery`  
+**Subsystem**: `org.embeddedjnosql.db.jpa`  
+**Components**: `JembedEntityManager`, `JembedEntityManagerFactory`, `JembedEntityTransaction`, `JembedPersistence`, `JembedTypedQuery`  
 **Status**: Verified Core JPA 3.1 Provider  
 
 ---
 
 ## 1. Specification Compliance Overview
 
-JunifyDB implements the core interfaces defined by the **Jakarta Persistence 3.1 Specification** (`jakarta.persistence.*`), allowing Java developers familiar with standard JPA to use JunifyDB without learning proprietary database APIs:
+EmbedJNoSQL implements the core interfaces defined by the **Jakarta Persistence 3.1 Specification** (`jakarta.persistence.*`), allowing Java developers familiar with standard JPA to use EmbedJNoSQL without learning proprietary database APIs:
 
 ```java
-EntityManagerFactory emf = JunifyPersistence.createEntityManagerFactory(db);
+EntityManagerFactory emf = JembedPersistence.createEntityManagerFactory(db);
 EntityManager em = emf.createEntityManager();
 
 em.getTransaction().begin();
@@ -26,16 +26,16 @@ CatalogProduct found = em.find(CatalogProduct.class, "prod-1");
 
 ## 2. Implemented JPA API Matrix
 
-| JPA Interface / Method | JunifyDB Support | Implementation Details |
+| JPA Interface / Method | EmbedJNoSQL Support | Implementation Details |
 |---|---|---|
 | `EntityManager#persist(entity)` | **Full** | Maps POJO to Document, inserts into collection, registers in PersistenceContext |
 | `EntityManager#merge(entity)` | **Full** | Updates document, refreshes persistence context |
 | `EntityManager#remove(entity)` | **Full** | Deletes document by primary key, evicts from context |
 | `EntityManager#find(entityClass, id)`| **Full** | Retrieves document by ID and instantiates entity via `EntityMapper` |
 | `EntityManager#refresh(entity)` | **Full** | Re-reads document from database and updates entity fields |
-| `EntityManager#createQuery(sql, cls)`| **Full** | Executes query via `JunifyTypedQuery` and maps results to `resultClass` |
+| `EntityManager#createQuery(sql, cls)`| **Full** | Executes query via `JembedTypedQuery` and maps results to `resultClass` |
 | `EntityManager#createNativeQuery(sql)`| **Full** | Executes native SQL query returning `Object[]` or raw map |
-| `EntityTransaction` (`begin`, `commit`, `rollback`)| **Full** | Integrates directly with JunifyDB ACID transaction substrate |
+| `EntityTransaction` (`begin`, `commit`, `rollback`)| **Full** | Integrates directly with EmbedJNoSQL ACID transaction substrate |
 | `TypedQuery#setParameter(name, val)` | **Full** | Supports named parameters (`:param`) and positional parameters (`?1`) |
 | `TypedQuery#setFirstResult` / `setMaxResults` | **Full** | Injects `LIMIT` and `OFFSET` clauses into SQL execution |
 
@@ -43,9 +43,9 @@ CatalogProduct found = em.find(CatalogProduct.class, "prod-1");
 
 ## 3. Developer Productivity Benefits
 
-- **Zero Migration Friction**: Developers accustomed to Spring Data JPA or Jakarta EE can drop JunifyDB in as their in-memory database replacement for H2/Derby.
+- **Zero Migration Friction**: Developers accustomed to Spring Data JPA or Jakarta EE can drop EmbedJNoSQL in as their in-memory database replacement for H2/Derby.
 - **No ORM Impedance Mismatch**: Document storage naturally preserves JSON collections, maps, and nested objects without relational normalisation overhead.
-- **Instant Boot Time**: Traditional JPA/Hibernate requires seconds to scan classpaths and build metamodels; JunifyDB initializes in < 15ms.
+- **Instant Boot Time**: Traditional JPA/Hibernate requires seconds to scan classpaths and build metamodels; EmbedJNoSQL initializes in < 15ms.
 
 ---
 

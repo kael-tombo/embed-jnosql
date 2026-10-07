@@ -16,7 +16,7 @@
 │                    Transport Layer                          │
 │        Fetch API (JSON REST)   │   EventSource (SSE)        │
 ├─────────────────────────────────────────────────────────────┤
-│                 JunifyDBServer (JVM)                        │
+│                 EmbedJNoSQLServer (JVM)                        │
 │                 Static File Handler (/)                     │
 │                 REST API Handlers (/api/*)                  │
 └─────────────────────────────────────────────────────────────┘

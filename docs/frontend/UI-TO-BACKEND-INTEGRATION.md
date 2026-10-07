@@ -15,8 +15,8 @@ User Action
   ├──> DOM Event Listener (e.g., onclick)
   ├──> JavaScript Fetch Function
   ├──> HTTP Request with Headers (X-API-Key / Cookie)
-  ├──> JunifyDBServer Handler
-  ├──> JunifyDB Domain Service
+  ├──> EmbedJNoSQLServer Handler
+  ├──> EmbedJNoSQL Domain Service
   ├──> StorageEngine SPI Mutation
   ├──> HTTP JSON Response
   └──> DOM Update & Toast Notification

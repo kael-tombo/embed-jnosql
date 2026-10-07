@@ -4,10 +4,10 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.junify.db.demo</groupId>
+    <groupId>org.embeddedjnosql.db.demo</groupId>
     <artifactId>micronaut-demo</artifactId>
     <version>1.0.0</version>
-    <name>JunifyDB Demo - Micronaut E-Commerce</name>
+    <name>EmbedJNoSQL Demo - Micronaut E-Commerce</name>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -29,16 +29,16 @@
     </dependencyManagement>
 
     <dependencies>
-        <!-- JunifyDB Micronaut Integration -->
+        <!-- EmbedJNoSQL Micronaut Integration -->
         <dependency>
-            <groupId>org.junify.db</groupId>
-            <artifactId>junifydb-micronaut-integration</artifactId>
+            <groupId>org.embeddedjnosql.db</groupId>
+            <artifactId>embedjnosql-micronaut-integration</artifactId>
             <version>1.0.0</version>
         </dependency>
 
         <!-- Common Domain -->
         <dependency>
-            <groupId>org.junify.db.demo</groupId>
+            <groupId>org.embeddedjnosql.db.demo</groupId>
             <artifactId>demo-common</artifactId>
             <version>1.0.0</version>
         </dependency>

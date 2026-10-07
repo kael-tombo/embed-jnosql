@@ -1,4 +1,4 @@
-# JunifyDB — Baseline Build Results
+# EmbedJNoSQL — Baseline Build Results
 
 **Audit Date**: September 9, 2026  
 **Host Operating System**: Windows Server 2022 (Version 10.0, amd64)  
@@ -17,15 +17,15 @@ mvn clean compile
 ### Result
 ```text
 [INFO] Scanning for projects...
-[INFO] -------------------< org.junify.db:junify-db-core >-------------------
-[INFO] Building JunifyDB NoSQL 1.0.0
+[INFO] -------------------< org.embeddedjnosql.db:embed-jnosql-core >-------------------
+[INFO] Building EmbedJNoSQL NoSQL 1.0.0
 [INFO]   from pom.xml
 [INFO] --------------------------------[ jar ]---------------------------------
-[INFO] --- clean:3.2.0:clean (default-clean) @ junify-db-core ---
+[INFO] --- clean:3.2.0:clean (default-clean) @ embed-jnosql-core ---
 [INFO] Deleting C:\Users\jratombo-adm\Desktop\JNoSQL-EMBED\target
-[INFO] --- resources:3.3.1:resources (default-resources) @ junify-db-core ---
+[INFO] --- resources:3.3.1:resources (default-resources) @ embed-jnosql-core ---
 [INFO] Copying 5 resources from src\main\resources to target\classes
-[INFO] --- compiler:3.13.0:compile (default-compile) @ junify-db-core ---
+[INFO] --- compiler:3.13.0:compile (default-compile) @ embed-jnosql-core ---
 [INFO] Recompiling the module because of changed source code.
 [INFO] Compiling 84 source files with javac [debug release 17] to target\classes
 [INFO] ------------------------------------------------------------------------
@@ -61,4 +61,4 @@ mvn clean compile
 
 - The core module creates a standalone runnable fat-jar via `maven-shade-plugin` (version 3.5.2).
 - `slf4j-simple` is explicitly excluded from shading to prevent classpath collision when consumers integrate with Logback, Log4j2, or JBoss Logging.
-- Main class manifest: `org.junify.db.JunifyDB`.
+- Main class manifest: `org.embeddedjnosql.db.EmbedJNoSQL`.

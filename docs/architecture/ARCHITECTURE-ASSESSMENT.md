@@ -15,7 +15,7 @@ JNOSQL-EMBED is structured around a multi-layered design separating high-level d
 └──────────────────────────────────┬─────────────────────────────────────┘
                                    │
 ┌──────────────────────────────────▼─────────────────────────────────────┐
-│                       JunifyDB Facade                                  │
+│                       EmbedJNoSQL Facade                                  │
 │           Lifecycle, Namespace Routing, Subsystem Wiring               │
 └─────┬──────────────┬──────────────┬──────────────┬──────────────┬──────┘
       │              │              │              │              │
@@ -40,8 +40,8 @@ JNOSQL-EMBED is structured around a multi-layered design separating high-level d
 
 ## 2. Core Subsystems Analysis
 
-### 2.1 Database Facade (`JunifyDB.java`)
-- **Strengths**: Acts as the single entry point. Provides fluent builder methods (`JunifyDB.embed().storageEngine(...).build()`). Manages lifecycle (`open`, `close`), metrics, event bus, and internal collection caches via thread-safe `ConcurrentHashMap`.
+### 2.1 Database Facade (`EmbedJNoSQL.java`)
+- **Strengths**: Acts as the single entry point. Provides fluent builder methods (`EmbedJNoSQL.embed().storageEngine(...).build()`). Manages lifecycle (`open`, `close`), metrics, event bus, and internal collection caches via thread-safe `ConcurrentHashMap`.
 - **Findings**: Thread-safe namespace lookup cache. Automatically triggers `EventBus` events (`COLLECTION_CREATED`, `BUCKET_CREATED`).
 
 ### 2.2 Document Collection Subsystem (`DocumentCollection.java`)

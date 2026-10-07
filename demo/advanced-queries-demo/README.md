@@ -1,8 +1,8 @@
-# JunifyDB Demo: Advanced Document Queries
+# EmbedJNoSQL Demo: Advanced Document Queries
 
 This demonstration application shows the query surface of the embedded **NoSQL** database: native
 document predicates, compound filters, sorting, pagination, secondary indexes, and aggregation
-computed from documents. There is no SQL engine and no relational engine in JunifyDB, so nothing
+computed from documents. There is no SQL engine and no relational engine in EmbedJNoSQL, so nothing
 here is executed as a statement — every query is a predicate tree evaluated by the document engine.
 
 ## Features Demonstrated
@@ -34,12 +34,12 @@ here is executed as a statement — every query is a predicate tree evaluated by
 mvn test
 
 # Run interactive CLI
-mvn compile exec:java -Dexec.mainClass="org.junify.db.demo.query.AdvancedQueriesDemoApplication"
+mvn compile exec:java -Dexec.mainClass="org.embeddedjnosql.db.demo.query.AdvancedQueriesDemoApplication"
 ```
 
 ## What this demo does *not* do
 
 SQL `JOIN`, `GROUP BY`, window functions, views, stored procedures, and a JDBC driver are **not part
-of the product**. If you need those, use a relational database. JunifyDB's guarantee is that the
+of the product**. If you need those, use a relational database. EmbedJNoSQL's guarantee is that the
 same process holds your documents, key-value state, Redis-style structures, and wide-column families
 without a server, a dialect, or a schema migration.

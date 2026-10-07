@@ -1,4 +1,4 @@
-# JunifyDB Demonstration Suite Architecture
+# EmbedJNoSQL Demonstration Suite Architecture
 
 ## Unified Domain Model: E-Commerce & Order Management
 
@@ -51,7 +51,7 @@ classDiagram
 
 ## Multi-Model Storage Architecture
 
-JunifyDB powers this application across three concurrent NoSQL models within the same database engine:
+EmbedJNoSQL powers this application across three concurrent NoSQL models within the same database engine:
 
 | Data Layer | Model Type | Container Name | Responsibilities | Engine Behavior |
 |---|---|---|---|---|
@@ -68,23 +68,23 @@ JunifyDB powers this application across three concurrent NoSQL models within the
 graph TB
     subgraph SpringBoot["Spring Boot Demo"]
         SB_C[EcommerceController] --> SB_S[ProductService / OrderService]
-        SB_S --> SB_T[JunifyDBTemplate]
-        SB_T --> Core_SB[JunifyDB Core]
+        SB_S --> SB_T[EmbedJNoSQLTemplate]
+        SB_T --> Core_SB[EmbedJNoSQL Core]
     end
 
     subgraph Quarkus["Quarkus Demo"]
-        Q_R[ProductResource / OrderResource] --> Q_CDI[JunifyDBProducer CDI]
-        Q_CDI --> Core_Q[JunifyDB Core]
+        Q_R[ProductResource / OrderResource] --> Q_CDI[EmbedDBProducer CDI]
+        Q_CDI --> Core_Q[EmbedJNoSQL Core]
     end
 
     subgraph Micronaut["Micronaut Demo"]
-        M_C[ProductController / OrderController] --> M_F[JunifyDBFactory JSR-330]
-        M_F --> Core_M[JunifyDB Core]
+        M_C[ProductController / OrderController] --> M_F[EmbedJNoSQLFactory JSR-330]
+        M_F --> Core_M[EmbedJNoSQL Core]
     end
 
     subgraph Vertx["Vert.x Reactive Demo"]
         V_R[Router HTTP Endpoints] --> V_EB[executeBlocking Worker ThreadPool]
-        V_EB --> Core_V[JunifyDB Core]
+        V_EB --> Core_V[EmbedJNoSQL Core]
     end
 ```
 

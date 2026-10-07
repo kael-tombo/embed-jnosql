@@ -1,4 +1,4 @@
-# JunifyDB — UI API Client Inventory
+# EmbedJNoSQL — UI API Client Inventory
 
 **Audit Date**: September 9, 2026  
 **Auditor**: Frontend Integration Lead  

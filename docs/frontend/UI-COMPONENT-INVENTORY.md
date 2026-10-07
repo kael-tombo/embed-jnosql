@@ -1,4 +1,4 @@
-# JunifyDB — UI Component Inventory
+# EmbedJNoSQL — UI Component Inventory
 
 **Audit Date**: September 9, 2026  
 **Auditor**: UI/UX Engineering Lead  

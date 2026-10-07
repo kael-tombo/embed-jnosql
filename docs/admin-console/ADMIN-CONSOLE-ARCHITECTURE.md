@@ -1,8 +1,8 @@
-# JunifyDB Administration Console Architecture
+# EmbedJNoSQL Administration Console Architecture
 
 ## 1. Overview & System Mission
 
-The JunifyDB Administration Console provides an embedded, framework-independent, low-overhead HTTP/REST server and web user interface for inspecting, managing, and querying JunifyDB multi-model databases in real-time.
+The EmbedJNoSQL Administration Console provides an embedded, framework-independent, low-overhead HTTP/REST server and web user interface for inspecting, managing, and querying EmbedJNoSQL multi-model databases in real-time.
 
 It runs directly inside the host JVM process, binding to local network interfaces without requiring external dependencies, sidecar containers, or heavy application servers.
 
@@ -11,7 +11,7 @@ It runs directly inside the host JVM process, binding to local network interface
 │ Host JVM (Application Process)                                                  │
 │                                                                                 │
 │  ┌────────────────────────┐         HTTP/REST         ┌──────────────────────┐  │
-│  │ Single-Page Web App UI │ ◄───────────────────────► │   JunifyDBServer     │  │
+│  │ Single-Page Web App UI │ ◄───────────────────────► │   EmbedJNoSQLServer     │  │
 │  │ (HTML5/CSS3/Vanilla JS)│                           │ (com.sun.net.http)   │  │
 │  └────────────────────────┘                           └──────────┬───────────┘  │
 │                                                                  │              │
@@ -22,7 +22,7 @@ It runs directly inside the host JVM process, binding to local network interface
 │                                                       └──────────┬───────────┘  │
 │                                                                  │              │
 │                                                       ┌──────────▼───────────┐  │
-│                                                       │      JunifyDB API    │  │
+│                                                       │      EmbedJNoSQL API    │  │
 │                                                       │ (Documents, KV, CF,  │  │
 │                                                       │  Query, Tx, Vectors) │  │
 │                                                       └──────────┬───────────┘  │
@@ -39,11 +39,11 @@ It runs directly inside the host JVM process, binding to local network interface
 | Layer | Component | Description |
 |---|---|---|
 | **Presentation** | `index.html`, `login.html`, `enhancements.js`, `enhancements.css` | Lightweight single-page application built with zero external runtime dependencies. |
-| **Transport** | `JunifyDBServer`, `PortManager`, `HttpsServer` | Built on high-performance JDK `com.sun.net.httpserver.HttpServer`. |
+| **Transport** | `EmbedJNoSQLServer`, `PortManager`, `HttpsServer` | Built on high-performance JDK `com.sun.net.httpserver.HttpServer`. |
 | **Configuration** | `ConsoleConfig`, `SecurityConfig`, `ConfigurationResolver` | Type-safe configuration records with precedence resolution across code, properties, env vars, and defaults. |
 | **Security Guard** | `CsrfTokenManager`, `SecureSessionManager`, RateLimiter, FailedLoginTracker | Defense-in-depth security barrier enforcing authentication, CSRF synchronizer tokens, rate limits, brute-force lockout, and OWASP headers. |
 | **API Handlers** | 20 HTTP handlers | RESTful endpoints providing full CRUD, query execution, indexing, backup, transaction lifecycle, metrics, and CDC. |
-| **Database Core** | `JunifyDB`, `DocumentCollection`, `KeyValueBucket`, `ColumnFamily` | Multi-model database internals and query engine. |
+| **Database Core** | `EmbedJNoSQL`, `DocumentCollection`, `KeyValueBucket`, `ColumnFamily` | Multi-model database internals and query engine. |
 | **Persistence** | `InMemoryEngine`, `FileEngine`, `LSMTreeEngine`, `BTreeEngine` | Storage SPI providers. |
 
 ## 3. Key Design Decisions

@@ -10,7 +10,7 @@
 
 ## 1. Objective & Scope
 
-Verify console interaction with JunifyDB embedded Key-Value buckets, as well as extended data structures (Lists with `rpush`/`lpush`/`lrange`, Sets with `sadd`/`smembers`, and Hashes with `hset`/`hget`).
+Verify console interaction with EmbedJNoSQL embedded Key-Value buckets, as well as extended data structures (Lists with `rpush`/`lpush`/`lrange`, Sets with `sadd`/`smembers`, and Hashes with `hset`/`hget`).
 
 ---
 

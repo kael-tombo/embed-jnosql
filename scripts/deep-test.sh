@@ -4,7 +4,7 @@
 # PowerShell is not available on every machine this repo is developed on, and an
 # evidence gate that cannot run is not evidence. This is the same 20-section
 # sweep, ported to bash in the style of console-contract-gate.sh, with every
-# expectation re-verified against the actual handlers in JunifyDBServer:
+# expectation re-verified against the actual handlers in EmbedJNoSQLServer:
 #   - POST /api/sql, /api/tables, /api/constraints are REMOVED SQL-era routes and
 #     must answer 404 (the old ps1 still expected tables/constraints to exist).
 #   - sismember is GET ?member= (the old ps1 used POST with a body).
@@ -17,12 +17,12 @@
 #   - login password is the API key (the old ps1 used admin/admin123).
 #
 # Usage: scripts/deep-test.sh [port]
-# Requires: target/junify-db-core-1.0.0.jar (build with: mvn -DskipTests package)
+# Requires: target/embed-jnosql-core-1.0.0.jar (build with: mvn -DskipTests package)
 set -u
 
 PORT="${1:-8099}"
 BASE="http://127.0.0.1:${PORT}"
-JAR="target/junify-db-core-1.0.0.jar"
+JAR="target/embed-jnosql-core-1.0.0.jar"
 DATA_DIR="target/deep-test-data"
 LOG="target/deep-test-server.log"
 KEY="deep-test-key-DO-NOT-USE-IN-PROD"
@@ -88,7 +88,7 @@ if curl -s -m 2 -o /dev/null "$BASE/api/health" 2>/dev/null; then
   exit 2
 fi
 
-echo "=== JunifyDB DEEP FEATURE TEST SUITE (bash) ==="
+echo "=== EmbedJNoSQL DEEP FEATURE TEST SUITE (bash) ==="
 echo "== booting server WITH --api-key on :$PORT =="
 java -jar "$JAR" --port "$PORT" --data-dir "$DATA_DIR" --engine FILE --sync --api-key "$KEY" >"$LOG" 2>&1 &
 SERVER_PID=$!

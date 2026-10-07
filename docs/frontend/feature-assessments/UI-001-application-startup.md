@@ -61,10 +61,10 @@ None
 Optional (bypassed if auth disabled; redirected to `/login.html` if 401).
 
 ## Backend Service
-`HealthHandler` in `JunifyDBServer`
+`HealthHandler` in `EmbedJNoSQLServer`
 
 ## JNOSQL-EMBED Library API
-`JunifyDB.isOpen()`, `JunifyDB.config()`
+`EmbedJNoSQL.isOpen()`, `EmbedJNoSQL.config()`
 
 ## Storage Engine
 Any active engine (`IN_MEMORY`, `FILE`, `B_TREE`, `LSM_TREE`).
@@ -114,7 +114,7 @@ Static asset load time < 50ms on localhost.
 Verified. `StaticHandler` streams from classpath `/static/index.html`.
 
 ## Existing Test Assessment
-Verified via `JunifyDBServerTest.healthEndpoint()`.
+Verified via `EmbedJNoSQLServerTest.healthEndpoint()`.
 
 ## Missing Tests
 None.
@@ -138,10 +138,10 @@ None.
 Configured fallback route in `StaticHandler`.
 
 ## Regression Tests Added
-`JunifyDBServerTest.healthEndpoint()`
+`EmbedJNoSQLServerTest.healthEndpoint()`
 
 ## Exact Test Commands
-`mvn test -Dtest=JunifyDBServerTest`
+`mvn test -Dtest=EmbedJNoSQLServerTest`
 
 ## Test Output
 Tests run: 9, Failures: 0, Errors: 0.
@@ -150,7 +150,7 @@ Tests run: 9, Failures: 0, Errors: 0.
 `docs/audit/BASELINE-UI-RESULTS.md`
 
 ## Manual Reproduction Steps
-1. Run `JunifyDB db = JunifyDB.embed().build(); db.startServer(8080);`
+1. Run `EmbedJNoSQL db = EmbedJNoSQL.embed().build(); db.startServer(8080);`
 2. Open `http://localhost:8080/` in browser.
 
 ## Remaining Problems

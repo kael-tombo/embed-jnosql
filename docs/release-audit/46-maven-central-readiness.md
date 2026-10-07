@@ -16,7 +16,7 @@ Publishability to Maven Central per current requirements.
 
 | Requirement | Status |
 |---|---|
-| Valid GAV coordinates (`org.junify.db:junify-db-core:1.0.0`) | ✅ |
+| Valid GAV coordinates (`org.embeddedjnosql.db:embed-jnosql-core:1.0.0`) | ✅ |
 | Project name/description/url | ✅ |
 | Licenses (Apache-2.0) | ✅ |
 | Developer info | ✅ |

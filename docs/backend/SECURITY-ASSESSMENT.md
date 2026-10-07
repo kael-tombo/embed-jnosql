@@ -13,7 +13,7 @@
 | **Authentication** | Optional API Key (`X-API-Key`) + Session Token auth | **VERIFIED** |
 | **Session Security** | `SecureSessionManager`: 256-bit cryptographically secure IDs, `HttpOnly`, `SameSite=Strict`, configurable TTL | **VERIFIED** |
 | **Transport Layer Security (TLS/HTTPS)** | Built-in `HttpsServer` support with custom keystore configuration | **VERIFIED** |
-| **Rate Limiting** | Per-IP sliding-window rate limiting in `JunifyDBServer` | **VERIFIED** |
+| **Rate Limiting** | Per-IP sliding-window rate limiting in `EmbedJNoSQLServer` | **VERIFIED** |
 | **CORS Configuration** | Configurable CORS headers (`Access-Control-Allow-Origin`, Preflight `OPTIONS` handler) | **VERIFIED** |
 | **Path Traversal Protection**| `StaticHandler` verifies canonical file paths stay within static resources folder | **VERIFIED** |
 | **Injection Defense** | Document JSON query parser avoids arbitrary string concatenation | **VERIFIED** |

@@ -1,4 +1,4 @@
-# JunifyDB (JNOSQL-EMBED) — Repository Inventory
+# EmbedJNoSQL (JNOSQL-EMBED) — Repository Inventory
 
 **Audit Date**: September 9, 2026  
 **Environment**: Windows Server 2022 (amd64), Java 25.0.2 (Eclipse Adoptium OpenJDK), Maven 3.9.15  
@@ -13,12 +13,12 @@ The project is structured into a core engine, enterprise starters/extensions, an
 
 | Module Path | Maven Artifact ID | Packaging | Description |
 |---|---|---|---|
-| `/` (root) | `junify-db-core` | `jar` | Core multi-model NoSQL embedded database engine, storage engines, WAL, MVCC, HTTP/REST console, web UI. |
-| `spring-boot-starter/` | `junify-db-spring-boot-starter` | `jar` | Spring Boot 3.x AutoConfiguration starter providing `JunifyDB` bean and `JunifyDBTemplate`. |
-| `quarkus-extension/` | `junify-db-quarkus-extension` | `pom` | Parent aggregator for Quarkus 3.x extension. |
-| `quarkus-extension/runtime/` | `junify-db-quarkus-extension-runtime` | `jar` | Runtime CDI `@DefaultBean` producers for database and data structures. |
-| `quarkus-extension/deployment/` | `junify-db-quarkus-extension-deployment` | `jar` | Quarkus build-step deployment processor for native and JVM image generation. |
-| `micronaut-integration/` | `junifydb-micronaut-integration` | `jar` | Micronaut 4.x factory and lifecycle integration with reflection-free serde. |
+| `/` (root) | `embed-jnosql-core` | `jar` | Core multi-model NoSQL embedded database engine, storage engines, WAL, MVCC, HTTP/REST console, web UI. |
+| `spring-boot-starter/` | `embed-jnosql-spring-boot-starter` | `jar` | Spring Boot 3.x AutoConfiguration starter providing `EmbedJNoSQL` bean and `EmbedJNoSQLTemplate`. |
+| `quarkus-extension/` | `embed-jnosql-quarkus-extension` | `pom` | Parent aggregator for Quarkus 3.x extension. |
+| `quarkus-extension/runtime/` | `embed-jnosql-quarkus-extension-runtime` | `jar` | Runtime CDI `@DefaultBean` producers for database and data structures. |
+| `quarkus-extension/deployment/` | `embed-jnosql-quarkus-extension-deployment` | `jar` | Quarkus build-step deployment processor for native and JVM image generation. |
+| `micronaut-integration/` | `embedjnosql-micronaut-integration` | `jar` | Micronaut 4.x factory and lifecycle integration with reflection-free serde. |
 | `demo/demo-common/` | `demo-common` | `jar` | Shared domain entities (`Product`, `Order`, `Customer`, etc.) modeled as Java 17 records. |
 | `demo/spring-boot-demo/` | `spring-boot-demo` | `jar` | Executable Spring Boot 3.2.5 REST service demonstrating catalog and order transactions. |
 | `demo/quarkus-demo/` | `quarkus-demo` | `jar` | Executable Quarkus 3.8.0 reactive application with CDI injection and REST endpoints. |
@@ -28,29 +28,29 @@ The project is structured into a core engine, enterprise starters/extensions, an
 
 ---
 
-## 2. Core Package Breakdown (`src/main/java/org/junify/db`)
+## 2. Core Package Breakdown (`src/main/java/org/embeddedjnosql/db`)
 
 | Package | Purpose & Key Classes |
 |---|---|
-| `org.junify.db` | Top-level entrypoint `JunifyDB.java` with builder pattern and component registry. |
-| `org.junify.db.config` | `JunifyDBConfig.java`, engine selection (`IN_MEMORY`, `FILE`, `B_TREE`, `LSM_TREE`), buffer sizes, flush intervals. |
-| `org.junify.db.storage.spi` | `StorageEngine.java` interface defining standard key-value storage contracts. |
-| `org.junify.db.storage.memory` | `InMemoryEngine.java` (concurrent skiplist/hash map, zero-allocation). |
-| `org.junify.db.storage.file` | `FileEngine.java` with append-only data files, indexing, and compaction. |
-| `org.junify.db.storage.btree` | `BTreeEngine.java` on-disk B+ Tree storage provider. |
-| `org.junify.db.storage.lsmtree` | `LSMTreeEngine.java` Log-Structured Merge Tree with MemTable, SSTables, Bloom Filters, and compaction. |
-| `org.junify.db.storage.wal` | `WriteAheadLog.java` synchronous/asynchronous durable WAL with fsync. |
-| `org.junify.db.transaction.mvcc` | `MVCCManager.java`, `Transaction.java`, snapshot isolation, read-views, commit/rollback tracking. |
-| `org.junify.db.nosql.document` | `Document.java`, `DocumentCollection.java`, `Query.java`, `QueryParser.java`. |
-| `org.junify.db.nosql.kv` | `KeyValueBucket.java`, `ListBucket.java`, `SetBucket.java`, `HashBucket.java`. |
-| `org.junify.db.nosql.column` | `ColumnFamily.java` wide-column family with timestamps, TTL, and slice queries. |
-| `org.junify.db.nosql.aggregation`| `AggregationPipeline.java`, match, project, group, sort, limit stages. |
-| `org.junify.db.index` | Secondary indexing (`HashIndex.java`, `BTreeIndex.java`, compound indexing). |
-| `org.junify.db.core.event` | `EventBus.java` asynchronous pub/sub event bus for collection/bucket mutations. |
-| `org.junify.db.core.cdc` | `CDCManager.java` Change Data Capture stream tracking inserts, updates, and deletes. |
-| `org.junify.db.core.metrics` | `DatabaseMetrics.java` operation counters, latency histograms, size tracking. |
-| `org.junify.db.console.http` | `JunifyDBServer.java` embedded HTTP/HTTPS server with static asset hosting and REST API. |
-| `org.junify.db.adapter.jnosql` | `DocumentTemplate.java`, `CrudRepository.java`, CDI producer, and Eclipse JNoSQL compatible annotations. |
+| `org.embeddedjnosql.db` | Top-level entrypoint `EmbedJNoSQL.java` with builder pattern and component registry. |
+| `org.embeddedjnosql.db.config` | `EmbedJNoSQLConfig.java`, engine selection (`IN_MEMORY`, `FILE`, `B_TREE`, `LSM_TREE`), buffer sizes, flush intervals. |
+| `org.embeddedjnosql.db.storage.spi` | `StorageEngine.java` interface defining standard key-value storage contracts. |
+| `org.embeddedjnosql.db.storage.memory` | `InMemoryEngine.java` (concurrent skiplist/hash map, zero-allocation). |
+| `org.embeddedjnosql.db.storage.file` | `FileEngine.java` with append-only data files, indexing, and compaction. |
+| `org.embeddedjnosql.db.storage.btree` | `BTreeEngine.java` on-disk B+ Tree storage provider. |
+| `org.embeddedjnosql.db.storage.lsmtree` | `LSMTreeEngine.java` Log-Structured Merge Tree with MemTable, SSTables, Bloom Filters, and compaction. |
+| `org.embeddedjnosql.db.storage.wal` | `WriteAheadLog.java` synchronous/asynchronous durable WAL with fsync. |
+| `org.embeddedjnosql.db.transaction.mvcc` | `MVCCManager.java`, `Transaction.java`, snapshot isolation, read-views, commit/rollback tracking. |
+| `org.embeddedjnosql.db.nosql.document` | `Document.java`, `DocumentCollection.java`, `Query.java`, `QueryParser.java`. |
+| `org.embeddedjnosql.db.nosql.kv` | `KeyValueBucket.java`, `ListBucket.java`, `SetBucket.java`, `HashBucket.java`. |
+| `org.embeddedjnosql.db.nosql.column` | `ColumnFamily.java` wide-column family with timestamps, TTL, and slice queries. |
+| `org.embeddedjnosql.db.nosql.aggregation`| `AggregationPipeline.java`, match, project, group, sort, limit stages. |
+| `org.embeddedjnosql.db.index` | Secondary indexing (`HashIndex.java`, `BTreeIndex.java`, compound indexing). |
+| `org.embeddedjnosql.db.core.event` | `EventBus.java` asynchronous pub/sub event bus for collection/bucket mutations. |
+| `org.embeddedjnosql.db.core.cdc` | `CDCManager.java` Change Data Capture stream tracking inserts, updates, and deletes. |
+| `org.embeddedjnosql.db.core.metrics` | `DatabaseMetrics.java` operation counters, latency histograms, size tracking. |
+| `org.embeddedjnosql.db.console.http` | `EmbedJNoSQLServer.java` embedded HTTP/HTTPS server with static asset hosting and REST API. |
+| `org.embeddedjnosql.db.adapter.jnosql` | `DocumentTemplate.java`, `CrudRepository.java`, CDI producer, and Eclipse JNoSQL compatible annotations. |
 
 ---
 

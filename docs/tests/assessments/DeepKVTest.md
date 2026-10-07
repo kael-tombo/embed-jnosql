@@ -1,7 +1,7 @@
 # Test Assessment: DeepKVTest
 
 ## Purpose
-Exhaustive verification of Key-Value buckets, Redis List/Set/Hash buckets, and TTL expirations (`org.junify.db.deep.DeepKVTest`).
+Exhaustive verification of Key-Value buckets, Redis List/Set/Hash buckets, and TTL expirations (`org.embeddedjnosql.db.deep.DeepKVTest`).
 
 ## Tested Behavior
 - Thousands of key-value operations with interleaved reads and writes.

@@ -4,7 +4,7 @@
 - **Java Runtime**: OpenJDK 23.0.1 / Java 17+ compatible bytecode
 - **Maven**: Apache Maven 3.9.x
 - **Spring Boot**: 3.2.5
-- **JunifyDB Version**: 1.0.0-GA
+- **EmbedJNoSQL Version**: 1.0.0-GA
 - **Browser Subagent**: Playwright / Chromium headless browser engine
 - **Host Binding**: 127.0.0.1 (Localhost-only secure binding)
 - **Primary Ports**:

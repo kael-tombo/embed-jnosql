@@ -1,6 +1,6 @@
 # Expected Results & Verification Signatures
 
-This document outlines the expected outcomes, HTTP response payloads, and data signatures for verifying healthy operations of all JunifyDB demonstrations.
+This document outlines the expected outcomes, HTTP response payloads, and data signatures for verifying healthy operations of all EmbedJNoSQL demonstrations.
 
 ---
 

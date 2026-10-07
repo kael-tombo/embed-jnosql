@@ -1,6 +1,6 @@
 # Restore Instructions — Baseline Snapshot
 
-`junifydb-baseline-before-public-release-audit-20260922` @ commit `b10b6cd` on `main`
+`embedjnosql-baseline-before-public-release-audit-20260922` @ commit `b10b6cd` on `main`
 
 ## Restore option 1 — Git (preferred, exact)
 
@@ -9,16 +9,16 @@ non-destructive and always available:
 
 ```bash
 # Inspect without leaving your branch
-git log junifydb-baseline-before-public-release-audit-20260922 -1
+git log embedjnosql-baseline-before-public-release-audit-20260922 -1
 
 # Compare any later state against the baseline
-git diff junifydb-baseline-before-public-release-audit-20260922..HEAD --stat
+git diff embedjnosql-baseline-before-public-release-audit-20260922..HEAD --stat
 
 # Recover a single file exactly as it was (does not touch your working tree)
-git checkout junifydb-baseline-before-public-release-audit-20260922 -- path/to/file
+git checkout embedjnosql-baseline-before-public-release-audit-20260922 -- path/to/file
 
 # Work from the baseline in a throwaway worktree (recommended over checkout)
-git worktree add ../junifydb-baseline-restore junifydb-baseline-before-public-release-audit-20260922
+git worktree add ../embedjnosql-baseline-restore embedjnosql-baseline-before-public-release-audit-20260922
 ```
 
 ## Restore option 2 — Archive (repository-independent)
@@ -28,7 +28,7 @@ baseline commit (991 entries). It can be extracted anywhere, even outside a
 Git checkout:
 
 ```bash
-mkdir junifydb-baseline && tar -xzf source-snapshot.tar.gz -C junifydb-baseline
+mkdir embedjnosql-baseline && tar -xzf source-snapshot.tar.gz -C embedjnosql-baseline
 ```
 
 Note: this archive contains the tracked tree at `b10b6cd` only. The 29 files

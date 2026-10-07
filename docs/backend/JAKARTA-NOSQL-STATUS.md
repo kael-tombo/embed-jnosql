@@ -10,13 +10,13 @@
 
 **Status**: `PARTIALLY_PROVEN / JAKARTA-INSPIRED EMBEDDED PROVIDER`
 
-JunifyDB adopts the core design principles, model taxonomies, and entity mapping paradigms of the **Jakarta NoSQL 1.0.0** specification, but is tailored specifically for **embedded single-process deployment** without heavyweight CDI runtime overhead.
+EmbedJNoSQL adopts the core design principles, model taxonomies, and entity mapping paradigms of the **Jakarta NoSQL 1.0.0** specification, but is tailored specifically for **embedded single-process deployment** without heavyweight CDI runtime overhead.
 
 ---
 
 ## 2. Specification Feature Analysis
 
-| Jakarta NoSQL Concept | JunifyDB Support | Implementation Details |
+| Jakarta NoSQL Concept | EmbedJNoSQL Support | Implementation Details |
 |---|---|---|
 | **Document Paradigm** | **Supported** | `DocumentCollection`, `Document`, nested fields, subdocuments |
 | **Key-Value Paradigm** | **Supported** | `KeyValueBucket`, `ListBucket`, `SetBucket`, `HashBucket` |
@@ -30,4 +30,4 @@ JunifyDB adopts the core design principles, model taxonomies, and entity mapping
 
 ## 3. Specification Verdict
 
-JunifyDB is an **exceptionally practical embedded implementation** of Jakarta NoSQL concepts. It provides 90% of the daily developer benefits (fluent multi-model querying, document/KV repositories) with zero external server dependencies.
+EmbedJNoSQL is an **exceptionally practical embedded implementation** of Jakarta NoSQL concepts. It provides 90% of the daily developer benefits (fluent multi-model querying, document/KV repositories) with zero external server dependencies.

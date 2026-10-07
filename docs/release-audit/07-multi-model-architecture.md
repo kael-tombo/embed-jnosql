@@ -7,7 +7,7 @@ Coherence of the multi-model claim: one engine substrate serving documents, KV s
 Per README: "Both engines share the same in-memory or disk storage substrate."
 
 ## Current Implementation
-Facade `JunifyDB` holds exactly one `StorageEngine`; `DocumentCollection`, all KV buckets, `ColumnFamily`, and `SqlEngine` read/write through it. Namespaces share the engine's key space (`DocumentCollection` uses the collection name; buckets use the bucket name; `KeyValueBucket` stores expirations under `meta_store`).
+Facade `EmbedJNoSQL` holds exactly one `StorageEngine`; `DocumentCollection`, all KV buckets, `ColumnFamily`, and `SqlEngine` read/write through it. Namespaces share the engine's key space (`DocumentCollection` uses the collection name; buckets use the bucket name; `KeyValueBucket` stores expirations under `meta_store`).
 
 ## Validation Performed
 - Code read of facade + model classes (write paths all call `engine.put/putRecord`).
@@ -23,7 +23,7 @@ Facade constructor (read in this audit): single `this.engine = config.storageEng
 | MM-02 | ACCEPTABLE | Low | Column-family and KV models do not emit CDC/events uniformly (only document layer + buckets emit); observability asymmetry noted. |
 
 ## Improvement Plan
-Namespace prefixing strategy post-1.0 (requires migration); unify event emission.
+Namespace prefixing strategy post-1.0 (requires migration); embed event emission.
 
 ## Acceptance Criteria
 Substrate-sharing claim verified by cross-model test (done); no README claim of isolation between models.

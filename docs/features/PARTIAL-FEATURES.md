@@ -34,7 +34,7 @@ This document tracks features where the core architecture exists, but full featu
 
 ### Current Status: `EXPERIMENTAL`
 - **What Works**:
-  - `HNSWVectorIndex` class exists in `org.junify.db.index`.
+  - `HNSWVectorIndex` class exists in `org.embeddedjnosql.db.index`.
   - Supports Euclidean distance and cosine similarity vector scoring in-memory.
 - **What Remains**:
   - On-disk quantization and vector index persistence.

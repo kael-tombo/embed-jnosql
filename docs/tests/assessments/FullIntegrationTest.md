@@ -1,7 +1,7 @@
 # Test Assessment: FullIntegrationTest
 
 ## Purpose
-Integration verification testing cross-subsystem interactions between Document Collections, Key-Value Buckets, Column Families, and File-based storage engines (`org.junify.db.integration.FullIntegrationTest`).
+Integration verification testing cross-subsystem interactions between Document Collections, Key-Value Buckets, Column Families, and File-based storage engines (`org.embeddedjnosql.db.integration.FullIntegrationTest`).
 
 ## Tested Behavior
 - Multi-model data coordination within a single database instance.

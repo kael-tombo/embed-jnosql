@@ -61,10 +61,10 @@ None
 Inherited from session cookie.
 
 ## Backend Service
-`CollectionsHandler` in `JunifyDBServer`
+`CollectionsHandler` in `EmbedJNoSQLServer`
 
 ## JNOSQL-EMBED Library API
-`JunifyDB.getCollectionNames()`, `JunifyDB.documentCollection(name).count()`
+`EmbedJNoSQL.getCollectionNames()`, `EmbedJNoSQL.documentCollection(name).count()`
 
 ## Storage Engine
 Any active engine.
@@ -111,10 +111,10 @@ Sidebar collapses into top dropdown on viewports < 768px.
 Collection list renders in < 5ms for 100 collections.
 
 ## Existing Implementation Assessment
-Verified in `JunifyDBServer.CollectionsHandler` and UI explorer.
+Verified in `EmbedJNoSQLServer.CollectionsHandler` and UI explorer.
 
 ## Existing Test Assessment
-Verified via `JunifyDBServerTest.listCollections()`.
+Verified via `EmbedJNoSQLServerTest.listCollections()`.
 
 ## Missing Tests
 None.
@@ -135,13 +135,13 @@ None.
 None.
 
 ## Fixes Applied
-Added `getCollectionNames()` to `JunifyDB` and hooked into `CollectionsHandler`.
+Added `getCollectionNames()` to `EmbedJNoSQL` and hooked into `CollectionsHandler`.
 
 ## Regression Tests Added
-`JunifyDBServerTest.listCollections()`
+`EmbedJNoSQLServerTest.listCollections()`
 
 ## Exact Test Commands
-`mvn test -Dtest=JunifyDBServerTest`
+`mvn test -Dtest=EmbedJNoSQLServerTest`
 
 ## Test Output
 Tests run: 9, Failures: 0, Errors: 0.

@@ -18,7 +18,7 @@ Each engine's persistence behavior is accurately documented; no engine claims di
 Engine stats endpoints (`/api/engines`), FileEngine restart in live preview, LSM restart regression, code read of all four engines.
 
 ## Evidence
-`ReleaseAuditRegressionTest` recovery tests; `junify-db-core` jar stats output; `docs/features/` engine tables.
+`ReleaseAuditRegressionTest` recovery tests; `embed-jnosql-core` jar stats output; `docs/features/` engine tables.
 
 ## Findings
 | ID | Status | Severity | Description |

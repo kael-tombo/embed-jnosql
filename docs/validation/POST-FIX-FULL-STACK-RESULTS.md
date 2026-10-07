@@ -9,7 +9,7 @@
 
 | Component | Pre-Fix Tests | Post-Fix Tests | Pre-Fix Failures | Post-Fix Failures | Status |
 |---|---|---|---|---|---|
-| `junify-db-core` | 489 | 491 | 0 | 0 | **PASS** |
+| `embed-jnosql-core` | 489 | 491 | 0 | 0 | **PASS** |
 | `spring-boot-starter` | 3 | 3 | 0 | 0 | **PASS** |
 | `spring-boot-demo` | 3 | 3 | 0 | 0 | **PASS** |
 | `quarkus-demo` | 4 | 4 | 0 | 0 | **PASS** |

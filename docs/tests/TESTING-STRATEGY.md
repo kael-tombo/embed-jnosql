@@ -28,7 +28,7 @@ A holistic view of the testing methodology, pyramid, and verification pipelines 
    - Focuses on individual data structure operations (`DocumentCollectionTest`, `KeyValueBucketTest`, `ListBucketTest`, `SetBucketTest`, `HashBucketTest`, `ColumnFamilyTest`).
    - Uses `InMemoryEngine` for sub-millisecond execution.
 2. **Integration Testing**:
-   - Focuses on multi-model interactions, persistence reload across restarts (`FilePersistenceTest`), and Spring Boot auto-configuration (`JunifyDBAutoConfigurationTest`).
+   - Focuses on multi-model interactions, persistence reload across restarts (`FilePersistenceTest`), and Spring Boot auto-configuration (`EmbedJNoSQLAutoConfigurationTest`).
 3. **Deep & Concurrency Testing**:
    - Focuses on multi-threaded stress, race condition detection (`ConcurrencyTest`), snapshot isolation verification (`DeepTransactionTest`), and infrastructure metrics (`DeepInfrastructureTest`).
 4. **End-to-End & REST Server Testing**:

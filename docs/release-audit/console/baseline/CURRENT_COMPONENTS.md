@@ -7,7 +7,7 @@ framework and no build step (intentional — CSP-safe, zero-dependency embedded 
 
 | Component | Ids | Behavior |
 |---|---|---|
-| Brand header | `.brand` | canonical logo tile + "JunifyDB Console" |
+| Brand header | `.brand` | canonical logo tile + "EmbedJNoSQL Console" |
 | Topbar | `panelTitle`, `panelSub`, `chipHealth`, `chipEngine`, `chipUptime`, `btnTheme`, `btnRefreshAll`, `btnLogout` | health chip, engine name, uptime, theme toggle, refresh, sign out |
 | Status bar | `statusbar` + `sbEngine/sbStorage/sbDatabase/sbConnection/sbTx/sbUser/sbContext` | always-visible orientation, `/api/health`-sourced, refreshed every 10s |
 | Sidebar | `nav` | grouped buttons, icons, number-key hints, hash routing, rail collapse < 900px |

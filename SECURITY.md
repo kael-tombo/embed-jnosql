@@ -11,10 +11,10 @@
 
 ## Reporting a Vulnerability
 
-We take the security of **JunifyDB** seriously. If you discover a security vulnerability, please do NOT create a public issue on GitHub.
+We take the security of **EmbedJNoSQL** seriously. If you discover a security vulnerability, please do NOT create a public issue on GitHub.
 
 Instead, please send an email to:
-**security@junifydb.org** (or contact the maintainers directly).
+**security@embedjnosql.org** (or contact the maintainers directly).
 
 Please include:
 1. A description of the vulnerability and potential impact.
@@ -31,11 +31,11 @@ Please include:
 ## Embedded Database Security Considerations
 
 ### 1. In-Process Execution & Memory Safety
-- JunifyDB executes entirely inside the host JVM process.
+- EmbedJNoSQL executes entirely inside the host JVM process.
 - Isolation between tenants is the responsibility of the host application architecture.
 - When running in shared environments, do not expose internal collections across tenant boundaries without authentication checks.
 
-### 2. HTTP Developer Console (`JunifyDBServer`)
+### 2. HTTP Developer Console (`EmbedJNoSQLServer`)
 - By default, the admin console does not enforce authentication unless configured.
 - In production environments, either:
   1. Disable the embedded HTTP server by not invoking `db.startServer()`.

@@ -5,11 +5,11 @@ This document provides in-depth technical documentation and concrete code exampl
 ---
 
 ## 1. Document Collection & Query Engine
-- **Classes**: `org.junify.db.nosql.document.DocumentCollection`, `Document`, `Query`
+- **Classes**: `org.embeddedjnosql.db.nosql.document.DocumentCollection`, `Document`, `Query`
 - **Behavior**: Provides schema-free document persistence serialized as JSON. Supports secondary index acceleration on equality and range fields, sort order (`ASC`, `DESC`), offset pagination, and count statistics.
 - **Example**:
   ```java
-  JunifyDB db = JunifyDB.embed().build();
+  EmbedJNoSQL db = EmbedJNoSQL.embed().build();
   DocumentCollection users = db.documentCollection("users");
   users.createIndex("email");
 
@@ -43,7 +43,7 @@ This document provides in-depth technical documentation and concrete code exampl
 ---
 
 ## 3. Wide-Column Family Store
-- **Classes**: `org.junify.db.nosql.column.ColumnFamily`
+- **Classes**: `org.embeddedjnosql.db.nosql.column.ColumnFamily`
 - **Behavior**: Multi-dimensional sparse table supporting row keys, column names, cell values, and optional column-level TTLs.
 - **Example**:
   ```java
@@ -56,7 +56,7 @@ This document provides in-depth technical documentation and concrete code exampl
 ---
 
 ## 4. MVCC & ACID Transactions
-- **Classes**: `org.junify.db.transaction.mvcc.Transaction`, `MVCCManager`
+- **Classes**: `org.embeddedjnosql.db.transaction.mvcc.Transaction`, `MVCCManager`
 - **Behavior**: Staged write buffering with snapshot isolation. Reads uncommitted writes within the same transaction (`Read-Your-Own-Writes`), atomic `commit()` to storage, or clean `rollback()`.
 - **Example**:
   ```java

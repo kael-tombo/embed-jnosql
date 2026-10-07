@@ -1,4 +1,4 @@
-# JunifyDB — Security Architecture Assessment
+# EmbedJNoSQL — Security Architecture Assessment
 
 **Auditor**: Application Security Specialist  
 **Date**: September 9, 2026  

@@ -14,14 +14,14 @@ before the professional-workspace redesign round. Nothing in this directory is a
 | `src/main/resources/static/css/console.css` | 655 | Design tokens + full stylesheet ("Carbon" system) |
 | `src/main/resources/static/css/enhancements.css` | 8 | Legacy shim |
 | `src/main/resources/static/logo.svg`, `favicon.svg` | — | Owner-supplied canonical mark (navy tile + amber DB) |
-| `src/main/java/org/junify/db/console/http/JunifyDBServer.java` | 3,280 | Embedded HTTP server + all 22 API handlers |
+| `src/main/java/org/embeddedjnosql/db/console/http/EmbedJNoSQLServer.java` | 3,280 | Embedded HTTP server + all 22 API handlers |
 | `PortManager.java`, `SecureSessionManager.java`, `PortConflictException.java` | ~265 | Port probing, session cookies |
 
 ## Runtime model
 
 - Embedded in the host JVM via `com.sun.net.httpserver.HttpServer` — no external web server.
-- Started by `JunifyDB.main()` (`--port`, `--data-dir`, `--engine`, `--sync/--async`, `--flush-interval`),
-  or programmatically through `JunifyDB.startIntelligent(ConsoleConfig)`.
+- Started by `EmbedJNoSQL.main()` (`--port`, `--data-dir`, `--engine`, `--sync/--async`, `--flush-interval`),
+  or programmatically through `EmbedJNoSQL.startIntelligent(ConsoleConfig)`.
 - Default port 8080; `PortManager` probes sequentially on conflict (validated CONSOLE-002/003).
 - Binds loopback by default; auth + CSRF + rate limiting + brute-force lockout via
   `SecurityConfig`/`CsrfTokenManager`/`SecureSessionManager`/`FailedLoginTracker`.
@@ -38,10 +38,10 @@ Keyboard: number keys 1–9,0 switch panels; Ctrl/Cmd+Enter runs SQL; Ctrl/Cmd+S
 
 ## Engine identity
 
-- Relational engine label: **JUNIFYDB-RDBMS** (built-in SQL dialect — SELECT/INSERT/UPDATE/DELETE/JOIN/
+- Relational engine label: **EMBEDJNOSQL-RDBMS** (built-in SQL dialect — SELECT/INSERT/UPDATE/DELETE/JOIN/
   GROUP BY, CREATE/DROP TABLE with PK/FK/UNIQUE/NOT NULL/CHECK; no views, procedures, functions,
   triggers, CREATE INDEX, or EXPLAIN).
-- Non-relational engine label: **JUNIFYDB-NOSQL** (documents, KV, lists/sets/hashes, wide-column,
+- Non-relational engine label: **EMBEDJNOSQL-NOSQL** (documents, KV, lists/sets/hashes, wide-column,
   HNSW vectors [experimental, fixed 128 dims]).
 - Storage engines: IN_MEMORY, FILE, LSM_TREE, B_TREE (all persistent engines WAL-backed).
 

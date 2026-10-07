@@ -4,10 +4,10 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.junify.db.demo</groupId>
+    <groupId>org.embeddedjnosql.db.demo</groupId>
     <artifactId>quarkus-demo</artifactId>
     <version>1.0.0</version>
-    <name>JunifyDB Demo - Quarkus E-Commerce</name>
+    <name>EmbedJNoSQL Demo - Quarkus E-Commerce</name>
 
     <properties>
         <maven.compiler.release>17</maven.compiler.release>
@@ -28,16 +28,16 @@
     </dependencyManagement>
 
     <dependencies>
-        <!-- JunifyDB Quarkus Extension -->
+        <!-- EmbedJNoSQL Quarkus Extension -->
         <dependency>
-            <groupId>org.junify.db</groupId>
-            <artifactId>junify-db-quarkus-extension-runtime</artifactId>
+            <groupId>org.embeddedjnosql.db</groupId>
+            <artifactId>embed-jnosql-quarkus-extension-runtime</artifactId>
             <version>1.0.0</version>
         </dependency>
 
         <!-- Common Domain -->
         <dependency>
-            <groupId>org.junify.db.demo</groupId>
+            <groupId>org.embeddedjnosql.db.demo</groupId>
             <artifactId>demo-common</artifactId>
             <version>1.0.0</version>
         </dependency>

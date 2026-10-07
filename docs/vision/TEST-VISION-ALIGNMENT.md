@@ -10,7 +10,7 @@
 
 | Module | Test Classes | Test Count | Passing | Failing | Coverage Target | Vision Alignment |
 |---|---|---|---|---|---|---|
-| **junify-db (Core)** | 25 | 489 | 489 | 0 | > 80% line | **HIGH** |
+| **embed-jnosql (Core)** | 25 | 489 | 489 | 0 | > 80% line | **HIGH** |
 | **spring-boot-starter** | 1 | 12 | 12 | 0 | > 85% line | **HIGH** |
 | **demo-common** | 0 | 0 | 0 | 0 | N/A (Model only) | **N/A** |
 | **spring-boot-demo** | 1 | 3 | 3 | 0 | End-to-End | **HIGH** |
@@ -24,7 +24,7 @@
 
 ## 2. Test Quality & Assertion Rigor Audit
 
-### A. Deep Testing Suite (`org.junify.db.deep.*`)
+### A. Deep Testing Suite (`org.embeddedjnosql.db.deep.*`)
 - **DeepTransactionTest**:
   - Tests ACID atomicity: ensures rollbacks cleanly revert uncommitted writes across collections.
   - Tests snapshot isolation: verifies that transaction readers do not observe dirty uncommitted writes from concurrent transactions.

@@ -1,4 +1,4 @@
-# JunifyDB — Proven vs Unproven Claims
+# EmbedJNoSQL — Proven vs Unproven Claims
 
 **Evaluation Standard**: Strict scientific audit. Every claim must have reproducible test evidence or be categorized as Unproven or Not Implemented.
 
@@ -12,8 +12,8 @@
 | **Crash Durability & Cold Restart** | Data written to disk survives process termination and reopens consistently across `FILE`, `B_TREE`, and `LSM_TREE`. | `FilePersistenceTest`, `MultiEngineE2EValidationTest`. |
 | **Atomic Transaction Rollback** | Mutations within an aborted transaction leave zero side-effects in storage. | `TransactionTest.testRollback`, `DeepTransactionTest`. |
 | **Document Query Optimization** | Queries on indexed fields use secondary B-Trees rather than full collection scans. | `AdvancedQueryTest.testSecondaryIndexLookup`. |
-| **Embedded Administrative UI** | Live web console serves assets and performs CRUD/query actions against embedded HTTP server. | `JunifyDBServerTest`, `deep-test.ps1`. |
-| **Spring Boot Auto-Configuration** | `@EnableJunifyDB` and starter instantiate `JunifyDB` beans in Spring applications. | `JunifyDBAutoConfigurationTest`, `EcommerceApplicationTest`. |
+| **Embedded Administrative UI** | Live web console serves assets and performs CRUD/query actions against embedded HTTP server. | `EmbedJNoSQLServerTest`, `deep-test.ps1`. |
+| **Spring Boot Auto-Configuration** | `@EnableEmbedJNoSQL` and starter instantiate `EmbedJNoSQL` beans in Spring applications. | `EmbedJNoSQLAutoConfigurationTest`, `EcommerceApplicationTest`. |
 | **Quarkus & Micronaut Native Support** | Extension and factory integrate seamlessly into modern compile-time DI frameworks. | `ProductResourceTest`, `EcommerceControllerTest`. |
 | **Vert.x Non-Blocking Integration** | Verticle offloads database operations to worker pool via `executeBlocking`. | `EcommerceVerticleTest`. |
 

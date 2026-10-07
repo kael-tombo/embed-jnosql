@@ -67,6 +67,6 @@ Verify that the interactive query runner executes structured JSON query criteria
 
 ## 4. Evaluation
 
-- The Query Runner successfully translates the criteria into JunifyDB query criteria.
+- The Query Runner successfully translates the criteria into EmbedJNoSQL query criteria.
 - Unfiltered items (or items below the price threshold) are excluded.
 - Results format matches the expected frontend table representation.

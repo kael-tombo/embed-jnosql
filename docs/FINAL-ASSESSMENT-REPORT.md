@@ -1,4 +1,4 @@
-# JNOSQL-EMBED (JunifyDB) — Final Assessment & Engineering Report
+# JNOSQL-EMBED (EmbedJNoSQL) — Final Assessment & Engineering Report
 
 **Author**: Principal Java Architect, Database-Engineering Specialist  
 **Date**: September 9, 2026  
@@ -10,13 +10,13 @@
 
 ## 1. Executive Summary
 
-This comprehensive engineering mission evaluated, refactored, documented, verified, and demonstrated the **JNOSQL-EMBED (JunifyDB)** project.
+This comprehensive engineering mission evaluated, refactored, documented, verified, and demonstrated the **JNOSQL-EMBED (EmbedJNoSQL)** project.
 
 ### The Problem
 Java/JVM developers have long enjoyed **H2** as an in-process, zero-dependency relational database for local testing, prototyping, and edge applications. However, modern applications increasingly rely on **NoSQL paradigms** (document structures, key-value stores, wide-column models). Previously, teams were forced to spin up heavy external Docker containers (MongoDB, Redis, Cassandra) even for simple unit tests or edge embedded workloads.
 
 ### The Solution
-**JunifyDB** establishes itself as the **H2 equivalent for NoSQL on the JVM**:
+**EmbedJNoSQL** establishes itself as the **H2 equivalent for NoSQL on the JVM**:
 - **Multi-Model**: Document collections (JSON with secondary indexing and aggregation pipelines), Key-Value (simple, Hash, List, Set), and Wide-Column families (with column TTL and slicing).
 - **Pluggable Storage**: Four distinct engines (`IN_MEMORY`, `FILE`, `B_TREE`, `LSM_TREE`).
 - **Deterministic Durability**: Write-Ahead Log (WAL) with synchronous fsync guarantees.
@@ -48,7 +48,7 @@ Java/JVM developers have long enjoyed **H2** as an in-process, zero-dependency r
 ### 2.2 Demonstration Ecosystem (`demo/`)
 A complete multi-module demonstration suite implementing a canonical **E-Commerce & Order Management** domain:
 - **`demo-common`**: Java 17 records (`Product`, `Order`, `OrderItem`, `Customer`, `InventoryItem`, `SampleData`).
-- **`spring-boot-demo`**: Spring Boot 3.2.0 REST application using `JunifyDBTemplate`.
+- **`spring-boot-demo`**: Spring Boot 3.2.0 REST application using `EmbedJNoSQLTemplate`.
 - **`quarkus-demo`**: Quarkus 3.8.0 reactive application with CDI `@DefaultBean` producers.
 - **`micronaut-demo`**: Micronaut 4.2.0 application using reflection-free Serde.
 - **`vertx-demo`**: Eclipse Vert.x 4.5.4 reactive verticle demonstrating thread-safe worker execution via `executeBlocking`.
@@ -80,8 +80,8 @@ During the deep-dive autonomous audit, several critical edge-case defects were d
 
 | Test Suite | Tests Run | Failures | Errors | Skipped | Pass Rate | Status |
 |---|---|---|---|---|---|---|
-| **Core Database Engine (`junify-db-core`)** | 491 | 0 | 0 | 0 | 100% | **GREEN** |
-| **Spring Boot Starter (`junify-db-spring-boot-starter`)** | 12 | 0 | 0 | 0 | 100% | **GREEN** |
+| **Core Database Engine (`embed-jnosql-core`)** | 491 | 0 | 0 | 0 | 100% | **GREEN** |
+| **Spring Boot Starter (`embed-jnosql-spring-boot-starter`)** | 12 | 0 | 0 | 0 | 100% | **GREEN** |
 | **Spring Boot Demo (`spring-boot-demo`)** | 4 | 0 | 0 | 0 | 100% | **GREEN** |
 | **Quarkus Demo (`quarkus-demo`)** | 4 | 0 | 0 | 0 | 100% | **GREEN** |
 | **Micronaut Demo (`micronaut-demo`)** | 4 | 0 | 0 | 0 | 100% | **GREEN** |
@@ -96,9 +96,9 @@ During the deep-dive autonomous audit, several critical edge-case defects were d
 As part of the final engineering phase, the embedded administration console and REST interface were upgraded to enterprise production readiness:
 
 1. **Configurable Console URL**:
-   - Programmatic (`ConsoleConfig.builder()`), system properties (`junifydb.console.*`), and environment variables (`JUNIFYDB_CONSOLE_*`).
+   - Programmatic (`ConsoleConfig.builder()`), system properties (`embedjnosql.console.*`), and environment variables (`EMBEDJNOSQL_CONSOLE_*`).
    - Customizable `scheme`, `host`, `port`, and `contextPath` with normalization.
-   - Spring Boot starter support via `junifydb.console.*` in `application.yml`.
+   - Spring Boot starter support via `embedjnosql.console.*` in `application.yml`.
 2. **Authoritative Intelligent Port Management**:
    - Zero-collision automatic port resolution with fallback probing across configurable ranges `[minPort, maxPort]`.
    - Ephemeral port support (`port: 0`) for collision-free parallel integration testing.
@@ -120,4 +120,4 @@ As part of the final engineering phase, the embedded administration console and 
 
 ## 6. Release Recommendation
 
-JunifyDB version **1.0.0-GA** satisfies all release readiness criteria, exhibits zero test regressions, provides production-ready starter integrations, configurable administration console with intelligent port management and OWASP security, and is accompanied by comprehensive architectural and operational documentation.
+EmbedJNoSQL version **1.0.0-GA** satisfies all release readiness criteria, exhibits zero test regressions, provides production-ready starter integrations, configurable administration console with intelligent port management and OWASP security, and is accompanied by comprehensive architectural and operational documentation.

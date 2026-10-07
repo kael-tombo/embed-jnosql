@@ -11,7 +11,7 @@ Framework compatibility at a glance, with honest verification levels.
 | Quarkus 3.8 | extension + demo | demo tests (not run here) | ✅ prior demo runs | ❌ | D functional — CI pending |
 | Micronaut 4.2 | integration + demo | demo tests (not run here) | ✅ prior demo runs | ❌ | D functional — CI pending |
 | Vert.x 4.5 | demo only | verticle test (not run here) | ✅ prior demo runs | ❌ | example — CI pending |
-| JNoSQL annotations | core (optional dep) | ✅ `JunifyRepositoryTest` etc. | — | ✅ | annotation dialect |
+| JNoSQL annotations | core (optional dep) | ✅ `EmbedRepositoryTest` etc. | — | ✅ | annotation dialect |
 | JPA annotations | core (optional dep) | ✅ `JpaEntityManagerTest` | — | ✅ | annotation dialect |
 | JDBC | — | — | — | — | not provided |
 | Testcontainers | — | — | — | — | not provided (by design) |

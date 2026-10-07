@@ -27,10 +27,10 @@ Single static page with hash routing — no server-side UI routes beyond static 
 ## Startup & URL configuration (recorded, unchanged by this redesign)
 
 ```
-java -jar target/junify-db-core-1.0.0.jar --port 8080 --data-dir data [--engine FILE|IN_MEMORY|LSM_TREE|B_TREE] [--sync|--async] [--flush-interval ms]
+java -jar target/embed-jnosql-core-1.0.0.jar --port 8080 --data-dir data [--engine FILE|IN_MEMORY|LSM_TREE|B_TREE] [--sync|--async] [--flush-interval ms]
 ```
 
-- `JunifyDB.main` parses args; unknown `--engine` values are rejected with a clear message.
+- `EmbedJNoSQL.main` parses args; unknown `--engine` values are rejected with a clear message.
 - `ConsoleConfig` may set a context path prefix; all routes register under it (root redirect 302).
 - HTTPS configurable via `configureSsl` (keystore path/password); plain HTTP on loopback otherwise.
 - `PortManager` probes `port, port+1, …` and throws `PortConflictException` when strict mode has

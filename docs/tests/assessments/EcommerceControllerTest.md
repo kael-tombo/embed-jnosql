@@ -1,7 +1,7 @@
 # Test Implementation Assessment: EcommerceControllerTest
 
 ## Test Purpose
-Validates Micronaut 4 HTTP controller endpoints against an embedded JunifyDB singleton bean.
+Validates Micronaut 4 HTTP controller endpoints against an embedded EmbedJNoSQL singleton bean.
 
 ## Related Vision or Requirement
 - Micronaut framework integration
@@ -38,7 +38,7 @@ None.
 Add 400 Bad Request boundary test.
 
 ## Revised Acceptance Criteria
-Micronaut controllers must serialize and deserialize JunifyDB records without reflection or proxy errors.
+Micronaut controllers must serialize and deserialize EmbedJNoSQL records without reflection or proxy errors.
 
 ## Final Status
 `PASS`

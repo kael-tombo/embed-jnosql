@@ -1,7 +1,7 @@
 # Overall Validation Report
 
 ## Executive Summary
-This report presents the consolidated validation results of the **JunifyDB (JNoSQL-EMBED)** embedded multi-model NoSQL database.
+This report presents the consolidated validation results of the **EmbedJNoSQL (JNoSQL-EMBED)** embedded multi-model NoSQL database.
 
 All automated verification gates, unit tests, integration suites, framework demos, and multi-engine end-to-end scenarios have been executed with **100% pass rates**.
 
@@ -11,7 +11,7 @@ All automated verification gates, unit tests, integration suites, framework demo
 
 | Test Suite | Total Tests | Passed | Failed | Errors | Skipped | Pass Rate | Execution Time |
 |---|---|---|---|---|---|---|---|
-| **Core Database (`junify-db-core`)** | 489 | 489 | 0 | 0 | 0 | **100%** | ~ 30 s |
+| **Core Database (`embed-jnosql-core`)** | 489 | 489 | 0 | 0 | 0 | **100%** | ~ 30 s |
 | **Spring Boot Starter & Demo** | 6 | 6 | 0 | 0 | 0 | **100%** | ~ 5 s |
 | **Quarkus Extension & Demo** | 4 | 4 | 0 | 0 | 0 | **100%** | ~ 55 s (with deps) |
 | **Micronaut Integration & Demo** | 4 | 4 | 0 | 0 | 0 | **100%** | ~ 8 s |

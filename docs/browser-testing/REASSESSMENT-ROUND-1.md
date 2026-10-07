@@ -5,7 +5,7 @@
 During initial browser testing of the running administration console at `http://localhost:9090/jnosql-admin/`:
 1. **CDP Environment Constraint**: Chrome DevTools Protocol port discovery was unavailable in the subagent sandbox. Automated HTTP testing against the live daemon was chosen.
 2. **Single-Threaded Server Starvation**:
-   - `JunifyDBServer` was instantiated with `server.setExecutor(null)`.
+   - `EmbedJNoSQLServer` was instantiated with `server.setExecutor(null)`.
    - When an SSE connection connected to `/api/metrics/stream`, the dispatcher thread entered an infinite stream loop, blocking all subsequent incoming requests until timeout.
 3. **Payload / Contract Discrepancies**:
    - List and Set operations required specific array-formatted request payloads (`"values"`, `"members"`).
@@ -17,8 +17,8 @@ During initial browser testing of the running administration console at `http://
 ## 2. Corrective Actions Applied
 
 1. **Multithreaded Executor Refactoring**:
-   - Refactored `JunifyDBServer` in `src/main/java/org/junify/db/console/http/JunifyDBServer.java`.
-   - Added a cached daemon thread pool `Executors.newCachedThreadPool(r -> new Thread(r, "junifydb-http-worker"))`.
+   - Refactored `EmbedJNoSQLServer` in `src/main/java/org/embeddedjnosql/db/console/http/EmbedJNoSQLServer.java`.
+   - Added a cached daemon thread pool `Executors.newCachedThreadPool(r -> new Thread(r, "embedjnosql-http-worker"))`.
    - Configured both HTTP and HTTPS servers to dispatch requests asynchronously.
    - Enhanced `MetricsStreamHandler` with `IOException` handling on socket disconnects to prevent thread spinning.
 2. **Context Path Relative Asset Handling**:

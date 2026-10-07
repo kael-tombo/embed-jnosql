@@ -8,7 +8,7 @@
 
 ## 1. REST Handler to Library API Mapping
 
-| REST Handler Context | Handler Class in `JunifyDBServer` | Target Domain Class | Invoked Methods |
+| REST Handler Context | Handler Class in `EmbedJNoSQLServer` | Target Domain Class | Invoked Methods |
 |---|---|---|---|
 | `/api/collections/*` | `CollectionsHandler` | `DocumentCollection` | `findAll()`, `findById()`, `insert()`, `deleteById()`, `find(query)` |
 | `/api/kv/*` | `KeyValueHandler` | `KeyValueBucket` | `get(key)`, `put(key, val)`, `delete(key)` |
@@ -24,7 +24,7 @@
 | `/api/backup` | `BackupHandler` | `StorageEngine` | `flush()`, file copy |
 | `/api/metrics` | `MetricsHandler` | `DatabaseMetrics` | `snapshot()` |
 | `/api/cdc` | `CDCHandler` | `CDCManager` | `getEvents()` |
-| `/api/audit/logs`| `AuditLogHandler` | `JunifyDBServer` audit log | ring buffer snapshot |
+| `/api/audit/logs`| `AuditLogHandler` | `EmbedJNoSQLServer` audit log | ring buffer snapshot |
 | `/api/benchmark` | `BenchmarkHandler` | `BenchmarkRunner` | `runAllBenchmarks()` |
 | `/api/auth/*` | `AuthHandler` | `SecureSessionManager` | `generateSessionId()`, `setSessionCookie()` |
 
@@ -32,4 +32,4 @@
 
 ## 2. Assertion of Zero Stubbing
 
-Handlers do not return synthetic mock objects. Each handler invokes operations on the live `JunifyDB` instance passed to `JunifyDBServer` during initialization.
+Handlers do not return synthetic mock objects. Each handler invokes operations on the live `EmbedJNoSQL` instance passed to `EmbedJNoSQLServer` during initialization.

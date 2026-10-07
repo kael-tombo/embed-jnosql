@@ -16,11 +16,11 @@
 2026-09-09T13:15:33.143+03:00  INFO 50164 --- [main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.20]
 2026-09-09T13:15:33.187+03:00  INFO 50164 --- [main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
 2026-09-09T13:15:33.189+03:00  INFO 50164 --- [main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1234 ms
-2026-09-09T13:15:33.376+03:00  INFO 50164 --- [main] org.junify.db.console.http.PortManager   : [PortManager] Bound successfully to preferred port 9090 on 127.0.0.1
-2026-09-09T13:15:33.391+03:00  INFO 50164 --- [main] o.junify.db.console.http.JunifyDBServer  : [JunifyDBServer] Administration Console available at: http://localhost:9090/jnosql-admin/
-2026-09-09T13:15:33.392+03:00  INFO 50164 --- [main] o.j.d.s.boot.JunifyDBAutoConfiguration   : ==========================================================================
-2026-09-09T13:15:33.393+03:00  INFO 50164 --- [main] o.j.d.s.boot.JunifyDBAutoConfiguration   : JunifyDB Administration Console: http://localhost:9090/jnosql-admin/
-2026-09-09T13:15:33.393+03:00  INFO 50164 --- [main] o.j.d.s.boot.JunifyDBAutoConfiguration   : ==========================================================================
+2026-09-09T13:15:33.376+03:00  INFO 50164 --- [main] org.embeddedjnosql.db.console.http.PortManager   : [PortManager] Bound successfully to preferred port 9090 on 127.0.0.1
+2026-09-09T13:15:33.391+03:00  INFO 50164 --- [main] o.embeddedjnosql.db.console.http.EmbedJNoSQLServer  : [EmbedJNoSQLServer] Administration Console available at: http://localhost:9090/jnosql-admin/
+2026-09-09T13:15:33.392+03:00  INFO 50164 --- [main] o.j.d.s.boot.EmbedJNoSQLAutoConfiguration   : ==========================================================================
+2026-09-09T13:15:33.393+03:00  INFO 50164 --- [main] o.j.d.s.boot.EmbedJNoSQLAutoConfiguration   : EmbedJNoSQL Administration Console: http://localhost:9090/jnosql-admin/
+2026-09-09T13:15:33.393+03:00  INFO 50164 --- [main] o.j.d.s.boot.EmbedJNoSQLAutoConfiguration   : ==========================================================================
 2026-09-09T13:15:33.511+03:00  INFO 50164 --- [main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
 2026-09-09T13:15:33.794+03:00  INFO 50164 --- [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8081 (http) with context path ''
 2026-09-09T13:15:33.805+03:00  INFO 50164 --- [main] o.j.db.demo.spring.EcommerceApplication  : Started EcommerceApplication in 2.62 seconds (process running for 3.373)

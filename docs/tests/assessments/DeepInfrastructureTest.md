@@ -1,7 +1,7 @@
 # Test Assessment: DeepInfrastructureTest
 
 ## Purpose
-Exhaustive verification of database infrastructure: EventBus dispatching, DatabaseMetrics accuracy, CDC event logging, and memory telemetry (`org.junify.db.deep.DeepInfrastructureTest`).
+Exhaustive verification of database infrastructure: EventBus dispatching, DatabaseMetrics accuracy, CDC event logging, and memory telemetry (`org.embeddedjnosql.db.deep.DeepInfrastructureTest`).
 
 ## Tested Behavior
 - High-throughput EventBus stress with multiple listeners.

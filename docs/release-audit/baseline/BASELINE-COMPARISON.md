@@ -2,7 +2,7 @@
 
 The assessment-first policy requires that after implementation work the result is **compared
 against the saved baseline**. This is that comparison. Snapshot under comparison:
-`junifydb-baseline-before-public-release-audit-20260922` @ `b10b6cd`.
+`embedjnosql-baseline-before-public-release-audit-20260922` @ `b10b6cd`.
 
 ## Commits since the baseline
 
@@ -15,7 +15,7 @@ against the saved baseline**. This is that comparison. Snapshot under comparison
 
 **Totals as of `19497a6`:** 4 commits, 34 files changed, **+2,574 / −42** lines — of which
 exactly **3 files are not documentation** (see below). Reproduce with:
-`git diff --stat junifydb-baseline-before-public-release-audit-20260922..HEAD`.
+`git diff --stat embedjnosql-baseline-before-public-release-audit-20260922..HEAD`.
 
 ## What changed — production code
 
@@ -23,13 +23,13 @@ Only **one** production file was touched:
 
 | File | Change | Why |
 |---|---|---|
-| `src/main/java/org/junify/db/console/http/JunifyDBServer.java` | **+28 / −4** | R-55: the collections handler resolved its target with the auto-creating `documentCollection(name)` before dispatching on the HTTP method, so `GET` on a typo'd collection returned `200 []` **and created it**. Non-document-write requests now resolve without creating and 404; POST/PUT keep auto-create |
+| `src/main/java/org/embeddedjnosql/db/console/http/EmbedJNoSQLServer.java` | **+28 / −4** | R-55: the collections handler resolved its target with the auto-creating `documentCollection(name)` before dispatching on the HTTP method, so `GET` on a typo'd collection returned `200 []` **and created it**. Non-document-write requests now resolve without creating and 404; POST/PUT keep auto-create |
 
 Everything else is tests, gates, and documentation:
 
 | File | Change |
 |---|---|
-| `src/test/java/org/junify/db/ConsoleCollectionResolutionTest.java` | +175 (new, 6 tests) |
+| `src/test/java/org/embeddedjnosql/db/ConsoleCollectionResolutionTest.java` | +175 (new, 6 tests) |
 | `scripts/console-contract-gate.sh` | +37 (five R-55 checks) |
 | 31 documentation files | assessment, ADRs, decision, implementation triage, corpus corrections, public-doc claim fixes, register |
 
@@ -69,7 +69,7 @@ defect verbatim in the assertion messages (`expected: <404> but was: <200>` retu
   browser-evidence JSONs rewritten by that other session, documented in
   `SNAPSHOT-VALIDATION.txt` rather than silently re-hashed.
 - Recovery still verified: the baseline branch is intact and
-  `git diff junifydb-baseline-before-public-release-audit-20260922..HEAD --stat` produces this
+  `git diff embedjnosql-baseline-before-public-release-audit-20260922..HEAD --stat` produces this
   comparison on demand.
 
 ## Assessment conclusion, re-checked against the baseline

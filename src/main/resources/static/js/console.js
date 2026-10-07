@@ -1,5 +1,5 @@
 /* ============================================================
-   JunifyDB Console v2 — application logic
+   EmbedJNoSQL Console v2 — application logic
    Vanilla ES2020, no dependencies. Talks only to /api/*.
    ============================================================ */
 'use strict';
@@ -123,7 +123,7 @@ async function api(path, opts = {}) {
     if (signal && signal.aborted) {
       throw new ApiError('Cancelled by user', { state: STATES.IDLE, dataChanged: false });
     }
-    throw new ApiError('Cannot reach the JunifyDB server — is it still running?',
+    throw new ApiError('Cannot reach the EmbedJNoSQL server — is it still running?',
       { state: STATES.BACKEND, dataChanged: false });
   } finally {
     if (timer) clearTimeout(timer);
@@ -1271,11 +1271,11 @@ async function srvRefresh() {
    ============================================================ */
 function setTheme(t) {
   document.documentElement.dataset.theme = t;
-  try { localStorage.setItem('junifydb.theme', t); } catch { /* ignore */ }
+  try { localStorage.setItem('embedjnosql.theme', t); } catch { /* ignore */ }
 }
 function initTheme() {
   let t = 'dark';
-  try { t = localStorage.getItem('junifydb.theme') || 'dark'; } catch { /* ignore */ }
+  try { t = localStorage.getItem('embedjnosql.theme') || 'dark'; } catch { /* ignore */ }
   setTheme(t);
 }
 
@@ -1506,7 +1506,7 @@ function bind() {
 }
 
 function openHelp() {
-  $('#helpVersion').textContent = `JunifyDB Console · server version ${$('#chipVersion')?.textContent || 'unknown'}`;
+  $('#helpVersion').textContent = `EmbedJNoSQL Console · server version ${$('#chipVersion')?.textContent || 'unknown'}`;
   $('#helpBackdrop').hidden = false;
   $('#helpClose').focus();
   document.addEventListener('keydown', helpEscape);

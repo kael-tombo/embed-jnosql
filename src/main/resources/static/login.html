@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JunifyDB — Sign In</title>
+    <title>EmbedJNoSQL — Sign In</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="stylesheet" href="/css/enhancements.css">
     <style>
@@ -167,9 +167,9 @@
     <div class="login-card">
         <div class="login-header">
             <div class="login-logo-wrap">
-                <img src="/logo.svg" alt="JunifyDB logo" width="88" height="88" />
+                <img src="/logo.svg" alt="EmbedJNoSQL logo" width="88" height="88" />
             </div>
-            <h1 class="login-title">JunifyDB Console</h1>
+            <h1 class="login-title">EmbedJNoSQL Console</h1>
             <p class="login-subtitle">Sign in to manage your embedded database</p>
             <span class="login-badge">Dual-Engine &bull; Relational SQL + Non-Relational NoSQL</span>
         </div>
@@ -196,7 +196,7 @@
         </form>
 
         <div class="login-footer">
-            JunifyDB Embedded Dual-Engine Database &bull; Secure Console
+            EmbedJNoSQL Embedded Dual-Engine Database &bull; Secure Console
         </div>
     </div>
 
@@ -294,7 +294,7 @@
             } catch (err) {
                 // Network failure is NOT an auth result — never fake a redirect.
                 console.error('Login request failed:', err);
-                showError('Cannot reach the server. Check that JunifyDB is running and try again.');
+                showError('Cannot reach the server. Check that EmbedJNoSQL is running and try again.');
             } finally {
                 if (!lockoutTimer) {
                     submitBtn.disabled = false;

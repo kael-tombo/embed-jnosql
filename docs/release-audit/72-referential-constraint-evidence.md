@@ -41,12 +41,12 @@ After this slice:
 
 ## Files
 
-- `src/main/java/org/junify/db/sql/ast/SqlStatement.java` — `ColumnDefinition` foreign-key fields; `CreateTableStatement.getChecks()`.
-- `src/main/java/org/junify/db/sql/parser/SqlParser.java` — `REFERENCES` / `CHECK` / `FOREIGN KEY` parsing, `parseExpression(String)`.
-- `src/main/java/org/junify/db/sql/SqlTableSchema.java` — foreign-key fields, `checks`, serialisation.
-- `src/main/java/org/junify/db/sql/SqlSchemaCatalog.java` — `all()` for parent-side checks.
-- `src/main/java/org/junify/db/sql/engine/SqlEngine.java` — `enforceConstraints` (FK + CHECK), `assertNoIncomingReferences` (DELETE/DROP), schema save.
-- `src/test/java/org/junify/db/sql/SqlReferentialConstraintTest.java` — **new** — 13 tests.
+- `src/main/java/org/embeddedjnosql/db/sql/ast/SqlStatement.java` — `ColumnDefinition` foreign-key fields; `CreateTableStatement.getChecks()`.
+- `src/main/java/org/embeddedjnosql/db/sql/parser/SqlParser.java` — `REFERENCES` / `CHECK` / `FOREIGN KEY` parsing, `parseExpression(String)`.
+- `src/main/java/org/embeddedjnosql/db/sql/SqlTableSchema.java` — foreign-key fields, `checks`, serialisation.
+- `src/main/java/org/embeddedjnosql/db/sql/SqlSchemaCatalog.java` — `all()` for parent-side checks.
+- `src/main/java/org/embeddedjnosql/db/sql/engine/SqlEngine.java` — `enforceConstraints` (FK + CHECK), `assertNoIncomingReferences` (DELETE/DROP), schema save.
+- `src/test/java/org/embeddedjnosql/db/sql/SqlReferentialConstraintTest.java` — **new** — 13 tests.
 
 ## Evidence
 

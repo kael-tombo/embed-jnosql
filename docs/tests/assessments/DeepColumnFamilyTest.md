@@ -1,7 +1,7 @@
 # Test Assessment: DeepColumnFamilyTest
 
 ## Purpose
-Deep stress and edge-case testing of the wide-column family subsystem (`org.junify.db.deep.DeepColumnFamilyTest`).
+Deep stress and edge-case testing of the wide-column family subsystem (`org.embeddedjnosql.db.deep.DeepColumnFamilyTest`).
 
 ## Tested Behavior
 - Thousands of dynamic columns per row key.

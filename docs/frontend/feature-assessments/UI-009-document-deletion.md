@@ -141,7 +141,7 @@ Added modal confirmation before initiating delete.
 `JNoSQLServerTest.deleteDocumentById()`
 
 ## Exact Test Commands
-`mvn test -Dtest=JunifyDBServerTest`
+`mvn test -Dtest=EmbedJNoSQLServerTest`
 
 ## Test Output
 Tests run: 9, Failures: 0, Errors: 0.

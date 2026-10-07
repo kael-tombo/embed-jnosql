@@ -2,7 +2,7 @@
 
 **Audit Date**: September 9, 2026  
 **Auditor**: Database Core Engineer  
-**Objective**: Empirically prove Atomicity, Consistency, Isolation, and Durability (ACID) in JunifyDB.
+**Objective**: Empirically prove Atomicity, Consistency, Isolation, and Durability (ACID) in EmbedJNoSQL.
 
 ---
 
@@ -19,7 +19,7 @@
 
 ## 2. Multi-Model Transactional Support
 
-JunifyDB allows multi-model updates within a single transaction:
+EmbedJNoSQL allows multi-model updates within a single transaction:
 - Modifying a document in `DocumentCollection`.
 - Updating a key in `KeyValueBucket`.
 - Incrementing a counter in `ColumnFamily`.

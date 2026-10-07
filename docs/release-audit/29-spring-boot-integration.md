@@ -7,7 +7,7 @@
 Per rule 6: an integration is "supported" only with a real executed demo; otherwise labeled accordingly.
 
 ## Current Implementation
-- `spring-boot-starter/` (own POM, NOT a module of the root build): `JunifyDBAutoConfiguration`, `JunifyDBTemplate`, config properties, health indicator wiring; unit tests exist (`JunifyDBAutoConfigurationTest`).
+- `spring-boot-starter/` (own POM, NOT a module of the root build): `EmbedJNoSQLAutoConfiguration`, `EmbedJNoSQLTemplate`, config properties, health indicator wiring; unit tests exist (`EmbedJNoSQLAutoConfigurationTest`).
 - `demo/spring-boot-demo`: E-commerce REST app with controller/service layering and an application test that boots a real context.
 
 ## Validation Performed

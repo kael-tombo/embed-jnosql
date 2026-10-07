@@ -1,4 +1,4 @@
-# JunifyDB — Broken Features Audit
+# EmbedJNoSQL — Broken Features Audit
 
 **Audit Date**: September 9, 2026  
 **Standard**: Strict empirical audit.

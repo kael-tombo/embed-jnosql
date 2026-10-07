@@ -5,15 +5,15 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.junify.db</groupId>
-        <artifactId>junify-db-quarkus-extension</artifactId>
+        <groupId>org.embeddedjnosql.db</groupId>
+        <artifactId>embed-jnosql-quarkus-extension</artifactId>
         <version>1.0.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>junify-db-quarkus-extension-runtime</artifactId>
-    <name>JunifyDB Quarkus Extension - Runtime</name>
-    <description>Quarkus extension runtime module for JunifyDB embedded NoSQL</description>
+    <artifactId>embed-jnosql-quarkus-extension-runtime</artifactId>
+    <name>EmbedJNoSQL Quarkus Extension - Runtime</name>
+    <description>Quarkus extension runtime module for EmbedJNoSQL embedded NoSQL</description>
 
     <properties>
         <maven.compiler.release>17</maven.compiler.release>
@@ -49,10 +49,10 @@
             <artifactId>smallrye-config</artifactId>
         </dependency>
 
-        <!-- JunifyDB core -->
+        <!-- EmbedJNoSQL core -->
         <dependency>
-            <groupId>org.junify.db</groupId>
-            <artifactId>junify-db-core</artifactId>
+            <groupId>org.embeddedjnosql.db</groupId>
+            <artifactId>embed-jnosql-core</artifactId>
             <version>1.0.0</version>
         </dependency>
 

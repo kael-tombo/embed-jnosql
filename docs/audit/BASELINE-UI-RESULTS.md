@@ -1,4 +1,4 @@
-# JunifyDB — Baseline UI Results
+# EmbedJNoSQL — Baseline UI Results
 
 **Audit Date**: September 9, 2026  
 **Standard**: Evidence-based. Visual inspection is NOT sufficient proof.
@@ -7,7 +7,7 @@
 
 ## 1. UI Asset Availability
 
-The following static assets are served by `JunifyDBServer.StaticHandler` from `src/main/resources/static/`:
+The following static assets are served by `EmbedJNoSQLServer.StaticHandler` from `src/main/resources/static/`:
 
 | Asset | Path | Size | Status |
 |---|---|---|---|
@@ -25,7 +25,7 @@ The following static assets are served by `JunifyDBServer.StaticHandler` from `s
 
 ## 2. Backend REST Endpoint Inventory vs UI API Calls
 
-All REST endpoints referenced in `index.html` have been mapped against registered handlers in `JunifyDBServer.registerHandlers()`:
+All REST endpoints referenced in `index.html` have been mapped against registered handlers in `EmbedJNoSQLServer.registerHandlers()`:
 
 | UI API Call (from index.html) | Backend Handler | Status |
 |---|---|---|
@@ -77,8 +77,8 @@ All REST endpoints referenced in `index.html` have been mapped against registere
 - **Impact**: Authentication timeout or manual logout result in a 404 page.
 - **Status**: **FAIL** — Broken navigation upon session expiry.
 
-### GAP-4: `/api/vectors` stores in-memory only, not in JunifyDB storage engine — UNKNOWN
-- **Vector Handler** uses `vectorIndexes.computeIfAbsent(indexName, k -> new HNSWIndex(128))` — stored in a transient `ConcurrentHashMap` on the server instance, NOT in any JunifyDB storage engine.
+### GAP-4: `/api/vectors` stores in-memory only, not in EmbedJNoSQL storage engine — UNKNOWN
+- **Vector Handler** uses `vectorIndexes.computeIfAbsent(indexName, k -> new HNSWIndex(128))` — stored in a transient `ConcurrentHashMap` on the server instance, NOT in any EmbedJNoSQL storage engine.
 - **Impact**: Vector indexes are lost on server restart. They do not persist with the database.
 - **Status**: **UNKNOWN** — Isolated from storage SPI. Documented as optional/experimental feature.
 
@@ -86,7 +86,7 @@ All REST endpoints referenced in `index.html` have been mapped against registere
 
 ## 4. Positive Findings
 
-- All **core document, key-value, column family, health, metrics, backup, transaction manager, index, and schema** endpoints are properly registered and connected to real `JunifyDB` library calls.
+- All **core document, key-value, column family, health, metrics, backup, transaction manager, index, and schema** endpoints are properly registered and connected to real `EmbedJNoSQL` library calls.
 - The web console correctly uses `fetch()` with `Content-Type: application/json` and `X-API-Key` headers.
 - CORS headers are conditionally applied based on `corsEnabled` configuration.
 - Rate limiting (100 req/min per IP by default) prevents brute force abuse.

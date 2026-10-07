@@ -1,4 +1,4 @@
-# JunifyDB — UI Hardcoded Data Audit
+# EmbedJNoSQL — UI Hardcoded Data Audit
 
 **Audit Date**: September 9, 2026  
 **Auditor**: UI QA Specialist  

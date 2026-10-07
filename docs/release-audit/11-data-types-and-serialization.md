@@ -10,7 +10,7 @@ Lossless round-trip of supported types; no `enableDefaultTyping`-style deseriali
 Jackson `jackson-databind` + `jackson-datatype-jsr310`; `JsonSerde` utility; `Document implements UnifiedRecord`; `adapter/jnosql/EntityMapper` resolves JNoSQL/JPA/Hibernate annotations reflectively (deps are `provided`+`optional`).
 
 ## Validation Performed
-`AnnotationDualSupportTest`, `JpaEntityManagerTest`, `JunifyRepositoryTest` green in both full runs. No `enableDefaultTyping` found in `JsonSerde` (searched during security review, see 22).
+`AnnotationDualSupportTest`, `JpaEntityManagerTest`, `EmbedRepositoryTest` green in both full runs. No `enableDefaultTyping` found in `JsonSerde` (searched during security review, see 22).
 
 ## Evidence
 Full-suite logs; source inspection.

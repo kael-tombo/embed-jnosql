@@ -23,10 +23,10 @@
 | **Event Streaming** | Change Data Capture | Activity Log -> Stream Events | `GET /api/cdc` | `CDCManager.getEvents` | Ring buffer event log | `EventBusTest` | Mutation triggers event emission | **PASS** |
 | **Live Telemetry** | Server Metrics & SSE | Dashboard -> SSE Real-time Gauge | `GET /api/metrics/stream` | `DatabaseMetrics.snapshot` | Atomic counters | `MetricsHandler`, UI stream | Real-time graphs update without polling | **PASS** |
 | **Enterprise Security** | Session Auth & Protection | Login Modal -> Submit Credentials | `POST /api/auth/login` | `SecureSessionManager` | Secure token store | `login.html`, Auth probes | HTTP 200 returned, session cookie set | **PASS** |
-| **Spring Integration** | Spring Boot Starter | Spring REST Service -> Model Access | Spring `@Autowired` Service | Spring AutoConfiguration | Embedded JunifyDB | `EcommerceApplicationTest` | 3/3 Spring tests pass against live engine | **PASS** |
-| **Quarkus Integration** | Quarkus Microservices | Quarkus JAX-RS Resource | REST Assured `/api/products` | CDI Bean Injection | Embedded JunifyDB | `ProductResourceTest` | 4/4 Quarkus tests pass with REST-Assured | **PASS** |
-| **Micronaut Integration**| Micronaut Microservices | Micronaut `@Controller` | Micronaut HttpClient | Singleton Bean Injection | Embedded JunifyDB | `EcommerceControllerTest` | 4/4 Micronaut tests pass with real client | **PASS** |
-| **Reactive Vert.x** | Non-blocking EventLoop | Vert.x Web Router | Vert.x WebClient | Asynchronous Verticle | Embedded JunifyDB | `EcommerceVerticleTest` | 4/4 Reactive tests pass without blocking | **PASS** |
+| **Spring Integration** | Spring Boot Starter | Spring REST Service -> Model Access | Spring `@Autowired` Service | Spring AutoConfiguration | Embedded EmbedJNoSQL | `EcommerceApplicationTest` | 3/3 Spring tests pass against live engine | **PASS** |
+| **Quarkus Integration** | Quarkus Microservices | Quarkus JAX-RS Resource | REST Assured `/api/products` | CDI Bean Injection | Embedded EmbedJNoSQL | `ProductResourceTest` | 4/4 Quarkus tests pass with REST-Assured | **PASS** |
+| **Micronaut Integration**| Micronaut Microservices | Micronaut `@Controller` | Micronaut HttpClient | Singleton Bean Injection | Embedded EmbedJNoSQL | `EcommerceControllerTest` | 4/4 Micronaut tests pass with real client | **PASS** |
+| **Reactive Vert.x** | Non-blocking EventLoop | Vert.x Web Router | Vert.x WebClient | Asynchronous Verticle | Embedded EmbedJNoSQL | `EcommerceVerticleTest` | 4/4 Reactive tests pass without blocking | **PASS** |
 | **Engine Invariance** | 4 Pluggable Backends | Storage Engine Config Switch | Core Library API | Engine SPI (`put/get/flush`) | Memory / File / LSM / BTree | `MultiEngineE2EValidationTest` | Identical business flow succeeds on all 4 | **PASS** |
 
 ---

@@ -2,7 +2,7 @@
 
 ## 1. Architectural Overview
 
-The JNOSQL-EMBED administration console consists of a lightweight single-page application (SPA) embedded directly inside the library core and served through an intelligent HTTP/HTTPS engine (`JunifyDBServer`).
+The JNOSQL-EMBED administration console consists of a lightweight single-page application (SPA) embedded directly inside the library core and served through an intelligent HTTP/HTTPS engine (`EmbedJNoSQLServer`).
 
 The architecture achieves complete framework independence:
 - Works with standard embedded setups, Spring Boot, Quarkus, Micronaut, Vert.x, or plain Java main applications.
@@ -25,7 +25,7 @@ The architecture achieves complete framework independence:
    ├── CORS Validation (`Access-Control-Allow-*`)
    ├── Security Headers (`nosniff`, `DENY`, CSP)
    ├── Rate Limiter (Sliding-window token bucket)
-   ├── Auth Filter (Session Cookie `JUNIFY_SESSION` or Bearer Token or `X-API-Key`)
+   ├── Auth Filter (Session Cookie `EMBED_SESSION` or Bearer Token or `X-API-Key`)
    └── CSRF Protection (`X-CSRF-Token` header check on mutating methods)
        │
        ▼

@@ -3,13 +3,13 @@
 **Status: historical record — not a description of the shipped product.**
 
 Everything under `docs/browser-testing/` (assessments, screenshots, network traces, recordings) was
-captured against the product **before** the NoSQL-only refocus. At that time JunifyDB also shipped a
+captured against the product **before** the NoSQL-only refocus. At that time EmbedJNoSQL also shipped a
 relational SQL engine, a JDBC driver, JPA `EntityManager`, `/api/sql` routes, and a SQL Studio screen.
 
 Those surfaces are gone:
 
 - the SQL engine, parser, planner, and relational catalog were deleted;
-- the JDBC driver, `JunifyJdbcDriver`, and its service descriptor were deleted;
+- the JDBC driver, `JembedJdbcDriver`, and its service descriptor were deleted;
 - the JPA `EntityManager`/`TypedQuery` surface was deleted;
 - `POST /api/sql`, `GET /api/sql/schema`, `POST /api/sql/execute` answer **404**;
 - the SQL Studio screen, its navigation entry, and its client-side code were removed from the console.

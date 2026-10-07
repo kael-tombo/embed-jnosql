@@ -114,7 +114,7 @@ SSE stream consumes < 1% CPU overhead.
 Verified in `index.html` lines 748-806 and `enhancements.js`.
 
 ## Existing Test Assessment
-Verified via `JunifyDBServerTest.healthEndpoint()`.
+Verified via `EmbedJNoSQLServerTest.healthEndpoint()`.
 
 ## Missing Tests
 None.

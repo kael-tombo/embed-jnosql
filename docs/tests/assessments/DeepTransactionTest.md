@@ -1,7 +1,7 @@
 # Test Assessment: DeepTransactionTest
 
 ## Purpose
-Exhaustive verification of transaction semantics, Multi-Version Concurrency Control (MVCC), snapshot isolation, and concurrent transaction conflicts (`org.junify.db.deep.DeepTransactionTest`).
+Exhaustive verification of transaction semantics, Multi-Version Concurrency Control (MVCC), snapshot isolation, and concurrent transaction conflicts (`org.embeddedjnosql.db.deep.DeepTransactionTest`).
 
 ## Tested Behavior
 - Multi-threaded transaction isolation: verifying readers do not observe concurrent uncommitted transactions.

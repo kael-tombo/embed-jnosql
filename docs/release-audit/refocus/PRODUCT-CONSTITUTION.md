@@ -1,14 +1,14 @@
-# JunifyDB (JNoSQL-EMBED) — Product Constitution, Release Scope, Capability Inventory
+# EmbedJNoSQL (JNoSQL-EMBED) — Product Constitution, Release Scope, Capability Inventory
 
 ## 1. Product constitution
 
-JunifyDB is a lightweight, embedded, multi-model **NoSQL** database for the JVM. A developer
+EmbedJNoSQL is a lightweight, embedded, multi-model **NoSQL** database for the JVM. A developer
 adds one dependency and gets a database inside their own process — no server, no daemon, no
 Docker, no network, no account.
 
 Principles (architectural constraints, not marketing):
 
-1. **Embedded first.** `JunifyDB.inMemory()` starts a working database in one call and stops on
+1. **Embedded first.** `EmbedJNoSQL.inMemory()` starts a working database in one call and stops on
    `close()`. The database lifecycle is the application lifecycle. Starting the database never
    starts an HTTP server unless the console is explicitly enabled.
 2. **Document and Key-Value are models of one product.** In-memory vs file-backed is a *storage
@@ -76,12 +76,12 @@ Evidence paths are relative to the repository root.
 | Key-Value + TTL + list/set/hash | IMPLEMENTED | `KeyValueBucketTest`, `KvTtlPersistenceTest`, `ListBucketTest`, `SetBucketTest`, `HashBucketTest` |
 | Document query model (factories, composition, sort, page) | IMPLEMENTED | `AdvancedQueryTest`, `AggregationPipelineTest`, `CoverageExtensionTest` |
 | Secondary field indexes | IMPLEMENTED | `ConsoleIndexAndCdcEndpointTest`, `SecondImprovementRoundTest` |
-| Fluent entity query `db.from()` | IMPLEMENTED (rewired onto `Query`) | `JunifyRepositoryTest`, `TransactionalCatalogVisibilityTest` |
+| Fluent entity query `db.from()` | IMPLEMENTED (rewired onto `Query`) | `EmbedRepositoryTest`, `TransactionalCatalogVisibilityTest` |
 | Broad aggregation (JOIN/GROUP BY windows) | REMOVED | SQL removal manifest |
 | Transactions (MVCC) | IMPLEMENTED | `TransactionTest`, `deep/DeepTransactionTest`, `ConsoleTransactionAndBulkTest` |
 | Persistence across restart (FILE/LSM/B_TREE) | IMPLEMENTED | `FilePersistenceTest`, `LSMReadResolutionTest`, `BTreeAutoFlushPersistenceTest`, `WalRotationAndCheckpointTest`, `CollectionExistenceDurabilityTest` |
 | Crash/power-loss safety | PARTIAL — WAL replay + checkpoint rotation tested; no power-loss test | `CheckpointRaceDurabilityTest`, `WalRotationAndCheckpointTest` |
-| Eclipse JNoSQL-style adapter (repository/template/mapping) | PARTIAL — document model only, no Key-Value adapter, no TCK | `jnosql/JunifyRepositoryTest`, `jpa/JpaAnnotationTest`, `jpa/AnnotationDualSupportTest`, `jpa/HibernateAnnotationTest` |
+| Eclipse JNoSQL-style adapter (repository/template/mapping) | PARTIAL — document model only, no Key-Value adapter, no TCK | `jnosql/EmbedRepositoryTest`, `jpa/JpaAnnotationTest`, `jpa/AnnotationDualSupportTest`, `jpa/HibernateAnnotationTest` |
 | Wide-column families | PARTIAL | `ColumnFamilyTest`, `ColumnFamilyAdvancedTest`, `ColumnFamilyTtlPersistenceTest` |
 | Vector (HNSW) search | PARTIAL / EXPERIMENTAL | `VectorPersistenceTest`, `VectorSearchAndTtlReadTest`, `ConsoleVectorSearchTest` |
 | Console (NoSQL IA) | IMPLEMENTED | `ConsoleComprehensiveFeatureProofTest`, `ConsoleTaskSuccessTest`, `ConsoleWorkspaceEndpointsTest` |

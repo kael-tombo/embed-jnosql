@@ -5,7 +5,7 @@ Modern edge and embedded applications, microservices, and branch office systems 
 
 Developers frequently resort to H2 for relational use cases, but when applications deal with dynamic documents, fast key-value caches, and wide-column time series/inventory matrices, no lightweight, pure-Java embedded solution has existed.
 
-**JunifyDB** fills this gap as the embedded NoSQL counterpart to H2.
+**EmbedJNoSQL** fills this gap as the embedded NoSQL counterpart to H2.
 
 ---
 

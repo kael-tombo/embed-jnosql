@@ -1,4 +1,4 @@
-# JunifyDB — Architectural Decision Log
+# EmbedJNoSQL — Architectural Decision Log
 
 **Auditor**: Principal Java Architect  
 **Date**: September 9, 2026  
@@ -21,7 +21,7 @@
 
 4. **ADR-04: Non-Relational First (Out-of-Scope SQL Parser)**
    - *Decision*: Exclude relational SQL string parsing and foreign key constraint engines.
-   - *Rationale*: Relational SQL duplicates H2 and SQLite; JunifyDB’s mission is the H2 equivalent for NoSQL (Document, Key-Value, Column).
+   - *Rationale*: Relational SQL duplicates H2 and SQLite; EmbedJNoSQL’s mission is the H2 equivalent for NoSQL (Document, Key-Value, Column).
 
 5. **ADR-05: Integrated Web Console & Session Security**
    - *Decision*: Serve administrative console and API handlers directly via embedded JDK `HttpServer`.

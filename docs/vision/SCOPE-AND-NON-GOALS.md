@@ -1,7 +1,7 @@
 # JNOSQL-EMBED: Scope & Non-Goals
 
 > **⚠ SUPERSEDED — pre-refactor document (SQL / dual-engine).**
-> JunifyDB is now NoSQL-only. The relational engine, SQL parser/planning, JDBC driver, JPA
+> EmbedJNoSQL is now NoSQL-only. The relational engine, SQL parser/planning, JDBC driver, JPA
 > `EntityManager`, `/api/sql` routes, and the SQL Studio console screen were removed from the
 > product. Statements in this file that describe SQL, JDBC, SQL schemas, or an engine selector no
 > longer describe shipped behavior.
@@ -31,7 +31,7 @@ To maintain high performance, reliability, and architectural purity, JNOSQL-EMBE
 - **ACID MVCC Transaction Isolation**:
   - Read snapshot isolation, staged write buffers, commit, and rollback.
 - **Framework Integration**:
-  - Spring Boot 3.x Starter with auto-configured `JunifyDB` and `JunifyDBTemplate`.
+  - Spring Boot 3.x Starter with auto-configured `EmbedJNoSQL` and `EmbedJNoSQLTemplate`.
   - Quarkus 3.x Extension with SmallRye `@ConfigMapping` and CDI bean producers.
   - Micronaut 4.x Integration with `@Singleton` factories and repositories.
   - Reactive Vert.x demo with worker-thread offloading.

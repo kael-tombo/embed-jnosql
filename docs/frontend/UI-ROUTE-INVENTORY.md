@@ -1,4 +1,4 @@
-# JunifyDB — UI Route Inventory
+# EmbedJNoSQL — UI Route Inventory
 
 **Audit Date**: September 9, 2026  
 **Auditor**: Frontend Architecture Lead  

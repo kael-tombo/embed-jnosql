@@ -15,7 +15,7 @@ NOT implemented: DDL (`CREATE TABLE` etc.), views, sequences, `WITH`/CTEs, subqu
 `SqlEngineTest` (9 tests) green; live SELECT/INSERT; source inspection of UPDATE/DELETE update-count paths.
 
 ## Evidence
-`src/test/java/org/junify/db/sql/SqlEngineTest.java`; `SqlEngine.java` lines 342/370/392 (UPDATE/DELETE execution).
+`src/test/java/org/embeddedjnosql/db/sql/SqlEngineTest.java`; `SqlEngine.java` lines 342/370/392 (UPDATE/DELETE execution).
 
 ## Findings
 | ID | Status | Severity | Description |

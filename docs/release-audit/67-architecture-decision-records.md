@@ -6,13 +6,13 @@ Statuses: **ACCEPTED**, **ACCEPTED (documented limitation)**, **SUPERSEDED**.
 
 ---
 
-## ADR-001 — Ship one artifact (`junify-db-core`), not 14 engine modules
+## ADR-001 — Ship one artifact (`embed-jnosql-core`), not 14 engine modules
 
 **Status:** ACCEPTED (documented limitation)
 
 **Context.** The product vision calls for separately deployable engine modules
-(`junify-db-sql`, `junify-db-nosql`, `junify-db-storage-*`, `junify-db-jdbc`,
-`junify-db-console`). The codebase as built is a **single Maven module**
+(`embed-jnosql-sql`, `embed-jnosql-nosql`, `embed-jnosql-storage-*`, `embed-jnosql-jdbc`,
+`embed-jnosql-console`). The codebase as built is a **single Maven module**
 (`<modules>` is empty) whose 97 main source files separate those concerns by *package*.
 
 **Decision.** Keep the single shaded jar for the public release. Package boundaries already
@@ -37,7 +37,7 @@ auditability have a precise alternative today: only three mandatory dependencies
 **Status:** ACCEPTED (documented limitation)
 
 **Context.** `sql/engine/SqlEngine` resolves SQL tables through
-`JunifyDB.documentCollection()` — SQL "tables" *are* document collections. The two engines
+`EmbedJNoSQL.documentCollection()` — SQL "tables" *are* document collections. The two engines
 have separate lexers, parsers, ASTs, and execution paths, but share storage and catalog.
 
 **Decision.** Keep the shared substrate and describe the product honestly as a **multi-model

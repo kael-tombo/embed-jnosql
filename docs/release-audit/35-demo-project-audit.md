@@ -7,7 +7,7 @@ The 8+ demo projects under `demo/` — buildability, documented-command accuracy
 Per the release standard: a new developer can follow documented commands and reproduce demo output without hidden knowledge.
 
 ## Current Implementation
-`demo/` contains `demo-common` + standalone Maven projects (spring-boot-demo, quarkus-demo, micronaut-demo, vertx-demo, annotation-showcase, advanced-queries, batch-processing, load-and-stress, end-to-end-validation). Each has its own POM, README sections, and tests; they reference `junify-db-core` **1.0.0** — resolved from the local repository after `mvn install` of the core (an implicit prerequisite that must be documented).
+`demo/` contains `demo-common` + standalone Maven projects (spring-boot-demo, quarkus-demo, micronaut-demo, vertx-demo, annotation-showcase, advanced-queries, batch-processing, load-and-stress, end-to-end-validation). Each has its own POM, README sections, and tests; they reference `embed-jnosql-core` **1.0.0** — resolved from the local repository after `mvn install` of the core (an implicit prerequisite that must be documented).
 
 ## Validation Performed
 - Demo sources read; prior sessions executed several demos successfully (annotation-showcase, batch, stress, e2e, spring-boot).
@@ -51,7 +51,7 @@ cold-restart phase now requires `getCollectionNames()` to list `products` and `o
 without being asked, on every persistent engine — the exact assertion that failed for
 LSM_TREE/B_TREE before the R-53 fix, and which this demo (claiming a "multi-engine
 durability matrix") had been silently missing. 4/4 green after reinstalling the core
-artifact (`mvn install` — the demo resolves `junify-db-core` from the local repo, so a
+artifact (`mvn install` — the demo resolves `embed-jnosql-core` from the local repo, so a
 demo run against a stale install silently tests old behavior; that prerequisite is now
  Load-bearing and documented here). Durability facts re-verified live: LSM_TREE recovers
 a document across a hard kill (taskkill) via its WAL; B_TREE losing writes since the
@@ -84,7 +84,7 @@ stale core) produced one failure and one repair:
 through a transaction and then runs `SELECT ... FROM invoices`; both SQL-backed tests errored with
 `SqlUnknownTableException: Table 'invoices' does not exist`. The read was correct — the **catalog
 was wrong**: collections written through a transaction never registered in
-`JunifyDB.getCollectionNames()`, which was latent until R-48 made SQL reads resolve through a
+`EmbedJNoSQL.getCollectionNames()`, which was latent until R-48 made SQL reads resolve through a
 non-creating path. Found by running the demos, not by reading code, and it existed *because* the
 demo exercises the real JPA/transaction path that unit tests covered only piecewise.
 

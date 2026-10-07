@@ -1,6 +1,6 @@
 # Feature Validation Matrix
 
-This matrix correlates every core capability of JunifyDB with its validation status and automated test coverage.
+This matrix correlates every core capability of EmbedJNoSQL with its validation status and automated test coverage.
 
 ## Core Multi-Model Database Capabilities
 
@@ -28,11 +28,11 @@ This matrix correlates every core capability of JunifyDB with its validation sta
 | | Atomic Multi-Record Commit | Yes | Yes | Yes | `DeepTransactionTest` |
 | | Rollback & Undo Buffer | Yes | Yes | Yes | `DeepTransactionTest`, `OrderResourceTest` |
 | | Write-Ahead Log (WAL) & Crash Recovery | Yes | Yes | Yes | `LSMTreeEngineTest`, `FilePersistenceTest` |
-| **Integration & Server**| HTTP REST & Admin Server | Yes | Yes | Yes | `JunifyDBServerTest`, `DefectFixTest` |
-| | API Key Authentication & RBAC | Yes | Yes | Yes | `JunifyDBServerTest` |
-| | Audit Logging & Metrics | Yes | Yes | Yes | `JunifyDBServerTest`, `DeepInfrastructureTest` |
+| **Integration & Server**| HTTP REST & Admin Server | Yes | Yes | Yes | `EmbedJNoSQLServerTest`, `DefectFixTest` |
+| | API Key Authentication & RBAC | Yes | Yes | Yes | `EmbedJNoSQLServerTest` |
+| | Audit Logging & Metrics | Yes | Yes | Yes | `EmbedJNoSQLServerTest`, `DeepInfrastructureTest` |
 | | Change Data Capture (CDC) | Yes | Yes | Yes | `DeepInfrastructureTest` |
-| | Spring Boot Auto-Configuration | Yes | Yes | Yes | `JunifyDBAutoConfigurationTest`, `EcommerceApplicationTest` |
+| | Spring Boot Auto-Configuration | Yes | Yes | Yes | `EmbedJNoSQLAutoConfigurationTest`, `EcommerceApplicationTest` |
 | | Quarkus CDI Extension | Yes | Yes | Yes | `ProductResourceTest` |
 | | Micronaut Factory & Serde Integration | Yes | Yes | Yes | `EcommerceControllerTest` |
 | | Vert.x Reactive Worker Dispatch | Yes | Yes | Yes | `EcommerceVerticleTest` |

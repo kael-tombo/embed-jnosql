@@ -11,12 +11,12 @@
 #      logout invalidates the session (401 afterwards).
 #
 # Usage: scripts/console-auth-gate.sh [port]
-# Requires: target/junify-db-core-1.0.0.jar (build with: mvn -DskipTests package)
+# Requires: target/embed-jnosql-core-1.0.0.jar (build with: mvn -DskipTests package)
 set -u
 
 PORT="${1:-8098}"
 BASE="http://127.0.0.1:${PORT}"
-JAR="target/junify-db-core-1.0.0.jar"
+JAR="target/embed-jnosql-core-1.0.0.jar"
 DATA_DIR="target/contract-auth-gate-data"
 LOG="target/contract-auth-gate-server.log"
 KEY="gate-secret-key-DO-NOT-USE-IN-PROD"

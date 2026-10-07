@@ -1,4 +1,4 @@
-# JunifyDB — Concurrency and Thread Safety Design
+# EmbedJNoSQL — Concurrency and Thread Safety Design
 
 **Architecture Component**: Concurrency, Thread Safety, and Snapshot Isolation  
 **Date**: September 9, 2026  
@@ -7,7 +7,7 @@
 
 ## 1. Threading Model Overview
 
-JunifyDB is designed for highly concurrent, multi-threaded JVM applications:
+EmbedJNoSQL is designed for highly concurrent, multi-threaded JVM applications:
 - Multiple reader threads can query collections and buckets simultaneously without blocking each other.
 - Writers utilize fine-grained locks or lock-free atomic primitives depending on the underlying storage engine.
 - Transactional sessions operate via **Multi-Version Concurrency Control (MVCC)** with Snapshot Isolation.
@@ -45,6 +45,6 @@ graph TD
 
 ## 3. Verification & Evidence
 
-Thread safety is rigorously asserted in `org.junify.db.ConcurrencyTest`:
+Thread safety is rigorously asserted in `org.embeddedjnosql.db.ConcurrencyTest`:
 - 16 concurrent threads performing 100,000 mixed read/write operations against document collections.
 - Zero data corruption, zero lost updates, and zero deadlocks verified under high contention.

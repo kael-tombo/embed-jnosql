@@ -7,13 +7,13 @@ Durable sequential logging of all transactional state mutations with CRC32 verif
 Mutations are appended to a binary WAL with record framing and CRC32 checksums before memory state is updated. On startup, the log is inspected and committed transactions are replayed; uncommitted or corrupted tail records are safely truncated.
 
 ## Relevant Source Files
-- `src/main/java/org/junify/db/storage/wal/WriteAheadLog.java`
-- `src/main/java/org/junify/db/storage/wal/WALRecord.java`
+- `src/main/java/org/embeddedjnosql/db/storage/wal/WriteAheadLog.java`
+- `src/main/java/org/embeddedjnosql/db/storage/wal/WALRecord.java`
 
 ## Public API
 Internal to database and storage layer. Configurable via:
 ```java
-JunifyDB.embed()
+EmbedJNoSQL.embed()
     .autoFlush(true) // synchronous fsync on commit
     .flushIntervalMs(50) // group commit interval
     .build();
@@ -26,8 +26,8 @@ JunifyDB.embed()
 4. Windows file locks are released cleanly upon log truncation or closing.
 
 ## Tests That Prove the Criteria
-- `org.junify.db.deep.DeepInfrastructureTest.testWalReplayAndRecovery`
-- `org.junify.db.DefectFixTest.testWindowsFileLockingOnWal`
+- `org.embeddedjnosql.db.deep.DeepInfrastructureTest.testWalReplayAndRecovery`
+- `org.embeddedjnosql.db.DefectFixTest.testWindowsFileLockingOnWal`
 
 ## Exact Commands
 ```bash
@@ -41,7 +41,7 @@ Test executes without `FileSystemException` on Windows.
 Passed: `Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.15 s`.
 
 ## Evidence Artifacts
-- `target/surefire-reports/org.junify.db.DefectFixTest.txt`
+- `target/surefire-reports/org.embeddedjnosql.db.DefectFixTest.txt`
 
 ## Edge Cases
 - Power loss during middle of record write (partial record at EOF).

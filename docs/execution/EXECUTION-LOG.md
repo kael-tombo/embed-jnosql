@@ -1,4 +1,4 @@
-# JunifyDB — Master Execution Log
+# EmbedJNoSQL — Master Execution Log
 
 **Execution Session**: Autonomous Re-engineering, Testing & Validation  
 **Date**: September 9, 2026  

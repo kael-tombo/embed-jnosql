@@ -1,7 +1,7 @@
 # Assessment: CONSOLE-BROWSER-001 — Static Console Asset Delivery
 
 - **Feature ID**: `CONSOLE-BROWSER-001`
-- **Component**: JunifyDB Admin Console Static Asset Pipeline & Security Headers
+- **Component**: EmbedJNoSQL Admin Console Static Asset Pipeline & Security Headers
 - **Assessed URL**: `http://localhost:9090/jnosql-admin/`
 - **Execution Mode**: Live Running Application (Spring Boot Demo PID `6552`)
 - **Status**: **PASS**
@@ -36,7 +36,7 @@ Verify that the administration console correctly delivers all required client as
 
 ## 4. UI Rendering Verification
 
-- **Console Index (`index.html`)**: Delivers complete SPA bundle including Vue.js CDN bootstrapping, dark/light theme stylesheet tokens, and JunifyDB brand elements.
+- **Console Index (`index.html`)**: Delivers complete SPA bundle including Vue.js CDN bootstrapping, dark/light theme stylesheet tokens, and EmbedJNoSQL brand elements.
 - **Login Form (`login.html`)**: Contains dynamic context path resolution (`getBasePath()`), username and password inputs, API key fallback, and CSRF token initialization.
 - **Brand Identity (`logo.svg`)**: Valid scalable vector graphics rendered with inline XML tags.
 

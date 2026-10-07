@@ -3,7 +3,7 @@
 Captured 2026-09-23 on a real process (not a test harness).
 
 Command:
-  java -jar target/junify-db-core-1.0.0.jar --port 18080 --engine IN_MEMORY
+  java -jar target/embed-jnosql-core-1.0.0.jar --port 18080 --engine IN_MEMORY
 
 Startup (from server log):
   Storage engine: IN_MEMORY
@@ -18,7 +18,7 @@ Startup (from server log):
 |---|---|---|
 | `GET /api/health` | `{"memory":{...},"status":"ok","engine":"IN_MEMORY","version":"1.0.0","open":true,"threads":{...}}` | PASS — real state, real telemetry |
 | `GET /api/metrics` | real counters (`totalOperations`, `inserts`, `heapUsed`, `threadCount`, …) | PASS — not placeholders |
-| `GET /` | `<title>JunifyDB Console — Embedded Admin UI</title>` | PASS — Console serves |
+| `GET /` | `<title>EmbedJNoSQL Console — Embedded Admin UI</title>` | PASS — Console serves |
 | `POST /api/collections/smoke` | returns the stored document with a generated id | PASS — write round-trip |
 | `GET /api/collections/smoke` | returns the inserted document | PASS — read round-trip (writes/reads agree) |
 | Cross-origin probe with `Origin: http://evil.example` | **no `Access-Control-Allow-Origin` header** | PASS — wildcard CORS is off by default (R-61 stays fixed) |

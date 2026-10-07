@@ -53,7 +53,7 @@ jobs:
       - name: Enforce core jar size limit (5 MB)
         if: matrix.java == '21'
         run: |
-          SIZE=$(stat -c %s target/junify-db-core-1.0.0.jar)
+          SIZE=$(stat -c %s target/embed-jnosql-core-1.0.0.jar)
           LIMIT=$((5 * 1024 * 1024))
           echo "core jar: ${SIZE} bytes (limit ${LIMIT})"
           if [ "$SIZE" -gt "$LIMIT" ]; then
@@ -143,7 +143,7 @@ jobs:
           (cd demo/demo-common && mvn -B install -DskipTests)  # runners preinstall mvn; no wrapper in demo-common
 
       - name: Install starter modules (needed by framework demos)
-        # spring-boot-demo, quarkus-demo and micronaut-demo resolve junify starter
+        # spring-boot-demo, quarkus-demo and micronaut-demo resolve embeddedjnosql starter
         # artifacts that exist in no public repository — they must be installed
         # locally before the demo loop. Mirrors the integrations job's module list.
         run: |
@@ -189,7 +189,7 @@ jobs:
           cache: maven
 
       - name: Run Benchmarks
-        run: mvn -B -Pbenchmark clean package exec:java -Dexec.mainClass=org.junify.db.benchmark.BenchmarkRunner
+        run: mvn -B -Pbenchmark clean package exec:java -Dexec.mainClass=org.embeddedjnosql.db.benchmark.BenchmarkRunner
 
       - name: Upload Benchmark Results
         uses: actions/upload-artifact@v4

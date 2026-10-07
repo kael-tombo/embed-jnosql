@@ -1,7 +1,7 @@
 # Test Assessment: DeepDocumentTest
 
 ## Purpose
-Exhaustive stress testing and edge-case validation for the Document Collection subsystem (`org.junify.db.deep.DeepDocumentTest`).
+Exhaustive stress testing and edge-case validation for the Document Collection subsystem (`org.embeddedjnosql.db.deep.DeepDocumentTest`).
 
 ## Tested Behavior
 - Deeply nested JSON structures (objects within arrays within objects).

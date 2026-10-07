@@ -1,4 +1,4 @@
-# JunifyDB — Performance Baseline
+# EmbedJNoSQL — Performance Baseline
 
 **Audit Date**: September 9, 2026  
 **Auditor**: Performance Lead  

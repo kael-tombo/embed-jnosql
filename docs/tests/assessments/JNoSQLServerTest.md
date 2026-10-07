@@ -1,7 +1,7 @@
 # Test Assessment: JNoSQLServerTest
 
 ## Purpose
-Validates the embedded HTTP server lifecycle, security authentication filters, and REST request routing in `JunifyDBServer.java`.
+Validates the embedded HTTP server lifecycle, security authentication filters, and REST request routing in `EmbedJNoSQLServer.java`.
 
 ## Tested Behavior
 - Server startup on specified or dynamic ports.

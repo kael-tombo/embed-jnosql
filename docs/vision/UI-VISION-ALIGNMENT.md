@@ -8,7 +8,7 @@
 
 ## 1. UI Philosophy & Stated Purpose
 
-The JunifyDB Web Console is intended to be a **zero-dependency, built-in developer cockpit** accessible directly from the database server port (default: 8080). It allows operators and developers to:
+The EmbedJNoSQL Web Console is intended to be a **zero-dependency, built-in developer cockpit** accessible directly from the database server port (default: 8080). It allows operators and developers to:
 - Inspect collection schemas and secondary indexes.
 - Perform visual queries and test SQL/NoSQL filter expressions.
 - Inspect Key-Value buckets, lists, sets, and hashes.
@@ -22,7 +22,7 @@ The JunifyDB Web Console is intended to be a **zero-dependency, built-in develop
 
 | UI Component | Purpose | Backend Endpoint | Real Engine Reached? | Status |
 |---|---|---|---|---|
-| **Health Dot & Status** | Live status indicator | `GET /api/health` | Yes (`JunifyDB.isOpen()`) | **VERIFIED** |
+| **Health Dot & Status** | Live status indicator | `GET /api/health` | Yes (`EmbedJNoSQL.isOpen()`) | **VERIFIED** |
 | **System Metrics Dashboard** | Real-time memory, ops/sec, collections count | `GET /api/metrics` & SSE `/api/metrics/stream` | Yes (`DatabaseMetrics.snapshot()`) | **VERIFIED** |
 | **Collection Browser** | List all document collections | `GET /api/collections` | Yes (now returns collection list) | **VERIFIED** |
 | **Document Table & Pagination** | View & paginate documents in a collection | `GET /api/collections/{name}` | Yes (`DocumentCollection.findAll()`) | **VERIFIED** |
@@ -34,7 +34,7 @@ The JunifyDB Web Console is intended to be a **zero-dependency, built-in develop
 | **Backup & Restore Panel** | Trigger binary backup to disk | `GET/POST /api/backup` | Yes (`engine.flush()`) | **VERIFIED** |
 | **Transaction Simulator** | Begin, commit, rollback visual transaction | `POST /api/transactions` | Yes (`MVCCManager`) | **VERIFIED** |
 | **Vector Search Studio** | Add vectors, run k-NN search | `POST /api/vectors/{index}/search` | Yes (`VectorHandler`) | **VERIFIED** |
-| **Activity Log** | Audit log of CRUD and server events | `GET /api/audit/logs` | Yes (`JunifyDBServer.auditLog`) | **VERIFIED** |
+| **Activity Log** | Audit log of CRUD and server events | `GET /api/audit/logs` | Yes (`EmbedJNoSQLServer.auditLog`) | **VERIFIED** |
 
 ---
 
@@ -45,12 +45,12 @@ The JunifyDB Web Console is intended to be a **zero-dependency, built-in develop
    - *Fix*: Created a dedicated, dark-themed `login.html` page matching the console aesthetic that authenticates via `/api/auth/login`.
 
 2. **Unregistered `/api/auth/*` Endpoints**:
-   - *Issue*: `SecureSessionManager.java` existed but was not mapped to any HTTP context in `JunifyDBServer.registerHandlers()`. Calls to `/api/auth/login` and `/api/auth/logout` failed with 404.
-   - *Fix*: Implemented `AuthHandler` in `JunifyDBServer` supporting login (credential/API key validation), logout (cookie clearing), and session check.
+   - *Issue*: `SecureSessionManager.java` existed but was not mapped to any HTTP context in `EmbedJNoSQLServer.registerHandlers()`. Calls to `/api/auth/login` and `/api/auth/logout` failed with 404.
+   - *Fix*: Implemented `AuthHandler` in `EmbedJNoSQLServer` supporting login (credential/API key validation), logout (cookie clearing), and session check.
 
 3. **Collection Listing Format Mismatch**:
    - *Issue*: `index.html` expected `data.collections` to be an array of objects `{ name, count }`. The server returned a scalar guidance string, triggering a frontend JavaScript `TypeError`.
-   - *Fix*: Added `getCollectionNames()` to `JunifyDB` and updated `CollectionsHandler` to return proper metadata array.
+   - *Fix*: Added `getCollectionNames()` to `EmbedJNoSQL` and updated `CollectionsHandler` to return proper metadata array.
 
 4. **Benchmark Triggering**:
    - *Issue*: UI button triggered `POST /api/benchmark`, which was unmapped.

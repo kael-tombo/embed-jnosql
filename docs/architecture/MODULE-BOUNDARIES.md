@@ -8,7 +8,7 @@ This document establishes the official module boundaries, dependency flow rules,
 
 ```
 JNOSQL-EMBED (Parent Project)
-├── junify-db-core                     [Core Library: Storage, Models, Engine, MVCC]
+├── embed-jnosql-core                     [Core Library: Storage, Models, Engine, MVCC]
 ├── spring-boot-starter                [Spring Boot 3.x Starter & AutoConfiguration]
 ├── quarkus-extension                  [Quarkus 3.x Extension Multi-Module]
 │   ├── runtime                        [Quarkus Runtime Module & SmallRye Config]
@@ -36,15 +36,15 @@ Applications / Framework Demos
 Framework Adapters (Spring Boot Starter / Quarkus Extension / Micronaut)
           │
           ▼
-Core Library (`junify-db-core`)
+Core Library (`embed-jnosql-core`)
           │
           ▼
 Pure JDK 17+ APIs (Standard Library + Minimal Essential Dependencies)
 ```
 
 ### Prohibited Dependencies
-- `junify-db-core` must **NEVER** depend on Spring, Quarkus, Micronaut, Vert.x, or any application container.
-- `junify-db-core` must **NEVER** package or shade `slf4j-simple` into its compile classpath (it must remain runtime/optional so consumers can supply Logback, Log4j2, or JBoss Logging).
+- `embed-jnosql-core` must **NEVER** depend on Spring, Quarkus, Micronaut, Vert.x, or any application container.
+- `embed-jnosql-core` must **NEVER** package or shade `slf4j-simple` into its compile classpath (it must remain runtime/optional so consumers can supply Logback, Log4j2, or JBoss Logging).
 - Framework adapters must not cross-depend on each other (e.g., `quarkus-extension` cannot depend on `spring-boot-starter`).
 
 ---
@@ -53,14 +53,14 @@ Pure JDK 17+ APIs (Standard Library + Minimal Essential Dependencies)
 
 | Package | Purpose | Consumer Visibility |
 |---|---|---|
-| `org.junify.db` | Main facade (`JunifyDB`) and high-level lifecycle | **Public API** |
-| `org.junify.db.config` | Database configuration builder (`JunifyDBConfig`) | **Public API** |
-| `org.junify.db.nosql.document` | Document collections, queries, records (`Document`, `Query`) | **Public API** |
-| `org.junify.db.nosql.kv` | Key-value and Redis-style buckets (`KeyValueBucket`, `ListBucket`) | **Public API** |
-| `org.junify.db.nosql.column` | Cassandra-style wide-column families (`ColumnFamily`) | **Public API** |
-| `org.junify.db.transaction.mvcc` | Transactions and snapshot isolation (`Transaction`) | **Public API** |
-| `org.junify.db.storage.spi` | Storage engine interface (`StorageEngine`) | **SPI (Extenders only)** |
-| `org.junify.db.core.*` | Internal serialization, event bus, metrics | **Internal** |
-| `org.junify.db.spring.boot.*` | Spring Boot auto-configuration and template | **Framework Public** |
-| `org.junify.db.quarkus.*` | Quarkus SmallRye config, producers, and processors | **Framework Public** |
-| `org.junify.db.micronaut.*` | Micronaut factories and entity managers | **Framework Public** |
+| `org.embeddedjnosql.db` | Main facade (`EmbedJNoSQL`) and high-level lifecycle | **Public API** |
+| `org.embeddedjnosql.db.config` | Database configuration builder (`EmbedJNoSQLConfig`) | **Public API** |
+| `org.embeddedjnosql.db.nosql.document` | Document collections, queries, records (`Document`, `Query`) | **Public API** |
+| `org.embeddedjnosql.db.nosql.kv` | Key-value and Redis-style buckets (`KeyValueBucket`, `ListBucket`) | **Public API** |
+| `org.embeddedjnosql.db.nosql.column` | Cassandra-style wide-column families (`ColumnFamily`) | **Public API** |
+| `org.embeddedjnosql.db.transaction.mvcc` | Transactions and snapshot isolation (`Transaction`) | **Public API** |
+| `org.embeddedjnosql.db.storage.spi` | Storage engine interface (`StorageEngine`) | **SPI (Extenders only)** |
+| `org.embeddedjnosql.db.core.*` | Internal serialization, event bus, metrics | **Internal** |
+| `org.embeddedjnosql.db.spring.boot.*` | Spring Boot auto-configuration and template | **Framework Public** |
+| `org.embeddedjnosql.db.quarkus.*` | Quarkus SmallRye config, producers, and processors | **Framework Public** |
+| `org.embeddedjnosql.db.micronaut.*` | Micronaut factories and entity managers | **Framework Public** |

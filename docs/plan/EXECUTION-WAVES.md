@@ -1,6 +1,6 @@
 # Execution Waves & Milestone Tracking
 
-This document outlines the phased milestone execution waves of the JunifyDB project lifecycle.
+This document outlines the phased milestone execution waves of the EmbedJNoSQL project lifecycle.
 
 ---
 

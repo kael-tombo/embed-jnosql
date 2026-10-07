@@ -64,7 +64,7 @@ Inherited from session cookie.
 `TransactionHandler` & `MVCCManager`
 
 ## JNOSQL-EMBED Library API
-`JunifyDB.beginTransaction()`, `Transaction.commit()`, `Transaction.rollback()`
+`EmbedJNoSQL.beginTransaction()`, `Transaction.commit()`, `Transaction.rollback()`
 
 ## Storage Engine
 Private copy-on-write workspace buffer + WAL.

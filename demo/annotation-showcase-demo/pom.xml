@@ -4,10 +4,10 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.junify.db.demo</groupId>
+    <groupId>org.embeddedjnosql.db.demo</groupId>
     <artifactId>annotation-showcase-demo</artifactId>
     <version>1.0.0</version>
-    <name>JunifyDB Demo - Annotation Showcase (JNoSQL, JPA, Hibernate &amp; SQL Engine)</name>
+    <name>EmbedJNoSQL Demo - Annotation Showcase (JNoSQL, JPA, Hibernate &amp; SQL Engine)</name>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -17,10 +17,10 @@
     </properties>
 
     <dependencies>
-        <!-- JunifyDB Core with Embedded NoSQL & SQL Engine -->
+        <!-- EmbedJNoSQL Core with Embedded NoSQL & SQL Engine -->
         <dependency>
-            <groupId>org.junify.db</groupId>
-            <artifactId>junify-db-core</artifactId>
+            <groupId>org.embeddedjnosql.db</groupId>
+            <artifactId>embed-jnosql-core</artifactId>
             <version>1.0.0</version>
         </dependency>
 
@@ -79,7 +79,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.2.0</version>
                 <configuration>
-                    <mainClass>org.junify.db.demo.annotation.AnnotationShowcaseApplication</mainClass>
+                    <mainClass>org.embeddedjnosql.db.demo.annotation.AnnotationShowcaseApplication</mainClass>
                 </configuration>
             </plugin>
         </plugins>

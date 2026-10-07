@@ -1,6 +1,6 @@
-# JunifyDB Demo: High-Throughput Batch Processing
+# EmbedJNoSQL Demo: High-Throughput Batch Processing
 
-This demonstration project validates high-volume batch ingestion, atomic all-or-nothing transactions, chunked streaming, and bulk Key-Value operations in JunifyDB.
+This demonstration project validates high-volume batch ingestion, atomic all-or-nothing transactions, chunked streaming, and bulk Key-Value operations in EmbedJNoSQL.
 
 ## Features Demonstrated
 
@@ -17,5 +17,5 @@ This demonstration project validates high-volume batch ingestion, atomic all-or-
 mvn test
 
 # Run interactive CLI
-mvn compile exec:java -Dexec.mainClass="org.junify.db.demo.batch.BatchDemoApplication"
+mvn compile exec:java -Dexec.mainClass="org.embeddedjnosql.db.demo.batch.BatchDemoApplication"
 ```

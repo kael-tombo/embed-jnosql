@@ -4,7 +4,7 @@
 Evidence record for console validation performed against the running server.
 
 ## Validation Performed (prior redesign session + this audit's preview)
-- Server: `java -jar junify-db-core-1.0.0.jar --port 8081 --engine FILE --data-dir target/preview-data --sync` — started/restarted across the audit; `/api/health` → `{"status":"ok","engine":"FILE","open":true}`.
+- Server: `java -jar embed-jnosql-core-1.0.0.jar --port 8081 --engine FILE --data-dir target/preview-data --sync` — started/restarted across the audit; `/api/health` → `{"status":"ok","engine":"FILE","open":true}`.
 - UI flows exercised via accessibility snapshots + DOM evaluation (screenshot compositing unavailable in environment):
   - SQL Studio: `INSERT INTO products (id, name, price) VALUES ('p1','Keyboard',75.0)` → row rendered; `SELECT * FROM products` returned it; error case surfaced cleanly.
   - Collections: list, document detail, delete with confirmation.

@@ -1,7 +1,7 @@
 # Test Implementation Assessment: ProductResourceTest
 
 ## Test Purpose
-Validates Quarkus REST endpoints using REST-Assured against an embedded JunifyDB CDI bean.
+Validates Quarkus REST endpoints using REST-Assured against an embedded EmbedJNoSQL CDI bean.
 
 ## Related Vision or Requirement
 - Quarkus framework compatibility
@@ -9,7 +9,7 @@ Validates Quarkus REST endpoints using REST-Assured against an embedded JunifyDB
 - Multi-model storage in Quarkus applications
 
 ## Feature Under Test
-`ProductResource`, `OrderResource`, Quarkus dependency injection with JunifyDB.
+`ProductResource`, `OrderResource`, Quarkus dependency injection with EmbedJNoSQL.
 
 ## What the Test Actually Verifies
 - `GET /api/products`: Validates list of seeded products.
@@ -27,7 +27,7 @@ Validates Quarkus REST endpoints using REST-Assured against an embedded JunifyDB
 Realistic domain data.
 
 ## Mocking Analysis
-**NO MOCKS**. Uses live embedded JunifyDB.
+**NO MOCKS**. Uses live embedded EmbedJNoSQL.
 
 ## Missing Scenarios
 - Native image integration testing.

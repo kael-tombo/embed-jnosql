@@ -11,7 +11,7 @@ amber Java-coffee database, SQL-grid and NoSQL-brace connectors. Single source u
 | Console logo | `static/logo.svg` | canonical mark, 256px raster embed |
 | Console favicon | `static/favicon.svg` | canonical mark, 64px embed |
 | Login logo | referenced `/logo.svg` at 88px | canonical |
-| Website | gh-pages `index.html` + `assets/junifydb-mark-*.png` | canonical, live-verified 2026-09-22 |
+| Website | gh-pages `index.html` + `assets/embedjnosql-mark-*.png` | canonical, live-verified 2026-09-22 |
 
 ## Design tokens (Console "Carbon" system, console.css)
 
@@ -33,16 +33,16 @@ amber Java-coffee database, SQL-grid and NoSQL-brace connectors. Single source u
 | Context path | `/` | `ConsoleConfig.contextPath()` |
 | Auth | configurable; disabled → `user: anonymous (auth disabled)` in status bar | `SecurityConfig` |
 | CORS | secure-by-default | `CorsPolicyConsistencyTest` |
-| Storage engine | FILE via `--engine` (FILE, IN_MEMORY, LSM_TREE, B_TREE) | `JunifyDBConfig` |
+| Storage engine | FILE via `--engine` (FILE, IN_MEMORY, LSM_TREE, B_TREE) | `EmbedJNoSQLConfig` |
 | Durability | `--sync`/`--async` + `--flush-interval` | surfaced verbatim in `/api/health` context |
 | Data dir | `data` (`--data-dir`) | surfaced as `database`/`dataDir` in context |
-| Theme | dark default, persisted `junifydb.theme` in localStorage | console.js |
+| Theme | dark default, persisted `embedjnosql.theme` in localStorage | console.js |
 | Request ceiling | 20s client-side → timeout state | console.js |
 
 ## Build & run commands (unchanged by the redesign)
 
 - Build: `./mvnw -DskipTests clean package` → shaded jar (gate: < 5 MB).
-- Run: `java -jar target/junify-db-core-1.0.0.jar --port 8081 --data-dir target/preview-data`
+- Run: `java -jar target/embed-jnosql-core-1.0.0.jar --port 8081 --data-dir target/preview-data`
 - Console URL: `http://localhost:8081/` (login at `/login.html` when auth enabled).
 - Tests: `./mvnw test` (full), `./mvnw test -Dtest=ConsoleTaskSuccessTest` (slice).
 

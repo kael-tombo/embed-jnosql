@@ -20,7 +20,7 @@ Demo sources; prior evidence tree.
 | VX-02 | CONFIRMED | Low | No reactive SPI in core; Vert.x demo wraps blocking engine calls behind worker-pool-safe patterns — acceptable for embedded usage, documented in demo README. |
 
 ## Improvement Plan
-Promote to a `junify-db-vertx` module with an async wrapper + CI test, or relabel the badge as "example".
+Promote to a `embed-jnosql-vertx` module with an async wrapper + CI test, or relabel the badge as "example".
 
 ## Acceptance Criteria
 Badge accuracy (met — README labels demo links); CI coverage scheduled.

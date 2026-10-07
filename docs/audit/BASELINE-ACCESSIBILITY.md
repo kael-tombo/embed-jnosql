@@ -1,4 +1,4 @@
-# JunifyDB — Baseline Accessibility Audit
+# EmbedJNoSQL — Baseline Accessibility Audit
 
 **Audit Date**: September 9, 2026  
 **Auditor**: UI Accessibility Specialist  

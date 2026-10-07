@@ -29,11 +29,11 @@ following **computed-style and asset-fetch evidence** was captured via
 | `#b45309` on `#ffffff` (light accent) | 5.02:1 | AA |
 
 ## Website evidence (source-level; live site pending redeploy)
-Live fetch of https://kael-tombo.github.io/JunifyDB/ quoted verbatim in
+Live fetch of https://kael-tombo.github.io/EmbedJNoSQL/ quoted verbatim in
 doc 53. Post-fix grep counts in `docs/index.html`:
 `ANSI SQL` = 0 · `15ms` = 0 · `124,000/86,500/48,200` = 0 ·
-`tamper-evident` = 0 · `org.junify:` = 0 · `org.junify.db` = 5 ·
-`junify-db-core` = 6.
+`tamper-evident` = 0 · `org.embeddedjnosql:` = 0 · `org.embeddedjnosql.db` = 5 ·
+`embed-jnosql-core` = 6.
 
 ## Stored per docs/release-audit/evidence/branding/
 This file is the branding evidence record; screenshot capture to be re-run

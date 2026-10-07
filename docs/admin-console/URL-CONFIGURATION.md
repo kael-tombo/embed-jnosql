@@ -33,7 +33,7 @@ ConsoleConfig config = ConsoleConfig.builder()
 
 ### In Spring Boot `application.yml`
 ```yaml
-junifydb:
+embedjnosql:
   console:
     enabled: true
     port: 9090
@@ -49,15 +49,15 @@ junifydb:
 ### In System Properties / Environment Variables
 | Property | Environment Variable | Default | Purpose |
 |---|---|---|---|
-| `junifydb.console.enabled` | `JUNIFYDB_CONSOLE_ENABLED` | `false` | Enable console server |
-| `junifydb.console.port` | `JUNIFYDB_CONSOLE_PORT` | `9090` | Preferred port |
-| `junifydb.console.context-path` | `JUNIFYDB_CONSOLE_CONTEXT_PATH` | `/` | Context path prefix |
-| `junifydb.console.host` | `JUNIFYDB_CONSOLE_HOST` | `127.0.0.1` | Network binding host |
-| `junifydb.console.scheme` | `JUNIFYDB_CONSOLE_SCHEME` | `http` | URL scheme (`http`/`https`) |
-| `junifydb.console.intelligent-port`| `JUNIFYDB_CONSOLE_INTELLIGENT_PORT`| `true` | Enable collision avoidance |
-| `junifydb.console.min-port` | `JUNIFYDB_CONSOLE_MIN_PORT` | `9090` | Lower port range limit |
-| `junifydb.console.max-port` | `JUNIFYDB_CONSOLE_MAX_PORT` | `9140` | Upper port range limit |
-| `junifydb.console.fail-if-preferred-port-unavailable` | `JUNIFYDB_CONSOLE_FAIL_IF_PREFERRED_PORT_UNAVAILABLE` | `false` | Strict port binding |
+| `embedjnosql.console.enabled` | `EMBEDJNOSQL_CONSOLE_ENABLED` | `false` | Enable console server |
+| `embedjnosql.console.port` | `EMBEDJNOSQL_CONSOLE_PORT` | `9090` | Preferred port |
+| `embedjnosql.console.context-path` | `EMBEDJNOSQL_CONSOLE_CONTEXT_PATH` | `/` | Context path prefix |
+| `embedjnosql.console.host` | `EMBEDJNOSQL_CONSOLE_HOST` | `127.0.0.1` | Network binding host |
+| `embedjnosql.console.scheme` | `EMBEDJNOSQL_CONSOLE_SCHEME` | `http` | URL scheme (`http`/`https`) |
+| `embedjnosql.console.intelligent-port`| `EMBEDJNOSQL_CONSOLE_INTELLIGENT_PORT`| `true` | Enable collision avoidance |
+| `embedjnosql.console.min-port` | `EMBEDJNOSQL_CONSOLE_MIN_PORT` | `9090` | Lower port range limit |
+| `embedjnosql.console.max-port` | `EMBEDJNOSQL_CONSOLE_MAX_PORT` | `9140` | Upper port range limit |
+| `embedjnosql.console.fail-if-preferred-port-unavailable` | `EMBEDJNOSQL_CONSOLE_FAIL_IF_PREFERRED_PORT_UNAVAILABLE` | `false` | Strict port binding |
 
 ## 3. Context Path Normalization Rules
 

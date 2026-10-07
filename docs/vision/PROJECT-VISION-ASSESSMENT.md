@@ -1,7 +1,7 @@
 # JNOSQL-EMBED: Project Vision Assessment
 
 > **⚠ SUPERSEDED — pre-refactor document (SQL / dual-engine).**
-> JunifyDB is now NoSQL-only. The relational engine, SQL parser/planning, JDBC driver, JPA
+> EmbedJNoSQL is now NoSQL-only. The relational engine, SQL parser/planning, JDBC driver, JPA
 > `EntityManager`, `/api/sql` routes, and the SQL Studio console screen were removed from the
 > product. Statements in this file that describe SQL, JDBC, SQL schemas, or an engine selector no
 > longer describe shipped behavior.
@@ -14,7 +14,7 @@
 
 ## Executive Overview
 
-JNOSQL-EMBED (JunifyDB) was conceived as **the H2 of NoSQL**—a zero-infrastructure, in-process, multi-model database engine engineered natively for the JVM. While the relational ecosystem has long benefited from embedded engines like H2, SQLite, and Apache Derby for integration testing, edge execution, and rapid local development, the non-relational world has historically forced developers to rely on heavy Docker containers, cloud emulators, or disparate mocks.
+JNOSQL-EMBED (EmbedJNoSQL) was conceived as **the H2 of NoSQL**—a zero-infrastructure, in-process, multi-model database engine engineered natively for the JVM. While the relational ecosystem has long benefited from embedded engines like H2, SQLite, and Apache Derby for integration testing, edge execution, and rapid local development, the non-relational world has historically forced developers to rely on heavy Docker containers, cloud emulators, or disparate mocks.
 
 This assessment critically analyzes the foundational identity, promises, and current architectural execution of JNOSQL-EMBED.
 
@@ -30,7 +30,7 @@ It is **not** merely a single-engine document database or a simple key-value has
 3. **Redis-Style High-Performance Data Structures**: Dedicated list buckets (`LPUSH`, `RPUSH`, `LPOP`, `LRANGE`), set buckets (`SADD`, `SISMEMBER`, `SMEMBERS`), and hash buckets (`HSET`, `HGET`, `HGETALL`).
 4. **Wide-Column Families**: Cassandra/Bigtable-style column families with column-level timestamps, TTLs, and dynamic column qualifiers.
 5. **Pluggable Storage Substrates**: Zero-overhead in-memory storage, append-only WAL file storage, disk-backed B-Tree storage, and write-optimized LSM-tree storage.
-6. **Unified Developer Experience**: Direct embedded Java builder API (`JunifyDB.embed().build()`), auto-configuring Spring Boot starter, Quarkus CDI extension, and Micronaut repository integration.
+6. **Unified Developer Experience**: Direct embedded Java builder API (`EmbedJNoSQL.embed().build()`), auto-configuring Spring Boot starter, Quarkus CDI extension, and Micronaut repository integration.
 
 ---
 
@@ -59,13 +59,13 @@ Our deep codebase audit identified four crucial misalignments in the historical 
 
 1. **Relational vs. Non-Relational Scope Drift**:
    * *Past Drift*: Attempted to shoehorn full H2/SQL relational engine features into the database via SQLite/H2 bridges, creating leaky abstractions and unfulfilled JDBC promises.
-   * *Correction*: Position JunifyDB cleanly as a **Multi-Model NoSQL Engine with Structured Querying Semantics**. Complex multi-table relational joins with foreign keys are non-goals; instead, JunifyDB focuses on high-speed Document, KV, Redis, and Column Family operations with ACID transactions.
+   * *Correction*: Position EmbedJNoSQL cleanly as a **Multi-Model NoSQL Engine with Structured Querying Semantics**. Complex multi-table relational joins with foreign keys are non-goals; instead, EmbedJNoSQL focuses on high-speed Document, KV, Redis, and Column Family operations with ACID transactions.
 2. **Dual Package Identity**:
-   * *Past Drift*: Fragmented between `org.jnosql.embed.*` and `org.junify.db.*` across modules.
-   * *Correction*: Fully consolidated under `org.junify.db.*` across all modules (Core, Spring Boot, Quarkus, Micronaut).
+   * *Past Drift*: Fragmented between `org.jnosql.embed.*` and `org.embeddedjnosql.db.*` across modules.
+   * *Correction*: Fully consolidated under `org.embeddedjnosql.db.*` across all modules (Core, Spring Boot, Quarkus, Micronaut).
 3. **Spec Alignment vs. Pragmatism**:
    * *Past Drift*: Attempted to implement `jakarta.persistence.EntityManager` for NoSQL, causing impossible generic type clashes in Java.
-   * *Correction*: Provide idiomatic templates (`JunifyDBTemplate`, `JunifyDBEntityManager`) tailored for document and key-value semantics while maintaining Jakarta NoSQL conceptual alignment.
+   * *Correction*: Provide idiomatic templates (`EmbedJNoSQLTemplate`, `EmbedJNoSQLEntityManager`) tailored for document and key-value semantics while maintaining Jakarta NoSQL conceptual alignment.
 4. **Storage Engine Overhead**:
    * *Past Drift*: In-memory engine calculated CRC32 checksums on every read and write.
    * *Correction*: Stripped redundant in-memory hashing, unlocking raw `ConcurrentHashMap` throughput (~1.0s for full multi-feature test cycles).

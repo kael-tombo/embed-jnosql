@@ -1,6 +1,6 @@
 Command: mvn -DskipTests clean package
 Result: BUILD SUCCESS (shaded jar replaces original)
-Artifact: target/junify-db-core-1.0.0.jar = 3,122,887 bytes (3.12 MB < 5 MB requirement)
+Artifact: target/embed-jnosql-core-1.0.0.jar = 3,122,887 bytes (3.12 MB < 5 MB requirement)
 SHA-1: b8ce7e551f50c25120749c0af8e55d1e0c7fc7d5
 Java: 23.0.1 / Maven: 3.9.6 / OS: Windows Server 2022 (MINGW64)
 

@@ -7,7 +7,7 @@
 
 ## 1. Full-Stack Verification Chain Status
 
-Every layer of the JunifyDB project has been verified across:
+Every layer of the EmbedJNoSQL project has been verified across:
 1. **Product Vision**: Re-anchored to the **H2 equivalent for NoSQL** on the JVM.
 2. **Architecture**: Pluggable storage SPI (`IN_MEMORY`, `FILE`, `B_TREE`, `LSM_TREE`), MVCC ACID transaction manager, Write-Ahead Log (WAL) with synchronous fsync.
 3. **Backend API**: All 30 REST endpoints tested with live HTTP exchanges.

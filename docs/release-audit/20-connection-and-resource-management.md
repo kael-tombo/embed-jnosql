@@ -7,8 +7,8 @@ Resource lifecycle: engine pools, facade close semantics, thread/executors clean
 `close()` releases threads, file handles, sockets; pools bounded; ports reused predictably.
 
 ## Current Implementation
-- `JunifyDB.close()`: server stop → engine flush → engine close → closed flag. Engines shut down schedulers/executors with bounded awaits (5–10s) and close WAL handles (the CHANGELOG records a prior Windows file-lock fix here).
-- `core/pool/JunifyDBPool` and `storage/spi/FileEnginePool` exist for multi-instance use; `console/http/PortManager` handles port selection.
+- `EmbedJNoSQL.close()`: server stop → engine flush → engine close → closed flag. Engines shut down schedulers/executors with bounded awaits (5–10s) and close WAL handles (the CHANGELOG records a prior Windows file-lock fix here).
+- `core/pool/EmbedJNoSQLPool` and `storage/spi/FileEnginePool` exist for multi-instance use; `console/http/PortManager` handles port selection.
 - Windows note (audit environment): `maven-clean` cannot delete `target/` while a database using it is open — expected OS behavior, documented in the run doc.
 
 ## Validation Performed
@@ -20,7 +20,7 @@ Engine close implementations (bounded `awaitTermination`, WAL close); CHANGELOG 
 ## Findings
 | ID | Status | Severity | Description |
 |---|---|---|---|
-| R-01 | CONFIRMED | Low | `JunifyDB.close()` is not idempotent-guarded against concurrent close calls (volatile flag closes the window); single-user embedded usage makes this acceptable. |
+| R-01 | CONFIRMED | Low | `EmbedJNoSQL.close()` is not idempotent-guarded against concurrent close calls (volatile flag closes the window); single-user embedded usage makes this acceptable. |
 | R-02 | ACCEPTABLE | Low | Default async flush interval (1000ms) balances durability (WAL) and I/O; `--sync` available for stricter durability. |
 
 ## Improvement Plan

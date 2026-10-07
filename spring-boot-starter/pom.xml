@@ -4,13 +4,13 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.junify.db</groupId>
-    <artifactId>junify-db-spring-boot-starter</artifactId>
+    <groupId>org.embeddedjnosql.db</groupId>
+    <artifactId>embed-jnosql-spring-boot-starter</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
-    <name>JunifyDB Spring Boot Starter</name>
-    <description>Spring Boot auto-configuration for the embedded JunifyDB NoSQL database</description>
+    <name>EmbedJNoSQL Spring Boot Starter</name>
+    <description>Spring Boot auto-configuration for the embedded EmbedJNoSQL NoSQL database</description>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -25,8 +25,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.junify.db</groupId>
-            <artifactId>junify-db-core</artifactId>
+            <groupId>org.embeddedjnosql.db</groupId>
+            <artifactId>embed-jnosql-core</artifactId>
             <version>1.0.0</version>
         </dependency>
         <dependency>

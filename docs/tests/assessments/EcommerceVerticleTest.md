@@ -1,7 +1,7 @@
 # Test Implementation Assessment: EcommerceVerticleTest
 
 ## Test Purpose
-Validates Eclipse Vert.x reactive HTTP routing with asynchronous handlers querying an embedded JunifyDB instance.
+Validates Eclipse Vert.x reactive HTTP routing with asynchronous handlers querying an embedded EmbedJNoSQL instance.
 
 ## Related Vision or Requirement
 - Reactive Java framework compatibility
@@ -38,7 +38,7 @@ None.
 Add concurrent async client requests to test event loop non-blocking behavior.
 
 ## Revised Acceptance Criteria
-Vert.x event loop handlers must execute JunifyDB calls without blocking worker threads.
+Vert.x event loop handlers must execute EmbedJNoSQL calls without blocking worker threads.
 
 ## Final Status
 `PASS`

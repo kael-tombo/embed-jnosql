@@ -1,7 +1,7 @@
 # JNOSQL-EMBED: Deprecated & Superseded Features
 
 > **⚠ SUPERSEDED — pre-refactor document (SQL / dual-engine).**
-> JunifyDB is now NoSQL-only. The relational engine, SQL parser/planning, JDBC driver, JPA
+> EmbedJNoSQL is now NoSQL-only. The relational engine, SQL parser/planning, JDBC driver, JPA
 > `EntityManager`, `/api/sql` routes, and the SQL Studio console screen were removed from the
 > product. Statements in this file that describe SQL, JDBC, SQL schemas, or an engine selector no
 > longer describe shipped behavior.
@@ -17,18 +17,18 @@ Features that were deprecated or explicitly removed to preserve the architectura
 ---
 
 ## 1. Raw StorageEngine Passing to Builder
-- **Method**: `JunifyDBConfig.Builder.storageEngine(StorageEngine engine)`
+- **Method**: `EmbedJNoSQLConfig.Builder.storageEngine(StorageEngine engine)`
 - **Status**: Deprecated for removal (throws `UnsupportedOperationException`).
 - **Rationale**: Passing a raw instantiated `StorageEngine` bypasses database lifecycle management, data directory assignment, and auto-flush interval configuration.
-- **Replacement**: Use `JunifyDBConfig.Builder.storageEngine(StorageEngineType type)`.
+- **Replacement**: Use `EmbedJNoSQLConfig.Builder.storageEngine(StorageEngineType type)`.
 
 ---
 
 ## 2. Legacy Package `org.jnosql.embed.*`
 - **Classes**: `org.jnosql.embed.quarkus.*`, `org.jnosql.embed.spring.*`
 - **Status**: Removed in v1.0.0.
-- **Rationale**: Created confusing package duality with `org.junify.db.*`.
-- **Replacement**: Fully unified under `org.junify.db.quarkus.*` and `org.junify.db.spring.boot.*`.
+- **Rationale**: Created confusing package duality with `org.embeddedjnosql.db.*`.
+- **Replacement**: Fully unified under `org.embeddedjnosql.db.quarkus.*` and `org.embeddedjnosql.db.spring.boot.*`.
 
 ---
 

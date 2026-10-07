@@ -1,4 +1,4 @@
-# JUNIFY-DB — User Story Map
+# EMBED-DB — User Story Map
 
 **Status:** canonical story map for the public release.
 **Date:** 2026-09-23
@@ -72,11 +72,11 @@ leaving **four**: procedures, functions, triggers and `EXPLAIN`.)* Every `PARTIA
 #### US-001 · In-memory database in one call
 `E1 · P0 · VERIFIED · S`
 **Persona:** P1 Plain-Java developer
-**Story:** As a plain-Java developer, I want `JunifyDB.inMemory()` to return a usable database, so that I can store and read data with zero infrastructure.
+**Story:** As a plain-Java developer, I want `EmbedJNoSQL.inMemory()` to return a usable database, so that I can store and read data with zero infrastructure.
 **Outcome:** One call yields a usable instance; insert → read round-trip succeeds.
 **Deps:** —
-**Files/modules:** `org.junify.db.JunifyDB`, `storage/spi/InMemoryEngine`
-**API:** `JunifyDB.inMemory()`
+**Files/modules:** `org.embeddedjnosql.db.EmbedJNoSQL`, `storage/spi/InMemoryEngine`
+**API:** `EmbedJNoSQL.inMemory()`
 **Data:** ephemeral only
 **UI:** — · **Security:** — · **Perf:** opens fast, binds no port
 **Negative:** use-after-close throws a clear error; double-close is safe
@@ -92,7 +92,7 @@ leaving **four**: procedures, functions, triggers and `EXPLAIN`.)* Every `PARTIA
 **Story:** As a plain-Java developer, I want a file-backed database from a builder, so that data survives a restart without a server.
 **Outcome:** writes persist across a clean JVM restart.
 **Deps:** US-001
-**Files/modules:** `JunifyDB.embed()`, `storage/spi/FileEngine`
+**Files/modules:** `EmbedJNoSQL.embed()`, `storage/spi/FileEngine`
 **API:** `.storageEngine(FILE).persistTo(dir).autoFlush(true)`
 **Data:** snapshot + WAL under `persistTo(dir)`
 **UI:** — · **Security:** files created under the given dir only · **Perf:** measurable flush cadence
@@ -185,7 +185,7 @@ leaving **four**: procedures, functions, triggers and `EXPLAIN`.)* Every `PARTIA
 **Story:** As a visitor, I want a consistent logo and mascot across site and Console, so that the project reads as one product.
 **Outcome:** Same mark/favicon on website and Console.
 **Deps:** —
-**Files/modules:** `docs/assets/junifydb-*`, Console `static/`, favicon
+**Files/modules:** `docs/assets/embedjnosql-*`, Console `static/`, favicon
 **API:** — · **Data:** — · **UI:** website + Console · **Security:** — · **Perf:** asset weight
 **Negative:** mismatched or missing mascot
 **G/W/T:** *Given* the website and the Console, *When* both are opened, *Then* the same logo/mark renders with correct aspect ratio.
@@ -234,7 +234,7 @@ leaving **four**: procedures, functions, triggers and `EXPLAIN`.)* Every `PARTIA
 **Story:** As a developer, I want sane defaults with no config file, so that I can start instantly.
 **Outcome:** in-memory + file modes work with no properties, no env vars.
 **Deps:** US-001
-**Files/modules:** `config/JunifyDBConfig`, `config/ConfigurationResolver`
+**Files/modules:** `config/EmbedJNoSQLConfig`, `config/ConfigurationResolver`
 **API:** builder defaults
 **Data:** default data dir · **UI:** — · **Security:** secure-by-default CORS/auth · **Perf:** —
 **Negative:** a missing value silently changes durability semantics
@@ -251,7 +251,7 @@ leaving **four**: procedures, functions, triggers and `EXPLAIN`.)* Every `PARTIA
 **Outcome:** All documented properties bind and take effect.
 **Deps:** US-011
 **Files/modules:** `config/*`, framework starters
-**API:** `JunifyDBConfig` builder + property binding
+**API:** `EmbedJNoSQLConfig` builder + property binding
 **Data:** engine/data-dir selection · **UI:** — · **Security:** — · **Perf:** flush interval
 **Negative:** unknown property ignored silently
 **G/W/T:** *Given* an override, *When* the app starts, *Then* the observable behavior matches.
@@ -556,7 +556,7 @@ leaving **four**: procedures, functions, triggers and `EXPLAIN`.)* Every `PARTIA
 **Deps:** US-019
 **Files/modules:** `sql/parser/SqlParser` (column/table-level `PRIMARY KEY`), `sql/engine/SqlEngine` (`enforceConstraints`), `sql/SqlTableSchema`, `sql/SqlSchemaCatalog`
 **API:** inline `PRIMARY KEY` and table-level `PRIMARY KEY (col)`; `SqlConstraintViolationException`
-**Data:** schema persisted in reserved collection `__junify_sql_schema` · **UI:** Console surfaces the 400 message · **Security:** integrity · **Perf:** O(1) for the `id` key
+**Data:** schema persisted in reserved collection `__embeddedjnosql_sql_schema` · **UI:** Console surfaces the 400 message · **Security:** integrity · **Perf:** O(1) for the `id` key
 **Negative:** a duplicate silently overwrote the row (pre-fix, measured); a null key auto-generated
 **G/W/T:** *Given* a PK table, *When* a duplicate key is inserted, *Then* `SqlConstraintViolationException` is thrown and the original row remains.
 **Test plan:** `SqlConstraintTest.duplicatePrimaryKeyIsRejected`, `primaryKeyRejectsNull`, `tableLevelConstraintsAreEnforced`, `constraintsSurviveRestart`
@@ -726,10 +726,10 @@ leaving **four**: procedures, functions, triggers and `EXPLAIN`.)* Every `PARTIA
 `E3 · P0 · PARTIAL · XL`
 **Persona:** P1
 **Story:** As a Java developer, I want a JDBC driver, so that existing tools and ORMs can connect.
-**Outcome:** `DriverManager.getConnection("jdbc:junifydb:...")` works, with `Statement`/`PreparedStatement` and a forward-only read-only `ResultSet`; transactions and schema reflection are not implemented.
+**Outcome:** `DriverManager.getConnection("jdbc:embedjnosql:...")` works, with `Statement`/`PreparedStatement` and a forward-only read-only `ResultSet`; transactions and schema reflection are not implemented.
 **Deps:** US-023
-**Files/modules:** `org.junify.db.jdbc` (Driver, Connection/Statement/ResultSet/DatabaseMetaData handlers), `META-INF/services/java.sql.Driver`
-**API:** `jdbc:junifydb:memory:` and `jdbc:junifydb:file:<dir>`; `Driver.jdbcCompliant()` returns **false**
+**Files/modules:** `org.embeddedjnosql.db.jdbc` (Driver, Connection/Statement/ResultSet/DatabaseMetaData handlers), `META-INF/services/java.sql.Driver`
+**API:** `jdbc:embedjnosql:memory:` and `jdbc:embedjnosql:file:<dir>`; `Driver.jdbcCompliant()` returns **false**
 **Data:** per URL · **UI:** — · **Security:** parameters bound by the engine, never string-concatenated · **Perf:** unsupported calls throw rather than degrade silently
 **Negative:** claiming JDBC compliance; `DriverManager` discovering the driver class but never registering it (found and fixed)
 **G/W/T:** *Given* the JDBC URL, *When* a `PreparedStatement` binds `?` and executes, *Then* rows return and constraint violations surface as `SQLException`.
@@ -779,7 +779,7 @@ leaving **four**: procedures, functions, triggers and `EXPLAIN`.)* Every `PARTIA
 **Story:** As a developer, I want `documentCollection(name)`, so that I can store documents without DDL.
 **Outcome:** Collection is addressed and queryable.
 **Deps:** US-001
-**Files/modules:** `nosql/document/DocumentCollection`, `JunifyDB`
+**Files/modules:** `nosql/document/DocumentCollection`, `EmbedJNoSQL`
 **API:** `db.documentCollection("users")`
 **Data:** creates a collection on write only · **UI:** Console · **Security:** — · **Perf:** O(1)
 **Negative:** reads on a missing collection must not create it (R-48)
@@ -1019,7 +1019,7 @@ leaving **four**: procedures, functions, triggers and `EXPLAIN`.)* Every `PARTIA
 **Story:** As a framework developer, I want repository interfaces, so that I can use entity-centric data access.
 **Outcome:** CRUD + derived queries work through a repository.
 **Deps:** US-046
-**Files/modules:** `adapter/jnosql/CrudRepository`, `JunifyRepository`
+**Files/modules:** `adapter/jnosql/CrudRepository`, `EmbedRepository`
 **API:** repository methods
 **Data:** entity-mapped · **UI:** — · **Security:** — · **Perf:** —
 **Negative:** mapping mismatch for renamed fields
@@ -1082,10 +1082,10 @@ leaving **four**: procedures, functions, triggers and `EXPLAIN`.)* Every `PARTIA
 #### US-064 · Run SQL and NoSQL from one instance
 `E5 · P0 · VERIFIED · S`
 **Persona:** P1
-**Story:** As a developer, I want one `JunifyDB` instance to expose both engines, so that I avoid two databases.
+**Story:** As a developer, I want one `EmbedJNoSQL` instance to expose both engines, so that I avoid two databases.
 **Outcome:** SQL and NoSQL calls work against the same instance.
 **Deps:** US-023, US-046
-**Files/modules:** `JunifyDB`
+**Files/modules:** `EmbedJNoSQL`
 **API:** `db.sql(...)`, `db.documentCollection(...)`
 **Data:** shared substrate · **UI:** Console · **Security:** — · **Perf:** —
 **Negative:** one engine's call corrupts the other's state
@@ -1313,7 +1313,7 @@ leaving **four**: procedures, functions, triggers and `EXPLAIN`.)* Every `PARTIA
 **Story:** As an operator, I want an embedded web Console, so that I can inspect the database without extra services.
 **Outcome:** Starting the jar with `--port` opens the Console.
 **Deps:** US-064
-**Files/modules:** `console/http/JunifyDBServer`, `console/http/PortManager`
+**Files/modules:** `console/http/EmbedJNoSQLServer`, `console/http/PortManager`
 **API:** `--port`, `--engine`, `--data-dir`
 **Data:** reads the live store · **UI:** full Console · **Security:** binds loopback by default · **Perf:** fast start
 **Negative:** binds a wildcard interface; port conflict
@@ -1663,7 +1663,7 @@ leaving **four**: procedures, functions, triggers and `EXPLAIN`.)* Every `PARTIA
 **Story:** As an operator, I want the Console to always state what I am connected to, so that I never act on the wrong engine, database, or durability assumption.
 **Outcome:** A persistent status bar shows engine, active database, storage mode, its durability meaning, connection state, transaction state, and identity.
 **Deps:** US-078
-**Files/modules:** `console/http/JunifyDBServer` (`/api/health` `context` block), `static/index.html` (`#statusbar`), `static/js/console.js` (`pollStatus`)
+**Files/modules:** `console/http/EmbedJNoSQLServer` (`/api/health` `context` block), `static/index.html` (`#statusbar`), `static/js/console.js` (`pollStatus`)
 **API:** `GET /api/health` → `context{engine, relationalEngine, nosqlEngine, storageMode, durability, database, dataDir, authEnabled, user, activeTransactions, transactionalConsoleWrites, transactionScope}`
 **Data:** read-only · **UI:** status bar · **Security:** identity shown; never invents one · **Perf:** one poll per 10s
 **Negative:** values are guessed in the front end and drift from the server; a memory database implies durability it does not have
@@ -1710,7 +1710,7 @@ leaving **four**: procedures, functions, triggers and `EXPLAIN`.)* Every `PARTIA
 **Story:** As an operator, I want an id I can quote when something fails, so that a report can be matched to a server event.
 **Outcome:** Every response carries `X-Correlation-Id`; every error body repeats that id; the UI shows it with what failed, why, whether data changed, and how to fix it.
 **Deps:** US-093
-**Files/modules:** `console/http/JunifyDBServer` (`sendJson`, `withCorrelationId`), `static/js/console.js` (`errorBanner`)
+**Files/modules:** `console/http/EmbedJNoSQLServer` (`sendJson`, `withCorrelationId`), `static/js/console.js` (`errorBanner`)
 **API:** `X-Correlation-Id` request/response header; `correlationId` in error JSON
 **Data:** — · **UI:** error banner · **Security:** no stack traces; a caller-supplied id is echoed for tracing · **Perf:** —
 **Negative:** an opaque "error" with no id and no data-safety answer
@@ -1834,7 +1834,7 @@ leaving **four**: procedures, functions, triggers and `EXPLAIN`.)* Every `PARTIA
 **Story:** As a visitor, I want one logo/mascot, so that branding is coherent.
 **Outcome:** Same files referenced by both surfaces.
 **Deps:** US-102
-**Files/modules:** `docs/assets/junifydb-*`, Console `logo.svg`
+**Files/modules:** `docs/assets/embedjnosql-*`, Console `logo.svg`
 **API:** — · **Data:** — · **UI:** both · **Security:** — · **Perf:** —
 **Negative:** two different marks
 **G/W/T:** *Given* both surfaces, *When* the mark is inspected, *Then* it is the same asset.
@@ -1956,14 +1956,14 @@ leaving **four**: procedures, functions, triggers and `EXPLAIN`.)* Every `PARTIA
 #### US-111 · Spring Boot auto-configuration
 `E9 · P1 · VERIFIED · M`
 **Persona:** P3
-**Story:** As a Spring developer, I want a `JunifyDB` bean auto-configured, so that I inject it directly.
+**Story:** As a Spring developer, I want a `EmbedJNoSQL` bean auto-configured, so that I inject it directly.
 **Outcome:** App starts with an injected database; properties bind.
 **Deps:** US-012
 **Files/modules:** `spring-boot-starter`
 **API:** auto-config + properties
 **Data:** per config · **UI:** — · **Security:** — · **Perf:** —
 **Negative:** conflicts with the consumer's logging/CDI
-**G/W/T:** *Given* the starter, *When* the app starts, *Then* `JunifyDB` is injectable and configured.
+**G/W/T:** *Given* the starter, *When* the app starts, *Then* `EmbedJNoSQL` is injectable and configured.
 **Test plan:** starter test
 **Evidence:** build log
 **DoD:** starter tests green
@@ -2135,7 +2135,7 @@ leaving **four**: procedures, functions, triggers and `EXPLAIN`.)* Every `PARTIA
 **Story:** As a maintainer, I want no wildcard CORS by default, so that a visited website cannot read the database.
 **Outcome:** Default server sends no permissive `Access-Control-Allow-Origin`.
 **Deps:** US-078
-**Files/modules:** `config/SecurityConfig`, `console/http/JunifyDBServer`
+**Files/modules:** `config/SecurityConfig`, `console/http/EmbedJNoSQLServer`
 **API:** — · **Data:** — · **UI:** — · **Security:** High-severity historical R-61 · **Perf:** —
 **Negative:** wildcard CORS applied only when auth enabled (historical)
 **G/W/T:** *Given* a hostile origin, *When* it fetches the API from a browser, *Then* the read is blocked.
@@ -2372,7 +2372,7 @@ leaving **four**: procedures, functions, triggers and `EXPLAIN`.)* Every `PARTIA
 
 
 > **⚠ SUPERSEDED — pre-refactor document (SQL / dual-engine).**
-> JunifyDB is now NoSQL-only. The relational engine, SQL parser/planning, JDBC driver, JPA
+> EmbedJNoSQL is now NoSQL-only. The relational engine, SQL parser/planning, JDBC driver, JPA
 > `EntityManager`, `/api/sql` routes, and the SQL Studio console screen were removed from the
 > product. Statements in this file that describe SQL, JDBC, SQL schemas, or an engine selector no
 > longer describe shipped behavior.

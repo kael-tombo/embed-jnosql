@@ -10,7 +10,7 @@
 (function () {
   function safeInit(fn) {
     try { fn(); } catch (e) {
-      if (window.console && console.warn) console.warn('[junifydb-enhancements]', e && e.message);
+      if (window.console && console.warn) console.warn('[embedjnosql-enhancements]', e && e.message);
     }
   }
 

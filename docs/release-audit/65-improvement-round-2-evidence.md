@@ -2,7 +2,7 @@
 
 Scope: remaining register items R-16, R-18, R-19, R-20, R-24, R-25 plus
 register/checklist hygiene. Regression tests:
-`src/test/java/org/junify/db/SecondImprovementRoundTest.java` (7 tests).
+`src/test/java/org/embeddedjnosql/db/SecondImprovementRoundTest.java` (7 tests).
 
 > Process note: the first run of this round's own test suite caught **two bugs
 > in my fix** — the vector-handler rewrite consumed the request body twice
@@ -13,13 +13,13 @@ register/checklist hygiene. Regression tests:
 
 ### R-16 — Typed exception hierarchy
 
-- New `org.junify.db.core.exception` package: `JunifyDBException` (base,
+- New `org.embeddedjnosql.db.core.exception` package: `EmbedJNoSQLException` (base,
   unchecked), `StorageException`, `SerializationException`.
 - All 15 bare `RuntimeException` wrap sites migrated (engines, JsonSerde,
   EntityMapper, batches, CDC connector, crypto, facade). Jakarta
   `PersistenceException` (JPA adapter) intentionally unchanged.
 
-**Test** — `storageFailuresSurfaceAsTypedJunifyDBException`. ✅
+**Test** — `storageFailuresSurfaceAsTypedEmbedJNoSQLException`. ✅
 
 ### R-18 — Index point lookup
 
@@ -70,7 +70,7 @@ rejected). ✅
 - `logAuditEvent` additionally appends JSONL to `<dataDir>/audit.log`
   (fail-open; flush per event, not fsynced — evidentiary, not a durability
   mechanism). In-memory engines keep the ring buffer only. The writer is
-  closed in `JunifyDBServer.stop()` (bug found by test).
+  closed in `EmbedJNoSQLServer.stop()` (bug found by test).
 - Scope stays honest: the file is a durable copy of the same events; retention
   and rotation are future work.
 
@@ -79,10 +79,10 @@ rejected). ✅
 
 ### R-25 — Orphan CLI recovered
 
-- `cli/pom.xml` created (jar with `JunifyDBShell` main class).
+- `cli/pom.xml` created (jar with `EmbedJNoSQLShell` main class).
 - Shell rewritten at the corrected package
-  `org.junify.db.integration.standalone.JunifyDBShell` with real imports
-  (`org.junify.db.nosql.document.*`), a working `use` command, and an entry
+  `org.embeddedjnosql.db.integration.standalone.EmbedJNoSQLShell` with real imports
+  (`org.embeddedjnosql.db.nosql.document.*`), a working `use` command, and an entry
   point taking an optional data-dir argument.
 - Old orphan file deleted; empty dirs pruned.
 - **Live-verified**: piped session (use → insert → find → count → stats →

@@ -8,7 +8,7 @@
 
 ## 1. Domain Object to Storage Engine Delegation
 
-All JunifyDB domain abstractions (`DocumentCollection`, `KeyValueBucket`, `ColumnFamily`) encapsulate a shared `StorageEngine` SPI implementation:
+All EmbedJNoSQL domain abstractions (`DocumentCollection`, `KeyValueBucket`, `ColumnFamily`) encapsulate a shared `StorageEngine` SPI implementation:
 
 ```text
 DocumentCollection  ──┐
@@ -30,7 +30,7 @@ ColumnFamily        ──┘
 
 ## 2. Storage Engine Invariant Verification
 
-Contract tests in `src/test/java/org/junify/db/` enforce that all four storage engines conform to the same lifecycle rules:
+Contract tests in `src/test/java/org/embeddedjnosql/db/` enforce that all four storage engines conform to the same lifecycle rules:
 - Reading a non-existent key returns `null` or empty byte array.
 - Writing a key and immediately reading it returns the exact byte array.
 - Overwriting updates the value deterministically.

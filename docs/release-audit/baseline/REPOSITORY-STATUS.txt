@@ -7,8 +7,8 @@ Judicael Ratombotiana ADM
 Wed Sep 23 09:28:01 2026 +0300
 Re-measure the artifact after the durability round
 --- REMOTES ---
-origin	https://github.com/armand-ratombotiana/JunifyDB.git (fetch)
-origin	https://github.com/armand-ratombotiana/JunifyDB.git (push)
+origin	https://github.com/armand-ratombotiana/EmbedJNoSQL.git (fetch)
+origin	https://github.com/armand-ratombotiana/EmbedJNoSQL.git (push)
 --- TAGS ---
 v0.1.0-package-migration
 v0.2.0-mvcc-kernel

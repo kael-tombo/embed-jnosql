@@ -13,7 +13,7 @@ Environment, repository shape, and the cleanest possible baseline build, recorde
 | Build | `mvn clean test` (surefire 3.2.5, compiler release 17) |
 
 ## Repository Shape (baseline, commit `6b8cece`)
-- **Single-module Maven build** (`junify-db-core`, version 1.0.0). `spring-boot-starter/`, `quarkus-extension/`, `micronaut-integration/`, `demo/`, `cli/` have their own POMs but are **not** Maven modules of the root build — they are built separately, if at all.
+- **Single-module Maven build** (`embed-jnosql-core`, version 1.0.0). `spring-boot-starter/`, `quarkus-extension/`, `micronaut-integration/`, `demo/`, `cli/` have their own POMs but are **not** Maven modules of the root build — they are built separately, if at all.
 - Source: 93 main Java files, 40 test files. Demos: 48 Java files in 8+ demo projects.
 - CI: `.github/workflows/ci.yml` (matrix Java 21/23, `mvn -B clean verify`) + `pages.yml`. CI also runs a Docker job that references a `Dockerfile` which **does not exist** at repo root (see 44-build-and-ci-audit.md).
 - Pre-existing tracked artifacts: `$null` (0-byte PowerShell artifact), `server.err`, `server.out` — build/run litter committed to git.

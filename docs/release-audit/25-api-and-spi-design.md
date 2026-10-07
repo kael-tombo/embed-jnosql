@@ -7,7 +7,7 @@ Public facade API, SPI surfaces, backward-compatibility risk of this audit's cha
 Clean, discoverable public API; SPI changes backward compatible; 1.0.0 as semver baseline.
 
 ## Current Implementation
-- Facade: `JunifyDB.inMemory()/temporary()/embed().build()/create(config)`, model accessors, `sql()`, `beginTransaction()`, console lifecycle.
+- Facade: `EmbedJNoSQL.inMemory()/temporary()/embed().build()/create(config)`, model accessors, `sql()`, `beginTransaction()`, console lifecycle.
 - SPI: `StorageEngine` (+ new default methods `collectionNames()` and, from the R-62 fix, `ensureCollection(String)`), `WriteAheadLog`, `FileEnginePool`.
   - **`ensureCollection(String)` (R-62, 2026-09-23):** called when a collection is *created* (SQL DDL, the console's create route, repository/annotation materialisation) so its existence is durable even with no records. Default: no-op returning `false`, so an existing external `StorageEngine` implementation keeps compiling and keeps its old semantics. Implementations: FILE writes an empty `{}` snapshot; LSM_TREE/B_TREE record the name in a `.collections` registry behind an atomic move (their identity is otherwise derived from `collection:key` records, so an empty collection has no key); IN_MEMORY lists it for the process lifetime and promises nothing beyond it.
 - Annotations adapters, `EntityQuery`, reactive API, JPA bridge.

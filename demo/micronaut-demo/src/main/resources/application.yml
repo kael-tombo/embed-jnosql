@@ -4,7 +4,7 @@ micronaut:
   server:
     port: 8083
 
-junifydb:
+embedjnosql:
   enabled: true
   engine: IN_MEMORY
   data-dir: target/micronaut-data

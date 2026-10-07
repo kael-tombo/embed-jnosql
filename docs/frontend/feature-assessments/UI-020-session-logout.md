@@ -114,7 +114,7 @@ Logout completes in < 5ms.
 Verified in `AuthLogoutHandler` and UI logout handler.
 
 ## Existing Test Assessment
-Verified via `JunifyDBServerTest.authLoginAndLogout()`.
+Verified via `EmbedJNoSQLServerTest.authLoginAndLogout()`.
 
 ## Missing Tests
 None.
@@ -138,10 +138,10 @@ None.
 Added `AuthLogoutHandler` clearing session cookies and map entries.
 
 ## Regression Tests Added
-`JunifyDBServerTest.authLoginAndLogout()`
+`EmbedJNoSQLServerTest.authLoginAndLogout()`
 
 ## Exact Test Commands
-`mvn test -Dtest=JunifyDBServerTest`
+`mvn test -Dtest=EmbedJNoSQLServerTest`
 
 ## Test Output
 Tests run: 9, Failures: 0, Errors: 0.

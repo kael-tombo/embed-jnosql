@@ -1,4 +1,4 @@
-# JunifyDB Refocus Handoff — NoSQL-only product
+# EmbedJNoSQL Refocus Handoff — NoSQL-only product
 
 **Date**: 2026-10-06 · **Scope**: remove the relational SQL product and the dual-engine architecture,
 leave one embedded NoSQL database (Document + Key-Value) that builds, tests, and ships.
@@ -23,7 +23,7 @@ Companion documents:
 | SQL product | Deleted `sql/` (engine, parser, lexer, AST, catalog, schema, row/result types, exceptions). |
 | JDBC | Deleted `jdbc/` (7 handlers + driver) and `META-INF/services/java.sql.Driver`. |
 | JPA | Deleted `jpa/` (`EntityManager`, `EntityManagerFactory`, `EntityTransaction`, `EntityQuery` impl, `Persistence`). |
-| Public API | `JunifyDB.sql(...)`, `sqlSchema()`, `createEntityManager()`, `from(...)`-as-SQL removed; `from(Class)` now returns the native document-backed `EntityQuery`. |
+| Public API | `EmbedJNoSQL.sql(...)`, `sqlSchema()`, `createEntityManager()`, `from(...)`-as-SQL removed; `from(Class)` now returns the native document-backed `EntityQuery`. |
 | Console server | `/api/sql`, `/api/sql/schema`, `/api/sql/execute` handlers and routes removed (now 404); `relationalEngine` context key removed; malformed query bodies answer **400** instead of 500; backup-restore note no longer references SQL Studio. |
 | Dead code | `core/cache/QueryCache` (the SQL result cache, no remaining consumer) deleted. |
 | Retained | Storage engines (memory/file/B-tree/LSM), WAL + recovery, MVCC transactions, secondary/text/HNSW indexes, document validation, TTL, backup, CDC, audit, metrics, event bus, security, console server, Jakarta NoSQL adapter, framework adapters. |
@@ -67,7 +67,7 @@ Companion documents:
 - `deep-test.ps1` section 10 replaced by a document-query smoke section that also asserts
   `POST /api/sql → 404`. In review round 3 the whole sweep was ported to
   `scripts/deep-test.sh` (PowerShell is not available on this machine) with every expectation
-  re-verified against the actual handlers in `JunifyDBServer` — it executes the full 20-section
+  re-verified against the actual handlers in `EmbedJNoSQLServer` — it executes the full 20-section
   sweep end to end.
 - `.github/workflows/pages.yml` unchanged (documented as publishing the whole `docs/` directory).
 
@@ -100,10 +100,10 @@ and the substring "SQL" inside "NoSQL"/"JNoSQL".
 
 - No SQL. `db.sql("…")` does not exist, `POST /api/sql` answers 404, and a former SQL payload is
   never re-interpreted as a NoSQL operation.
-- No JDBC driver, no `jdbc:junifydb:` URL, no `java.sql.Driver` service entry.
+- No JDBC driver, no `jdbc:embedjnosql:` URL, no `java.sql.Driver` service entry.
 - No JPA `EntityManager`/`TypedQuery`/`EntityTransaction`. Jakarta Persistence **annotations** are
   still read as mapping hints (`@Entity`, `@Table`, `@Id`, `@Column`, `@Transient`, `@EmbeddedId`).
-- Removed packages: `org.junify.db.sql.**`, `org.junify.db.jdbc.**`, `org.junify.db.jpa.**`.
+- Removed packages: `org.embeddedjnosql.db.sql.**`, `org.embeddedjnosql.db.jdbc.**`, `org.embeddedjnosql.db.jpa.**`.
 - Console: SQL Studio screen, engine selector, SQL autocomplete/history, saved queries, explain
   views are gone.
 
@@ -115,9 +115,9 @@ and the substring "SQL" inside "NoSQL"/"JNoSQL".
 - Document/Key-Value APIs are unchanged in shape: `documentCollection`, `keyValueBucket`,
   `listBucket`, `setBucket`, `hashBucket`, `columnFamily`, transactions, TTL, indexes, backup.
 - Maven coordinates and the Java 17 target are unchanged.
-- **Experimental surface (round-3 product decision):** `JunifyDBPool`, `ReactiveJNoSQL`, and
+- **Experimental surface (round-3 product decision):** `EmbedJNoSQLPool`, `ReactiveJNoSQL`, and
   `MigrationManager` are **kept**, not deleted, and are now marked with the runtime-visible
-  `org.junify.db.Experimental` annotation plus class javadoc stating they have no production
+  `org.embeddedjnosql.db.Experimental` annotation plus class javadoc stating they have no production
   caller, no functional coverage, and may change or be removed without notice. They sit outside
   the compatibility contract and the JaCoCo gate (exclusions retained in `pom.xml`); the label is
   enforced by `ReleaseFeatureSweepTest.experimentalClassesAreLabeled`.
@@ -145,20 +145,20 @@ genuinely needs `JOIN`/`GROUP BY` to a relational database.
 | Document/KV/TTL/index/persistence | `DocumentCollectionTest`, `KeyValueBucketTest`, `*TtlPersistenceTest`, `SecondaryIndex*`, `LSMReadResolutionTest`, `BTreeAutoFlushPersistenceTest` | PASS |
 | Transactions | `TransactionTest`, `deep/DeepTransactionTest`, `TransactionalCatalogVisibilityTest` | PASS |
 | Durability across restart | `EngineRestartDiscoveryTest`, `CheckpointRaceDurabilityTest`, `WalRotationAndCheckpointTest`, `CollectionExistenceDurabilityTest` | PASS |
-| Jakarta NoSQL adapter | `jnosql/JunifyRepositoryTest` + annotation demo suite | PASS |
+| Jakarta NoSQL adapter | `jnosql/EmbedRepositoryTest` + annotation demo suite | PASS |
 | Demos and adapters | `mvn -B -o test` per module after `mvn install` of the core | PASS — spring-boot-demo 28 (6 app + **22 Hibernate-integration**), advanced-queries-demo 5, annotation-showcase-demo 5, spring-boot-starter 12, cli 4 (0 failures, 0 errors each); quarkus runtime/deployment and micronaut-integration built green |
 | Hibernate integration inside Spring Boot (deep) | `HibernateIntegrationTest` (22 tests, real `@SpringBootTest`) | PASS — log: [demo-spring-hibernate.log](demo-spring-hibernate.log). Hibernate/JPA-annotated entities drive a template-backed `@Service` through auto-configured beans: `@Table` collection naming (and the lowercase-simple-name fallback), `@UuidGenerator` id backfill (36-char UUID) vs. explicit `@Id`, `@PrePersist`/`@PostLoad`, `@CreationTimestamp`/`@UpdateTimestamp` columns, derived `@Formula` recomputed on load and tracking inputs after update, `@Column(name=…)` alias as the stored key, `@Enumerated(STRING)` stored as names and queryable via `Query.eq`, `@Transient` excluded from documents, `java.util.Date`↔ISO-string write/read symmetry, raw `EntityMapper` remap agreeing with the template, batch `insertAll`, `sortByDesc`+`limit(offset)` windowing, storage-level enum-name grouping, `@Immutable` update refusal on an audit entity, `@NaturalId` recognition, and a whole-stack column audit. First run surfaced and fixed a real core bug: `EntityMapper.convertValue` wrote `java.util.Date` as an ISO string but threw on read; the read now parses symmetrically 
 | Website JS syntax | `node --check` on the extracted inline script | PASS |
-| Website DOM (local preview) | `preview_evaluate` on the registered page | PASS — title `JunifyDB — The Embedded NoSQL Database for Java`, H1 "One Embedded Engine. Zero Infrastructure.", one playground tab, real-API sample, two data-model cards + four storage modes |
+| Website DOM (local preview) | `preview_evaluate` on the registered page | PASS — title `EmbedJNoSQL — The Embedded NoSQL Database for Java`, H1 "One Embedded Engine. Zero Infrastructure.", one playground tab, real-API sample, two data-model cards + four storage modes |
 | Gate scripts | `bash -n scripts/console-contract-gate.sh`, `bash -n scripts/console-auth-gate.sh` | PASS (syntax), and **executed end-to-end**: contract gate **95/95 checks PASS** ([contract-gate-run.log](contract-gate-run.log)) incl. restart and kill -9 WAL recovery and 4 shipped-jar picker checks; auth gate **36/36 PASS** ([auth-gate-run.log](auth-gate-run.log)); deep test **90/90 PASS** ([deep-test-run.log](deep-test-run.log)) |
-| Live browser verification (real server, real Chromium page) | DOM/network assertions via the preview browser against `java -jar junify-db-core-1.0.0.jar --engine IN_MEMORY` | PASS — 12 panels (`overview, collections, kv, columns, vectors, schema, tx, indexes, backup, cdc, audit, server`), zero SQL panels, old `#sql-studio` deep link resolves to `overview`, no SQL headings (the only `sql`-substring hits are `.engine-tag.nosql` “NoSQL” badges), all fetches 200 with no `/api/sql` traffic, and the real user path works: refresh ⟳ → collection chip `gate_ui_demo 1` → click → document table renders the inserted doc (screenshot export still impossible, see §6) |
+| Live browser verification (real server, real Chromium page) | DOM/network assertions via the preview browser against `java -jar embed-jnosql-core-1.0.0.jar --engine IN_MEMORY` | PASS — 12 panels (`overview, collections, kv, columns, vectors, schema, tx, indexes, backup, cdc, audit, server`), zero SQL panels, old `#sql-studio` deep link resolves to `overview`, no SQL headings (the only `sql`-substring hits are `.engine-tag.nosql` “NoSQL” badges), all fetches 200 with no `/api/sql` traffic, and the real user path works: refresh ⟳ → collection chip `gate_ui_demo 1` → click → document table renders the inserted doc (screenshot export still impossible, see §6) |
 
 The 39-test core delta from the baseline (886 → 847) is accounted for: 7 deleted SQL/JDBC/JPA test
 classes, 10 `QueryCache` tests deleted with the orphan class they covered, the rest from
 migrated/merged console and durability tests, then **+37 core tests added by this verification
 round and the round-3 follow-up**: `ReleaseFeatureSweepTest` (22 — one per advertised capability
 family plus the experimental-label contract assertion for
-`JunifyDBPool`/`ReactiveJNoSQL`/`MigrationManager`), four new HTTP cases in
+`EmbedJNoSQLPool`/`ReactiveJNoSQL`/`MigrationManager`), four new HTTP cases in
 `ConsoleWorkspaceEndpointsTest` (Redis-style list/set/hash routes, `/api/stats`, and the
 retired-route 404s), and `TextIndexPhraseTest` (11 — the positional phrase-search contract after
 the sweep's `searchPhrases` finding was fixed). The demo layer adds another 22: the
@@ -178,7 +178,7 @@ nothing, and that a document query returns the same count after a restart (exact
 
 | Artifact | Size |
 |---|---|
-| `target/junify-db-core-1.0.0.jar` (shaded, published artifact) | **3,076,575 B = 2.93 MiB = 3.08 MB** ✅ under the 5 MB goal |
+| `target/embed-jnosql-core-1.0.0.jar` (shaded, published artifact) | **3,076,575 B = 2.93 MiB = 3.08 MB** ✅ under the 5 MB goal |
 | — of which compiled classes | 85.1 % |
 | — of which console assets (`static/`, 11 entries) | 100 KB compressed / 220 KB raw (3.3 %) |
 | — of which documentation/logo SVGs | 2.0 % |
@@ -200,7 +200,7 @@ adding its own artifacts on top.
 |---|---|---|
 | `deep-test.ps1` (and its execution) | **PASS** | No PowerShell on this machine, so the sweep was ported to bash as `scripts/deep-test.sh` with expectations re-verified against the handlers, and executed: **90 checks, 0 failures** ([deep-test-run.log](deep-test-run.log)) |
 | Browser screenshot/video export | **NOT RUN** | The preview webview produces no frames ("not compositing") in this environment — retried twice on a live server and it still captures nothing. All browser verification is therefore DOM/network-level (see the live-browser row in §4), which is weaker only in that it proves the DOM, not the pixels. |
-| `docs/assets/junifydb-banner.png` (OG/Twitter social banner) | **NOT VERIFIED** | Raster asset last generated 2026-09-21; its rendered text could not be inspected here. Regenerate before a public announcement if it shows the old dual-engine wording. The README logo and its `alt` text are NoSQL-correct. |
+| `docs/assets/embedjnosql-banner.png` (OG/Twitter social banner) | **NOT VERIFIED** | Raster asset last generated 2026-09-21; its rendered text could not be inspected here. Regenerate before a public announcement if it shows the old dual-engine wording. The README logo and its `alt` text are NoSQL-correct. |
 | Maven Central publication | **BLOCKED** | Needs release credentials/authorization; no publish step was run. |
 | GitHub Pages deployment | **BLOCKED (by policy)** | `pages.yml` publishes `docs/`; nothing was pushed or deployed from this session. |
 | `scripts/console-contract-gate.sh` / `console-auth-gate.sh` / `deep-test.sh` end-to-end | **PASS** | Executed against the shaded jar from the green build: contract gate 95 checks 0 failures (seeding, console GETs, destructive-route safety, transactions, bulk, query operators, malformed-query 400s, no-create-on-read, TTL, vector persistence, CORS policy, restore round trip, restart, kill -9 WAL recovery, shipped-jar picker wiring); auth gate 36 checks 0 failures (anonymous 401 everywhere, wrong key 401, real key 200 everywhere, authenticated write + readback, login/logout session lifecycle); deep test 90 checks 0 failures (every feature family plus retired-SQL-route 404s and anonymous static files) |
@@ -218,6 +218,6 @@ Hibernate-integration suite, and the published core JAR is 3.08 MB.
 **NOT READY** for an announced Maven Central release until: release credentials and the publication
 step are authorized and executed, and the social banner asset is regenerated/verified.
 
-**Smallest remaining milestone to ship**: sign and publish `junify-db-core-1.0.0` (plus the three
+**Smallest remaining milestone to ship**: sign and publish `embed-jnosql-core-1.0.0` (plus the three
 optional adapters) to the chosen repository, then re-run `mvn -B clean verify` on the tagged commit
 and refresh the banner image — everything else required for the NoSQL-only release is in place.

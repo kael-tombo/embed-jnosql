@@ -6,7 +6,7 @@ Detailed architecture of the `StorageEngine` SPI and its four concrete implement
 
 ## 1. The `StorageEngine` SPI Contract
 
-Every storage backend in JNOSQL-EMBED implements `org.junify.db.storage.spi.StorageEngine`:
+Every storage backend in JNOSQL-EMBED implements `org.embeddedjnosql.db.storage.spi.StorageEngine`:
 
 ```java
 public interface StorageEngine extends AutoCloseable {

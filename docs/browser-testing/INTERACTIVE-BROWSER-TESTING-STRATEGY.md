@@ -10,7 +10,7 @@ User Interaction
 → Browser DOM / Events
 → JavaScript Client & State
 → HTTP API Requests
-→ JunifyDB Embedded Server
+→ EmbedJNoSQL Embedded Server
 → Core Database Engine & Storage
 → Response Serialization
 → UI Visual Update

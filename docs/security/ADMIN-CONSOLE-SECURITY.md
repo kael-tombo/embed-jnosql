@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-The JunifyDB Administration Console security model is designed according to **OWASP Top 10** guidelines and defense-in-depth principles:
+The EmbedJNoSQL Administration Console security model is designed according to **OWASP Top 10** guidelines and defense-in-depth principles:
 
 1. **Authentication Barrier**: Dual support for HTTP Basic / Username-Password credentials (session-based) and machine-to-machine API Keys (`X-API-Key` or Bearer token).
 2. **Session Hardening**: 256-bit cryptographically secure session identifiers generated via `SecureRandom`. Encapsulated in `HttpOnly`, `SameSite=Lax`, and optional `Secure` cookies with configurable inactivity TTL.
@@ -21,7 +21,7 @@ The JunifyDB Administration Console security model is designed according to **OW
 ## 2. Security Configuration Reference
 
 ```yaml
-junifydb:
+embedjnosql:
   security:
     auth-enabled: true
     admin-username: admin

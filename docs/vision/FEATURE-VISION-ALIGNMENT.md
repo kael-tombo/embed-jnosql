@@ -1,7 +1,7 @@
 # Feature-Vision Alignment Assessment
 
 > **⚠ SUPERSEDED — pre-refactor document (SQL / dual-engine).**
-> JunifyDB is now NoSQL-only. The relational engine, SQL parser/planning, JDBC driver, JPA
+> EmbedJNoSQL is now NoSQL-only. The relational engine, SQL parser/planning, JDBC driver, JPA
 > `EntityManager`, `/api/sql` routes, and the SQL Studio console screen were removed from the
 > product. Statements in this file that describe SQL, JDBC, SQL schemas, or an engine selector no
 > longer describe shipped behavior.
@@ -20,7 +20,7 @@
 
 ## 1. Executive Evaluation
 
-The core vision of JunifyDB is to provide a **zero-configuration, embedded multi-model database** for Java 21+ applications, bridging the gap between lightweight key-value stores (e.g., RocksDB, MapDB) and full relational engines (e.g., H2, Derby, SQLite) while implementing Jakarta NoSQL abstractions.
+The core vision of EmbedJNoSQL is to provide a **zero-configuration, embedded multi-model database** for Java 21+ applications, bridging the gap between lightweight key-value stores (e.g., RocksDB, MapDB) and full relational engines (e.g., H2, Derby, SQLite) while implementing Jakarta NoSQL abstractions.
 
 This document critically classifies each capability against the stated product vision:
 
@@ -49,7 +49,7 @@ OUT_OF_SCOPE                   — Feature does not belong in an embedded databa
 | **Vector Search (HNSW)** | Embedded vector indexing for AI/ML embeddings | Experimental cosine similarity & Euclidean distance search | `VectorHandler`, UI experimental tab | **PARTIALLY_PROVEN** |
 | **Full-Text Search** | Inverted index tokenization and TF-IDF scoring | `InvertedIndex.java`, text matching | `TextSearchTest` | **PROVEN** |
 | **Change Data Capture** | Real-time event streaming for record mutations | `CDCManager.java`, `EventBus.java` | `EventBusTest`, `CDCHandler` | **PROVEN** |
-| **Console Web UI** | Self-contained zero-dependency admin dashboard | Single-page console served via built-in `HttpServer` | `JunifyDBServer.java`, `index.html` | **PARTIALLY_PROVEN** (Fixed auth/collection listing gaps) |
+| **Console Web UI** | Self-contained zero-dependency admin dashboard | Single-page console served via built-in `HttpServer` | `EmbedJNoSQLServer.java`, `index.html` | **PARTIALLY_PROVEN** (Fixed auth/collection listing gaps) |
 | **Framework Starters** | Native integration with Spring Boot, Quarkus, Micronaut | Starter modules & working demo apps | `spring-boot-starter`, `quarkus-demo`, etc. | **PROVEN** |
 
 ---

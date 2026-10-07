@@ -1,4 +1,4 @@
-# JunifyDB — Crash Recovery Verification Results
+# EmbedJNoSQL — Crash Recovery Verification Results
 
 **Auditor**: Database Recovery Specialist  
 

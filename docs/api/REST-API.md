@@ -1,8 +1,8 @@
-# JunifyDB REST API Reference (Embedded Console/Admin API)
+# EmbedJNoSQL REST API Reference (Embedded Console/Admin API)
 
 All endpoints are served by the embedded administration server
-(`JunifyDBServer`, default bind `127.0.0.1`, default port `8080`; see
-`JunifyDBConfig`). Responses are JSON. Authentication (session or API key)
+(`EmbedJNoSQLServer`, default bind `127.0.0.1`, default port `8080`; see
+`EmbedJNoSQLConfig`). Responses are JSON. Authentication (session or API key)
 applies when security is enabled; CSRF protection applies to state-changing
 requests from the browser console.
 
@@ -10,7 +10,7 @@ requests from the browser console.
 1.0.0 server during the release audit; example responses are captured output,
 not mockups. Endpoints marked ○ exist in the server but their full contracts
 are not yet documented here — consult
-`src/main/java/org/junify/db/console/http/JunifyDBServer.java`.
+`src/main/java/org/embeddedjnosql/db/console/http/EmbedJNoSQLServer.java`.
 
 ## Health & Diagnostics
 

@@ -1,7 +1,7 @@
 # 36 — Console Backend Audit
 
 ## Scope
-`JunifyDBServer` HTTP API: routes, auth, validation, error responses, static serving.
+`EmbedJNoSQLServer` HTTP API: routes, auth, validation, error responses, static serving.
 
 ## Expected Behavior
 Every console panel's call succeeds against real endpoints with correct contracts; invalid input rejected cleanly; auth enforced when configured.
@@ -28,7 +28,7 @@ Single-file server (2,634 lines) with ~20 inner handlers: health, metrics, stats
 | CB-03 | ACCEPTABLE | Low | Inner handlers excluded from JaCoCo (POM exclusion) — mitigated by the console integration tests; flagged in 44. |
 
 ## Improvement Plan
-Publish REST API reference; split server into per-handler classes; unify error envelope `{error, status}`.
+Publish REST API reference; split server into per-handler classes; embed error envelope `{error, status}`.
 
 ## Acceptance Criteria
 All console tests green (met); UI↔backend contract mismatches fixed (met in UI rewrite).

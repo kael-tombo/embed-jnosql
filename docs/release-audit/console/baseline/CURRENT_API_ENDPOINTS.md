@@ -1,6 +1,6 @@
 # Current Console routes & API endpoints (baseline, 2026-09-23)
 
-Registered in `JunifyDBServer.registerHandlers()`; context-path prefix configurable, default root.
+Registered in `EmbedJNoSQLServer.registerHandlers()`; context-path prefix configurable, default root.
 All `/api/*` routes except login require auth (session cookie, `X-API-Key`, or Bearer) when auth is
 enabled; all mutating routes require the `X-CSRF-Token` synchronizer header.
 

@@ -4,8 +4,8 @@
 `quarkus-extension/` (runtime + deployment) — support status per rule 6.
 
 ## Current Implementation
-- Multi-POM extension: `runtime` (`JunifyDBProducer`, `JunifyRecorder`, config mapping) + `deployment` (build-time processor).
-- `demo/quarkus-demo`: REST resources using injected `JunifyDB` with transactional flows; test `OrderResource` paths in prior sessions.
+- Multi-POM extension: `runtime` (`EmbedDBProducer`, `JembedRecorder`, config mapping) + `deployment` (build-time processor).
+- `demo/quarkus-demo`: REST resources using injected `EmbedJNoSQL` with transactional flows; test `OrderResource` paths in prior sessions.
 
 ## Validation Performed
 In THIS audit environment: **extension not built** (Quarkus builds are slow; separate POM tree). Prior-session evidence: demo application started and served CRUD flows; unit tests exist in the demo.

@@ -1,16 +1,16 @@
-# JunifyDB Annotation Showcase Demo
+# EmbedJNoSQL Annotation Showcase Demo
 
-This demonstration application shows how **JunifyDB** maps annotated Java classes onto ordinary
+This demonstration application shows how **EmbedJNoSQL** maps annotated Java classes onto ordinary
 documents, with no ORM runtime and no relational engine:
 
-- **Eclipse JNoSQL (Jakarta NoSQL)** annotations plus the generic `JunifyRepository<T, ID>`.
+- **Eclipse JNoSQL (Jakarta NoSQL)** annotations plus the generic `EmbedRepository<T, ID>`.
 - **Jakarta Persistence (JPA) annotations** (`@Entity`, `@Table`, `@Id`, `@Column`, `@Transient`)
   used as **mapping hints** — the JPA `EntityManager`/`TypedQuery` surface is not part of the
   product.
 - **Hibernate annotation extensions** (`@UuidGenerator`, `@CreationTimestamp`, `@UpdateTimestamp`,
   `@Formula`, `@Enumerated`), applied at mapping time.
 - **Document aggregation in application code**: summaries and per-customer groupings are computed
-  from documents. JunifyDB ships no SQL engine, so there is no `GROUP BY` or `JOIN` to call.
+  from documents. EmbedJNoSQL ships no SQL engine, so there is no `GROUP BY` or `JOIN` to call.
 
 ---
 
@@ -21,7 +21,7 @@ demo/annotation-showcase-demo/
 ├── pom.xml
 ├── README.md
 └── src/
-    ├── main/java/org/junify/db/demo/annotation/
+    ├── main/java/org/embeddedjnosql/db/demo/annotation/
     │   ├── AnnotationShowcaseApplication.java     # Runnable CLI demonstration
     │   ├── model/
     │   │   ├── CatalogProduct.java               # Eclipse JNoSQL (@Entity, @Id, @Column)
@@ -29,10 +29,10 @@ demo/annotation-showcase-demo/
     │   │   ├── InvoiceRecord.java                # Hibernate (@UuidGenerator, @CreationTimestamp, @Formula)
     │   │   └── InvoiceStatus.java                # Enum mapped via @Enumerated(EnumType.STRING)
     │   ├── repository/
-    │   │   └── CatalogProductRepository.java     # Extends JunifyRepository<CatalogProduct, String>
+    │   │   └── CatalogProductRepository.java     # Extends EmbedRepository<CatalogProduct, String>
     │   └── service/
     │       └── OrderInvoiceService.java          # EntityMapper + MVCC transactions, no ORM
-    └── test/java/org/junify/db/demo/annotation/
+    └── test/java/org/embeddedjnosql/db/demo/annotation/
         └── AnnotationShowcaseTest.java           # Full integration test suite
 ```
 
@@ -58,11 +58,11 @@ public class CatalogProduct {
 }
 ```
 
-Use `JunifyRepository<T, ID>` for out-of-the-box CRUD and derived query operations:
+Use `EmbedRepository<T, ID>` for out-of-the-box CRUD and derived query operations:
 
 ```java
-public class CatalogProductRepository extends JunifyRepository<CatalogProduct, String> {
-    public CatalogProductRepository(JunifyDB db) {
+public class CatalogProductRepository extends EmbedRepository<CatalogProduct, String> {
+    public CatalogProductRepository(EmbedJNoSQL db) {
         super(CatalogProduct.class, db);
     }
 

@@ -1,7 +1,7 @@
 # 16. Feature Traceability
 
 > **SUPERSEDED - pre-refactor document (SQL / dual-engine).**
-> JunifyDB is now NoSQL-only. The relational engine, SQL parser/planning, JDBC driver, JPA
+> EmbedJNoSQL is now NoSQL-only. The relational engine, SQL parser/planning, JDBC driver, JPA
 > `EntityManager`, `/api/sql` routes, and the SQL Studio console screen were removed from the
 > product. Statements in this file that describe SQL, JDBC, SQL schemas, or an engine selector no
 > longer describe shipped behavior.
@@ -17,7 +17,7 @@
 
 | Story | Outcome this round | Implementation | Test/Evidence |
 |---|---|---|---|
-| US-078 Start console | unchanged, re-verified | `JunifyDBServer`, `PortManager` | `BrowserConsoleWorkflowVerificationTest` |
+| US-078 Start console | unchanged, re-verified | `EmbedJNoSQLServer`, `PortManager` | `BrowserConsoleWorkflowVerificationTest` |
 | US-079 Overview | + Storage & WAL card, version chip | `StorageStatusHandler`, `#ovStorage`, `#chipVersion` | `ConsoleWorkspaceEndpointsTest.storageStatus…`; EVID §6 |
 | US-080 Collections CRUD | + chips w/ state, JSON cells, tree detail | `loadColPicker/loadCollection/jsonTreeHtml` | EVID-COLL §1–3 |
 | US-081 KV browsing w/ TTL | **new** browser + TTL create/delete | `KvMetaHandler`, `kvBrowse/kvNewKeyForm` | 6 endpoint tests; EVID-KV |
@@ -56,4 +56,4 @@
 | CD-12 a11y | closed for known gaps (axe run still future) | accessibility.md |
 | CD-13 large results | closed (cap 500, export full) | EVID-SQL §8 |
 
-*EVID-* = `../evidence/console/BROWSER-JOURNEY-*.md`. Backend tests: `src/test/java/org/junify/db/ConsoleWorkspaceEndpointsTest.java` (6). Suite: 885/885.
+*EVID-* = `../evidence/console/BROWSER-JOURNEY-*.md`. Backend tests: `src/test/java/org/embeddedjnosql/db/ConsoleWorkspaceEndpointsTest.java` (6). Suite: 885/885.

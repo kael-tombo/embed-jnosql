@@ -8,7 +8,7 @@
 
 ## 1. Architectural Architecture
 
-JunifyDB is an embedded multi-model database engine engineered with clean separation between the storage abstraction layer, data-model abstractions, transaction manager, and client-facing interfaces:
+EmbedJNoSQL is an embedded multi-model database engine engineered with clean separation between the storage abstraction layer, data-model abstractions, transaction manager, and client-facing interfaces:
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐

@@ -1,6 +1,6 @@
-# Contributing to JunifyDB (JNoSQL-EMBED)
+# Contributing to EmbedJNoSQL (JNoSQL-EMBED)
 
-Thank you for contributing to JunifyDB! This guide outlines our standards, environment setup, and contribution workflows.
+Thank you for contributing to EmbedJNoSQL! This guide outlines our standards, environment setup, and contribution workflows.
 
 ---
 
@@ -27,12 +27,12 @@ mvn clean install -DskipTests
 
 ## 2. Project Architecture & Structure
 
-- `src/main/java/org/junify/db/`: Core database engine
+- `src/main/java/org/embeddedjnosql/db/`: Core database engine
   - `nosql/`: Document, Key-Value, and Wide-Column models
   - `storage/`: Pluggable storage engines (`InMemoryEngine`, `FileEngine`, `BTreeEngine`, `LSMTreeEngine`)
   - `transaction/`: MVCC and ACID transaction managers
   - `console/`: Developer HTTP admin server
-- `spring-boot-starter/`: Spring Boot 3 auto-configuration and `JunifyDBTemplate`
+- `spring-boot-starter/`: Spring Boot 3 auto-configuration and `EmbedJNoSQLTemplate`
 - `quarkus-extension/`: Quarkus runtime and deployment modules
 - `micronaut-integration/`: Micronaut factory and CDI providers
 - `demo/`: Real-world framework demonstration applications

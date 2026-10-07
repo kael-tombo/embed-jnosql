@@ -18,7 +18,7 @@ Code search in this audit.
 ## Findings
 | ID | Status | Severity | Description |
 |---|---|---|---|
-| TC-01 | ACCEPTABLE | Low | If users want to run JunifyDB's own console image in Testcontainers, that would require the missing Dockerfile (see 44) — noted, not claimed. |
+| TC-01 | ACCEPTABLE | Low | If users want to run EmbedJNoSQL's own console image in Testcontainers, that would require the missing Dockerfile (see 44) — noted, not claimed. |
 
 ## Improvement Plan
 None for release. After a Dockerfile exists, publish a `GenericContainer` example.

@@ -1,1 +1,1 @@
-org.junify.db.spring.boot.JunifyDBAutoConfiguration
+org.embeddedjnosql.db.spring.boot.EmbedJNoSQLAutoConfiguration

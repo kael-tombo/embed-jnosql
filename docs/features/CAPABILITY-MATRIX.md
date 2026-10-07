@@ -39,8 +39,8 @@ A technical capability matrix detailing the supported storage models, query opti
 
 | Capability | Plain Java 17+ | Spring Boot 3.x | Quarkus 3.x | Micronaut 4.x | Vert.x 4.x |
 |---|:---:|:---:|:---:|:---:|:---:|
-| **Embedded Injection** | Direct API | `@Autowired JunifyDB` | `@Inject JunifyDB` | `@Inject JunifyDB` | Verticle Context |
-| **Document Template** | Fluent API | `JunifyDBTemplate` | Direct Collection | `JunifyDBEntityManager`| Worker Thread |
-| **Config via File** | `JunifyDBConfig`| `application.yml` | `application.properties` | `application.yml` | Vert.x JsonObject |
+| **Embedded Injection** | Direct API | `@Autowired EmbedJNoSQL` | `@Inject EmbedJNoSQL` | `@Inject EmbedJNoSQL` | Verticle Context |
+| **Document Template** | Fluent API | `EmbedJNoSQLTemplate` | Direct Collection | `EmbedJNoSQLEntityManager`| Worker Thread |
+| **Config via File** | `EmbedJNoSQLConfig`| `application.yml` | `application.properties` | `application.yml` | Vert.x JsonObject |
 | **Lifecycle Auto-Close**| `try-with-res` | Spring Context Close | Quarkus Shutdown Event | Micronaut Stop | Verticle undeploy |
 | **Native Image Ready** | N/A | Experimental | Supported | Experimental | Supported |

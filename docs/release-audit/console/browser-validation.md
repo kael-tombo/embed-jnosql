@@ -1,7 +1,7 @@
 # 15. Browser Validation
 
 > **SUPERSEDED - pre-refactor document (SQL / dual-engine).**
-> JunifyDB is now NoSQL-only. The relational engine, SQL parser/planning, JDBC driver, JPA
+> EmbedJNoSQL is now NoSQL-only. The relational engine, SQL parser/planning, JDBC driver, JPA
 > `EntityManager`, `/api/sql` routes, and the SQL Studio console screen were removed from the
 > product. Statements in this file that describe SQL, JDBC, SQL schemas, or an engine selector no
 > longer describe shipped behavior.
@@ -15,7 +15,7 @@
 
 ## Setup
 
-- Server: `java -jar target/junify-db-core-1.0.0-shaded.jar --port 8095 --data-dir target/console-preview-data --engine FILE`
+- Server: `java -jar target/embed-jnosql-core-1.0.0-shaded.jar --port 8095 --data-dir target/console-preview-data --engine FILE`
 - Seed: table `ws_products` (PK/NN/CHECK) 4 rows; collections `catalog` (2 docs with nested `spec`/`tags`) + `ws_products`; KV bucket `session_cache` (`user-1` TTL 3600, `user-2` no TTL).
 - Static assets are served from the **jar classpath**, so every fix round was: edit → `./mvnw -q -DskipTests package` → restart → cache-busted reload (`?v=N`).
 

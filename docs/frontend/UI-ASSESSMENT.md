@@ -8,7 +8,7 @@
 
 ## 1. Architectural Summary
 
-The JunifyDB Console is built using **Vanilla HTML5, CSS3, and JavaScript (ES2022)** with zero external runtime dependencies (no React, Angular, Vue, or Webpack required). It is served directly from the embedded database JVM using `JunifyDBServer.StaticHandler`.
+The EmbedJNoSQL Console is built using **Vanilla HTML5, CSS3, and JavaScript (ES2022)** with zero external runtime dependencies (no React, Angular, Vue, or Webpack required). It is served directly from the embedded database JVM using `EmbedJNoSQLServer.StaticHandler`.
 
 Key design characteristics:
 - Modern sleek dark mode with CSS custom properties (variables) for theme switching.

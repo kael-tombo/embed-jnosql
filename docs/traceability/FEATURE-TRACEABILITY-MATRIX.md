@@ -31,7 +31,7 @@ The following matrix documents the complete execution chain:
 
 ## 2. Integrity Verification
 
-- Every public REST API endpoint has a corresponding handler in `JunifyDBServer.java`.
-- Every handler invokes the public domain API on `JunifyDB`, `DocumentCollection`, `KeyValueBucket`, or `ColumnFamily`.
+- Every public REST API endpoint has a corresponding handler in `EmbedJNoSQLServer.java`.
+- Every handler invokes the public domain API on `EmbedJNoSQL`, `DocumentCollection`, `KeyValueBucket`, or `ColumnFamily`.
 - Every domain operation delegates to `StorageEngine` for persistent or in-memory state changes.
 - Every state-modifying action is covered by one or more regression tests in `src/test/java`.

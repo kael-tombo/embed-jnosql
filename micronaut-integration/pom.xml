@@ -4,13 +4,13 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.junify.db</groupId>
-    <artifactId>junifydb-micronaut-integration</artifactId>
+    <groupId>org.embeddedjnosql.db</groupId>
+    <artifactId>embedjnosql-micronaut-integration</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
-    <name>JunifyDB Micronaut Integration</name>
-    <description>Micronaut integration for JunifyDB embedded NoSQL</description>
+    <name>EmbedJNoSQL Micronaut Integration</name>
+    <description>Micronaut integration for EmbedJNoSQL embedded NoSQL</description>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -32,10 +32,10 @@
     </dependencyManagement>
 
     <dependencies>
-        <!-- JunifyDB core — the only mandatory dependency -->
+        <!-- EmbedJNoSQL core — the only mandatory dependency -->
         <dependency>
-            <groupId>org.junify.db</groupId>
-            <artifactId>junify-db-core</artifactId>
+            <groupId>org.embeddedjnosql.db</groupId>
+            <artifactId>embed-jnosql-core</artifactId>
             <version>1.0.0</version>
         </dependency>
 
@@ -63,7 +63,7 @@
             <version>2.0.1</version>
         </dependency>
 
-        <!-- Jakarta Persistence (for JunifyDBEntityManager which implements EntityManager) -->
+        <!-- Jakarta Persistence (for EmbedJNoSQLEntityManager which implements EntityManager) -->
         <dependency>
             <groupId>jakarta.persistence</groupId>
             <artifactId>jakarta.persistence-api</artifactId>

@@ -1,7 +1,7 @@
 # 6. SQL Workspace
 
 > **SUPERSEDED - pre-refactor document (SQL / dual-engine).**
-> JunifyDB is now NoSQL-only. The relational engine, SQL parser/planning, JDBC driver, JPA
+> EmbedJNoSQL is now NoSQL-only. The relational engine, SQL parser/planning, JDBC driver, JPA
 > `EntityManager`, `/api/sql` routes, and the SQL Studio console screen were removed from the
 > product. Statements in this file that describe SQL, JDBC, SQL schemas, or an engine selector no
 > longer describe shipped behavior.
@@ -25,7 +25,7 @@
 
 ## Saved queries (CD-01)
 
-Browser-local library (`localStorage['junifydb.sql.saved']`, cap 50): save via `await prompt2(...)` (the missing `await` was the save-flow bug found in validation), load restores SQL + re-highlights + refreshes destructive badge, delete is confirm-guarded and states the library is browser-local. `#sqlSaved` empty state explains the feature.
+Browser-local library (`localStorage['embedjnosql.sql.saved']`, cap 50): save via `await prompt2(...)` (the missing `await` was the save-flow bug found in validation), load restores SQL + re-highlights + refreshes destructive badge, delete is confirm-guarded and states the library is browser-local. `#sqlSaved` empty state explains the feature.
 
 ## Run pipeline (US-084/142/143/144)
 

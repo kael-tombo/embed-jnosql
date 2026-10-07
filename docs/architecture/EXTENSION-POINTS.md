@@ -9,7 +9,7 @@ This document catalogs all available extension points allowing users and library
 Developers can implement custom storage backends (e.g. distributed S3-backed cache, off-heap shared memory, or encrypted disk storage) by implementing `StorageEngine`:
 
 ```java
-package org.junify.db.storage.spi;
+package org.embeddedjnosql.db.storage.spi;
 
 public interface StorageEngine extends AutoCloseable {
     String name();
@@ -32,7 +32,7 @@ public interface StorageEngine extends AutoCloseable {
 Applications can attach reactive observers to database lifecycle mutations:
 
 ```java
-JunifyDB db = JunifyDB.embed().build();
+EmbedJNoSQL db = EmbedJNoSQL.embed().build();
 
 // Subscribe to mutation events
 db.eventBus().on(EventBus.EventType.AFTER_INSERT, event -> {
@@ -66,6 +66,6 @@ JNOSQL-EMBED includes a streaming CDC subsystem allowing change events (`INSERT`
 ## 4. Framework Producers & CDI Overrides
 
 In Spring Boot, Quarkus, and Micronaut, all database beans are marked as conditional/default:
-- In Spring: `@ConditionalOnMissingBean(JunifyDB.class)` allows applications to supply their own customized `JunifyDB` `@Bean`.
-- In Quarkus: All producers in `JunifyDBProducer` use `@DefaultBean`, allowing applications to override `JunifyDB`, `DocumentCollection`, or `KeyValueBucket` via standard `@Produces` methods.
-- In Micronaut: Custom `@Replaces(JunifyDBFactory.class)` beans can completely customize database construction.
+- In Spring: `@ConditionalOnMissingBean(EmbedJNoSQL.class)` allows applications to supply their own customized `EmbedJNoSQL` `@Bean`.
+- In Quarkus: All producers in `EmbedDBProducer` use `@DefaultBean`, allowing applications to override `EmbedJNoSQL`, `DocumentCollection`, or `KeyValueBucket` via standard `@Produces` methods.
+- In Micronaut: Custom `@Replaces(EmbedJNoSQLFactory.class)` beans can completely customize database construction.

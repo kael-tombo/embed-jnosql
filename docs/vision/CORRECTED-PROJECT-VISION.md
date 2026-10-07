@@ -1,7 +1,7 @@
-# JunifyDB — Corrected Project Vision
+# EmbedJNoSQL — Corrected Project Vision
 
 > **⚠ SUPERSEDED — pre-refactor document (SQL / dual-engine).**
-> JunifyDB is now NoSQL-only. The relational engine, SQL parser/planning, JDBC driver, JPA
+> EmbedJNoSQL is now NoSQL-only. The relational engine, SQL parser/planning, JDBC driver, JPA
 > `EntityManager`, `/api/sql` routes, and the SQL Studio console screen were removed from the
 > product. Statements in this file that describe SQL, JDBC, SQL schemas, or an engine selector no
 > longer describe shipped behavior.
@@ -17,7 +17,7 @@
 
 > **Status update (September 2026, release audit):** This document's "no SQL
 > parser" positioning is **superseded**. The project ships a working built-in
-> SQL engine (`org.junify.db.sql`) supporting SELECT/INSERT/UPDATE/DELETE,
+> SQL engine (`org.embeddedjnosql.db.sql`) supporting SELECT/INSERT/UPDATE/DELETE,
 > JOIN, GROUP BY and filtering over the same collections — an
 > implementation-defined dialect, not a full ANSI:92 grammar. The SQL engine
 > is a documented, tested part of the product; see the README and
@@ -31,7 +31,7 @@
 Earlier high-level descriptions occasionally conflated "embedded database" with traditional relational RDBMS features (such as SQL tables, joins, and relational foreign keys) alongside Jakarta NoSQL claims.
 
 ### The Grounded Reality
-JunifyDB is an **embedded multi-model NoSQL engine**. It does **not** feature an SQL parser or relational table engine, nor should it:
+EmbedJNoSQL is an **embedded multi-model NoSQL engine**. It does **not** feature an SQL parser or relational table engine, nor should it:
 - Relational workloads in the JVM ecosystem are already served with high maturity by **H2**, **Derby**, and **HSQLDB**.
 - Attempting to build an SQL engine inside a NoSQL project results in a bloated, mediocre hybrid that satisfies neither relational nor NoSQL users.
 - The true, unaddressed gap in the Java ecosystem is an **H2 equivalent for NoSQL workloads**: an in-process, zero-dependency engine providing Document, Key-Value, and Wide-Column models.
@@ -40,7 +40,7 @@ JunifyDB is an **embedded multi-model NoSQL engine**. It does **not** feature an
 
 ## 2. Definitive Value Proposition
 
-> **"JunifyDB is to Document and Key-Value stores what H2 is to Relational databases."**
+> **"EmbedJNoSQL is to Document and Key-Value stores what H2 is to Relational databases."**
 
 ### Core Differentiators
 1. **Zero External Infrastructure**: No Testcontainers, no Docker, no external ports, no cloud dependencies.

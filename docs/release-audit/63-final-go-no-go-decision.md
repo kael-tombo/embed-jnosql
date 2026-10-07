@@ -44,12 +44,12 @@ in CHANGELOG/LICENSE) tighten rather than widen scope.
 ## Architecture Verdict
 
 **Genuinely separated at the domain level.** Relational SQL and NoSQL engines
-have separate parsers (`org.junify.db.sql` vs NoSQL query/aggregation paths),
+have separate parsers (`org.embeddedjnosql.db.sql` vs NoSQL query/aggregation paths),
 separate catalogs/metadata, separate execution pipelines, separate validation
 and error semantics (dialect-boundary SQL errors, browser-verified), and
 separate test suites. They share only the approved infrastructure layer
 (storage SPI, WAL, serialization, metrics). The full multi-module split
-(`junify-db-sql`, `junify-db-nosql`, …) remains the documented 1.1 roadmap
+(`embed-jnosql-sql`, `embed-jnosql-nosql`, …) remains the documented 1.1 roadmap
 (doc 03/25); the current single-jar build does not let either domain leak into
 the other. Verdict: acceptable, documented, and independently evolvable.
 
@@ -121,13 +121,13 @@ sweep covered the other two argument parsers (R-30): `BenchmarkRunner` now
 rejects unknown options/engines/workloads instead of silently running the
 IN_MEMORY engine or reporting zero benchmarks, and the CLI shell rejects
 unsupported options (`BenchmarkOptionValidationTest` 7 tests,
-`JunifyDBShellArgsTest` 4 tests — the recovered `cli/` module's first test
+`EmbedJNoSQLShellArgsTest` 4 tests — the recovered `cli/` module's first test
 harness).
 
 ## Website Verdict
 
 **Accurate. Live-verified today** (cache-busted fetch of
-`https://kael-tombo.github.io/JunifyDB/`): "Relational SQL Engine" ×10,
+`https://kael-tombo.github.io/EmbedJNoSQL/`): "Relational SQL Engine" ×10,
 "Non-Relational NoSQL Engine" ×8, canonical mark ×3, favicon + og-banner HTTP
 200, and **0** occurrences of BM25 / 85k / zero-loss / Crash-Safe / ANSI SQL /
 "fully production" / JNoSQL-EMBED. Deployment current (`4e5d7cd` gh-pages,
@@ -314,7 +314,7 @@ live-site redeploy, deployment-origin mismatch, CI demos job — docs 53/62).
 
 ## Safe Post-Release Improvements
 
-- Thin-jar publication; `junify-db-sql`/`junify-db-nosql`/storage/console module split (1.1)
+- Thin-jar publication; `embed-jnosql-sql`/`embed-jnosql-nosql`/storage/console module split (1.1)
 - Foreign keys, CHECK constraints, views, sequences (roadmap, doc 05)
 - Planner range-query index use; HNSW configuration surface
 - Console authentication flag surface (no CLI flag to set the admin password today; config/env only — documented, loopback-bound)

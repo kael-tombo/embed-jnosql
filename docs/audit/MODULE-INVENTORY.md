@@ -1,4 +1,4 @@
-# JunifyDB — Module Inventory
+# EmbedJNoSQL — Module Inventory
 
 **Audit Date**: September 9, 2026  
 **Auditor**: Repository Architect  
@@ -7,12 +7,12 @@
 
 ## 1. Project Modules Overview
 
-The JunifyDB codebase is structured into core engine components, framework starters/extensions, and demonstration applications:
+The EmbedJNoSQL codebase is structured into core engine components, framework starters/extensions, and demonstration applications:
 
 ```text
 JNoSQL-EMBED/
-├── pom.xml                               # Core Engine root POM (org.junify.db:junify-db-core)
-├── src/main/java/org/junify/db/          # Core Database & Engine Implementation
+├── pom.xml                               # Core Engine root POM (org.embeddedjnosql.db:embed-jnosql-core)
+├── src/main/java/org/embeddedjnosql/db/          # Core Database & Engine Implementation
 │   ├── nosql/                            # Document, Key-Value, Column models
 │   ├── storage/                          # Storage SPI (InMemory, File, BTree, LSMTree, WAL)
 │   ├── transaction/                      # MVCC, UndoLog, TransactionManager
@@ -34,9 +34,9 @@ JNoSQL-EMBED/
 
 | Module | Artifact ID | Type | Java Target | Primary Purpose |
 |---|---|---|---|---|
-| Core Engine | `junify-db-core` | JAR | Java 17 | Multi-model database, storage SPI, WAL, transactions, web console |
+| Core Engine | `embed-jnosql-core` | JAR | Java 17 | Multi-model database, storage SPI, WAL, transactions, web console |
 | Demo Common | `demo-common` | JAR | Java 17 | Domain model records (`Product`, `Order`, `InventoryItem`) |
-| Spring Boot Demo | `spring-boot-demo` | App | Java 17 | Spring Boot 3.2.0 REST application using `JunifyDBTemplate` |
+| Spring Boot Demo | `spring-boot-demo` | App | Java 17 | Spring Boot 3.2.0 REST application using `EmbedJNoSQLTemplate` |
 | Quarkus Demo | `quarkus-demo` | App | Java 17 | Quarkus 3.8.0 CDI-based application |
 | Micronaut Demo | `micronaut-demo` | App | Java 17 | Micronaut 4.2.0 Serde-based application |
 | Vert.x Demo | `vertx-demo` | App | Java 17 | Eclipse Vert.x 4.5.4 non-blocking event-loop application |

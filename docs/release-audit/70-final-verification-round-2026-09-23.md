@@ -15,7 +15,7 @@ Raw capture: `baseline/_environment.txt`.
 | # | Check | Command | Result |
 |---|---|---|---|
 | 1 | Full build + test | `./mvnw -B -ntp clean test` | **BUILD SUCCESS — 832 tests, 0 failures, 0 errors, 0 skipped** |
-| 2 | Shaded artifact | `./mvnw -B -ntp -DskipTests clean package` | **`junify-db-core-1.0.0.jar` = 3,122,887 bytes (3.12 MB)**, SHA-1 `b8ce7e551f50c25120749c0af8e55d1e0c7fc7d5` |
+| 2 | Shaded artifact | `./mvnw -B -ntp -DskipTests clean package` | **`embed-jnosql-core-1.0.0.jar` = 3,122,887 bytes (3.12 MB)**, SHA-1 `b8ce7e551f50c25120749c0af8e55d1e0c7fc7d5` |
 | 3 | Line coverage | JaCoCo `target/site/jacoco/jacoco.csv` | **75.5%** line (27,791 covered / 9,030 missed); branch **59.2%** |
 | 4 | Live runtime probe | `java -jar … --port 18080 --engine IN_MEMORY` + `curl` | health OK, metrics real, Console served, document round-trip OK, **no wildcard CORS** |
 | 5 | Structure census | `find`/`grep` | 98 main / 72 test sources, 10 demo projects, 22 Console `/api` routes, 4 storage engines |

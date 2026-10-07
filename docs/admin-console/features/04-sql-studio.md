@@ -1,7 +1,7 @@
-# JunifyDB Console Feature Assessment: SQL Studio & ANSI SQL Engine
+# EmbedJNoSQL Console Feature Assessment: SQL Studio & ANSI SQL Engine
 
 > **⚠ SUPERSEDED — pre-refactor document (SQL / dual-engine).**
-> JunifyDB is now NoSQL-only. The relational engine, SQL parser/planning, JDBC driver, JPA
+> EmbedJNoSQL is now NoSQL-only. The relational engine, SQL parser/planning, JDBC driver, JPA
 > `EntityManager`, `/api/sql` routes, and the SQL Studio console screen were removed from the
 > product. Statements in this file that describe SQL, JDBC, SQL schemas, or an engine selector no
 > longer describe shipped behavior.
@@ -64,7 +64,7 @@ The deep analysis across this feature revealed the following UX and operational 
 ---
 
 ## 5. Verification & Acceptance Criteria
-1. **Visual Consistency**: Conforms with JunifyDB dark/light glassmorphic design language.
+1. **Visual Consistency**: Conforms with EmbedJNoSQL dark/light glassmorphic design language.
 2. **Robust Error Handling**: Network errors, validation failures, and server exceptions display clear, actionable toast notifications.
 3. **No Breaking Changes**: Full backwards compatibility with existing REST endpoints and server handlers.
 4. **Automated Test Validation**: Verified via browser interaction and automated test suites.

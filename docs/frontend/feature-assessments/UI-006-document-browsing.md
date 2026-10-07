@@ -61,7 +61,7 @@ None
 Inherited from session cookie.
 
 ## Backend Service
-`CollectionsHandler` in `JunifyDBServer`
+`CollectionsHandler` in `EmbedJNoSQLServer`
 
 ## JNOSQL-EMBED Library API
 `DocumentCollection.findAll()`
@@ -141,7 +141,7 @@ Added search filtering in client-side table renderer.
 `JNoSQLServerTest.findAllDocuments()`
 
 ## Exact Test Commands
-`mvn test -Dtest=JunifyDBServerTest`
+`mvn test -Dtest=EmbedJNoSQLServerTest`
 
 ## Test Output
 Tests run: 9, Failures: 0, Errors: 0.

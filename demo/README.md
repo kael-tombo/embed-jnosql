@@ -1,6 +1,6 @@
-# JunifyDB Demonstration Ecosystem
+# EmbedJNoSQL Demonstration Ecosystem
 
-This directory contains the demonstration applications showcasing **JunifyDB** embedded multi-model NoSQL database across the Java/JVM ecosystem. Every demo is a standalone Maven project; see `RUNBOOK.md` for the exact run procedure (install core, install `demo-common`, then `mvn test` each demo).
+This directory contains the demonstration applications showcasing **EmbedJNoSQL** embedded multi-model NoSQL database across the Java/JVM ecosystem. Every demo is a standalone Maven project; see `RUNBOOK.md` for the exact run procedure (install core, install `demo-common`, then `mvn test` each demo).
 
 ---
 
@@ -9,9 +9,9 @@ This directory contains the demonstration applications showcasing **JunifyDB** e
 ```
 demo/
 ├── demo-common/              # Shared E-Commerce domain model & fixtures (Records)
-├── spring-boot-demo/         # Spring Boot 3.2.5 + JunifyDB Auto-Configuration starter demo
-├── quarkus-demo/             # Quarkus 3.8.0 + JunifyDB CDI Extension demo
-├── micronaut-demo/           # Micronaut 4.2.0 + JunifyDB DI Integration demo
+├── spring-boot-demo/         # Spring Boot 3.2.5 + EmbedJNoSQL Auto-Configuration starter demo
+├── quarkus-demo/             # Quarkus 3.8.0 + EmbedJNoSQL CDI Extension demo
+├── micronaut-demo/           # Micronaut 4.2.0 + EmbedJNoSQL DI Integration demo
 ├── vertx-demo/               # Eclipse Vert.x 4.5.4 Reactive non-blocking demo
 ├── end-to-end-validation/    # Multi-engine lifecycle and durability verification
 ├── advanced-queries-demo/    # Native document queries, filtering, and JVM-side aggregation
@@ -34,9 +34,9 @@ demo/
 
 ### 2. [spring-boot-demo](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/spring-boot-demo)
 - **Framework**: Spring Boot 3.2.0
-- **Integration**: `junify-db-spring-boot-starter` (`JunifyDBTemplate`)
+- **Integration**: `embed-jnosql-spring-boot-starter` (`EmbedJNoSQLTemplate`)
 - **Key Highlights**:
-  - Auto-configuration of `JunifyDB` and `JunifyDBTemplate`.
+  - Auto-configuration of `EmbedJNoSQL` and `EmbedJNoSQLTemplate`.
   - Spring MVC REST controller (`EcommerceController`).
   - Document indexing on `category` and fast queries.
   - Key-Value price caching bucket (`price_cache`).
@@ -44,16 +44,16 @@ demo/
 
 ### 3. [quarkus-demo](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/quarkus-demo)
 - **Framework**: Quarkus 3.8.0 (Jakarta EE 10 / CDI)
-- **Integration**: `junify-db-quarkus-extension-runtime`
+- **Integration**: `embed-jnosql-quarkus-extension-runtime`
 - **Key Highlights**:
-  - `@ApplicationScoped` and `@Singleton` CDI injection of `JunifyDB`.
+  - `@ApplicationScoped` and `@Singleton` CDI injection of `EmbedJNoSQL`.
   - Quarkus RESTEasy Reactive endpoints (`ProductResource`, `OrderResource`).
   - ACID MVCC Transactions (`db.beginTransaction()`) verifying stock deduction.
   - Hot reloading and small-footprint execution.
 
 ### 4. [micronaut-demo](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/micronaut-demo)
 - **Framework**: Micronaut 4.2.0
-- **Integration**: `junifydb-micronaut-integration` (`@Factory`, `@Singleton`)
+- **Integration**: `embedjnosql-micronaut-integration` (`@Factory`, `@Singleton`)
 - **Key Highlights**:
   - Compile-time dependency injection and Serde introspection.
   - Non-blocking HTTP endpoints (`ProductController`, `OrderController`).
@@ -61,7 +61,7 @@ demo/
 
 ### 5. [vertx-demo](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/vertx-demo)
 - **Framework**: Eclipse Vert.x 4.5.4
-- **Integration**: `junify-db-core` embedded directly.
+- **Integration**: `embed-jnosql-core` embedded directly.
 - **Key Highlights**:
   - Fully reactive `EcommerceVerticle` utilizing `vertx.executeBlocking(...)` to protect the event loop from blocking disk/MVCC operations.
   - Full CRUD REST API with Netty WebClient integration tests.
@@ -76,7 +76,7 @@ demo/
 ### 7. [annotation-showcase-demo](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/annotation-showcase-demo)
 - **Scope**: Multi-standard annotation interoperability over one document engine.
 - **Key Highlights**:
-  - **Eclipse JNoSQL Standard**: Entity mapping with `@Entity`, `@Id`, `@Column` and type-safe `JunifyRepository`.
+  - **Eclipse JNoSQL Standard**: Entity mapping with `@Entity`, `@Id`, `@Column` and type-safe `EmbedRepository`.
   - **Jakarta Persistence annotations as mapping hints**: `@Entity`, `@Table`, `@Id`, `@Column`, `@Transient` are resolved onto documents. The JPA `EntityManager`/`TypedQuery`/`EntityTransaction` surface is not part of the product.
   - **Hibernate Annotations**: Automated primary key generation (`@UuidGenerator`), audit timestamps (`@CreationTimestamp`, `@UpdateTimestamp`), computed values (`@Formula`), and enum mappings (`@Enumerated`).
   - **Aggregation in application code**: grouping and aggregates (`count`, `sum`, `avg`, `min`, `max`) are computed from documents in the JVM — there is no SQL engine, no `GROUP BY`, and no `JOIN`.

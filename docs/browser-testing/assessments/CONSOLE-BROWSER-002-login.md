@@ -10,7 +10,7 @@
 
 ## 1. Objective & Scope
 
-Verify that protected administration endpoints reject unauthenticated access (`401 Unauthorized`), that invalid credentials fail with audit logging, and that valid credentials issue a secure `JUNIFY_SESSION` cookie along with an `X-CSRF-Token` header.
+Verify that protected administration endpoints reject unauthenticated access (`401 Unauthorized`), that invalid credentials fail with audit logging, and that valid credentials issue a secure `EMBED_SESSION` cookie along with an `X-CSRF-Token` header.
 
 ---
 
@@ -41,7 +41,7 @@ Verify that protected administration endpoints reject unauthenticated access (`4
 - **Request**: `POST /jnosql-admin/api/auth/login` with `{"username":"admin","password":"password"}`
 - **Response**: `200 OK`
 - **Response Headers**:
-  - `Set-Cookie: JUNIFY_SESSION=...; Path=/; HttpOnly; SameSite=Lax`
+  - `Set-Cookie: EMBED_SESSION=...; Path=/; HttpOnly; SameSite=Lax`
   - `X-CSRF-Token: <UUID-token>`
 - **Response Body**:
   ```json
@@ -58,6 +58,6 @@ Verify that protected administration endpoints reject unauthenticated access (`4
 
 ## 4. Security Assessment
 
-1. **Session Hijacking Mitigation**: `JUNIFY_SESSION` is flagged `HttpOnly` and `SameSite=Lax`.
+1. **Session Hijacking Mitigation**: `EMBED_SESSION` is flagged `HttpOnly` and `SameSite=Lax`.
 2. **CSRF Mitigation**: Subsequent state-modifying requests (`POST`, `PUT`, `DELETE`) require `X-CSRF-Token` matching the active session.
 3. **Auditability**: Every login attempt (success, failure, lockout) is registered in the database audit ring-buffer.

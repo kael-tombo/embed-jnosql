@@ -5,7 +5,7 @@
 Post-release-audit improvement round: closing the highest-priority OPEN items
 from `53-defect-register.md` and `59-prioritized-fix-roadmap.md`, with a
 regression test per fix in
-`src/test/java/org/junify/db/ImprovementRoundRegressionTest.java` (5 tests).
+`src/test/java/org/embeddedjnosql/db/ImprovementRoundRegressionTest.java` (5 tests).
 
 > Transparency note: an earlier draft of this file listed two "fixes"
 > (LSM WAL truncation after compaction; 3-generation snapshot rotation) that
@@ -21,7 +21,7 @@ regression test per fix in
 ### R-15 — CDC subsystem had no producer wired to the write path
 
 **Fix**
-- `JunifyDB` constructor registers `cdcManager.changeListener()` on the
+- `EmbedJNoSQL` constructor registers `cdcManager.changeListener()` on the
   database `EventBus` for AFTER_INSERT / AFTER_UPDATE / AFTER_DELETE.
 - `DocumentCollection.update()` resolves the previous value at write time so
   UPDATE events carry payloads, matching CDC semantics.
@@ -71,7 +71,7 @@ rejected). ✅
 ### R-17 — CORS wildcard origin combined with credentials
 
 **Fix**
-- `JunifyDBServer` no longer emits `Access-Control-Allow-Credentials: true`
+- `EmbedJNoSQLServer` no longer emits `Access-Control-Allow-Credentials: true`
   when the allowed-origin list is `*` (browsers reject the combination; it is
   a credentialed-CORS anti-pattern). Explicit origin lists keep credentials
   support. `corsEnabled` still defaults to `false` (test-enforced).
@@ -98,7 +98,7 @@ server has no credential-bearing cookies by default).
 
 | ID | Component | Finding | Status |
 |---|---|---|---|
-| R-25 | `cli/` | Orphan module: no `pom.xml`, single 139-line source file with package path mismatch (`org/jnosql/embed/cli/` declares `org.junify.db.integration.standalone`) and stale imports (`org.junify.db.document.Document` does not exist). Deliberately excluded from CI | OPEN (documented) |
+| R-25 | `cli/` | Orphan module: no `pom.xml`, single 139-line source file with package path mismatch (`org/jnosql/embed/cli/` declares `org.embeddedjnosql.db.integration.standalone`) and stale imports (`org.embeddedjnosql.db.document.Document` does not exist). Deliberately excluded from CI | OPEN (documented) |
 
 ## Suite status
 

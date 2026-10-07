@@ -7,7 +7,7 @@
 
 ## 1. Executive Summary
 
-A comprehensive, feature-by-feature evaluation was conducted across the entire user interface of JunifyDB. Every screen, tab, modal, and button was traced from user interaction through the frontend event handlers, API client, HTTP network dispatch, backend REST endpoints, domain library methods, and underlying storage engines.
+A comprehensive, feature-by-feature evaluation was conducted across the entire user interface of EmbedJNoSQL. Every screen, tab, modal, and button was traced from user interaction through the frontend event handlers, API client, HTTP network dispatch, backend REST endpoints, domain library methods, and underlying storage engines.
 
 ## 2. Key Metrics
 

@@ -11,7 +11,7 @@
 
 set -u
 
-JAR="${1:-target/junify-db-core-1.0.0.jar}"
+JAR="${1:-target/embed-jnosql-core-1.0.0.jar}"
 # Prefer the Maven wrapper (what CI uses) so local and CI builds are the same build.
 if [ -x ./mvnw ]; then MVN="./mvnw"; elif [ -f ./mvnw ]; then MVN="sh ./mvnw"; else MVN="mvn"; fi
 WORK="$(mktemp -d 2>/dev/null || echo target/.repro-work)"
@@ -26,9 +26,9 @@ fail() { echo "REPRODUCIBILITY GATE: FAIL — $1"; exit 1; }
 # Windows-only check (guarded so the script is a no-op check on Linux/CI, where the file-lock
 # behaviour does not exist).
 if command -v powershell >/dev/null 2>&1; then
-  if powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter \"Name='java.exe'\" | Where-Object { \$_.CommandLine -like '*junify-db-core*' } | Select-Object -ExpandProperty ProcessId" 2>/dev/null | grep -qE '[0-9]'; then
-    echo "FAIL: a junify-db-core server is running and holds the jar open — stop it first:"
-    powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter \"Name='java.exe'\" | Where-Object { \$_.CommandLine -like '*junify-db-core*' } | Select-Object ProcessId, CommandLine | Format-Table -AutoSize | Out-String -Width 200" 2>/dev/null | head -8
+  if powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter \"Name='java.exe'\" | Where-Object { \$_.CommandLine -like '*embed-jnosql-core*' } | Select-Object -ExpandProperty ProcessId" 2>/dev/null | grep -qE '[0-9]'; then
+    echo "FAIL: a embed-jnosql-core server is running and holds the jar open — stop it first:"
+    powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter \"Name='java.exe'\" | Where-Object { \$_.CommandLine -like '*embed-jnosql-core*' } | Select-Object ProcessId, CommandLine | Format-Table -AutoSize | Out-String -Width 200" 2>/dev/null | head -8
     exit 1
   fi
 fi

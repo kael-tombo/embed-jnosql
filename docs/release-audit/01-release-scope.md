@@ -12,13 +12,13 @@ What is in scope for the first public release, and what is explicitly out of sco
 ## In Scope (verified present in repository)
 | Area | Evidence |
 |---|---|
-| Core engine `junify-db-core` (single Maven module; artifact version 1.0.0, release tag `v0.9.0`) | root `pom.xml` |
-| Storage engines: IN_MEMORY, FILE, B_TREE, LSM_TREE | `src/main/java/org/junify/db/storage/spi/` |
-| Multi-model API: Document, KV/List/Set/Hash buckets, ColumnFamily | `src/main/java/org/junify/db/nosql/`, `column/` |
-| Built-in SQL engine (SELECT/INSERT/UPDATE/DELETE, JOIN, GROUP BY, `CREATE/DROP TABLE`) | `src/main/java/org/junify/db/sql/` (8 files: lexer, parser, AST, engine, results; exercised by `SqlEngineTest`, `SqlUnknownTableTest`, the contract gate's SQL block, and the console SQL Studio) |
-| MVCC transactions (snapshot isolation, first-writer-wins) | `src/main/java/org/junify/db/transaction/mvcc/` |
+| Core engine `embed-jnosql-core` (single Maven module; artifact version 1.0.0, release tag `v0.9.0`) | root `pom.xml` |
+| Storage engines: IN_MEMORY, FILE, B_TREE, LSM_TREE | `src/main/java/org/embeddedjnosql/db/storage/spi/` |
+| Multi-model API: Document, KV/List/Set/Hash buckets, ColumnFamily | `src/main/java/org/embeddedjnosql/db/nosql/`, `column/` |
+| Built-in SQL engine (SELECT/INSERT/UPDATE/DELETE, JOIN, GROUP BY, `CREATE/DROP TABLE`) | `src/main/java/org/embeddedjnosql/db/sql/` (8 files: lexer, parser, AST, engine, results; exercised by `SqlEngineTest`, `SqlUnknownTableTest`, the contract gate's SQL block, and the console SQL Studio) |
+| MVCC transactions (snapshot isolation, first-writer-wins) | `src/main/java/org/embeddedjnosql/db/transaction/mvcc/` |
 | WAL + crash recovery (File/LSM engines) | `WriteAheadLog.java`, fixed per audit (see 15) |
-| Embedded HTTP console (UI + REST API + API-key auth) | `console/http/JunifyDBServer.java`, `static/` |
+| Embedded HTTP console (UI + REST API + API-key auth) | `console/http/EmbedJNoSQLServer.java`, `static/` |
 | Framework integration projects (separate builds) | `spring-boot-starter/`, `quarkus-extension/`, `micronaut-integration/`, `demo/` (vertx) |
 | Demos (8+ standalone Maven projects) | `demo/` |
 | CLI shell | `cli/` |

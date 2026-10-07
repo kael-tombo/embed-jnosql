@@ -4,10 +4,10 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.junify.db.demo</groupId>
+    <groupId>org.embeddedjnosql.db.demo</groupId>
     <artifactId>advanced-queries-demo</artifactId>
     <version>1.0.0</version>
-    <name>JunifyDB Demo - Advanced Multi-Engine Queries</name>
+    <name>EmbedJNoSQL Demo - Advanced Multi-Engine Queries</name>
     <description>Demonstration of multi-table ANSI SQL JOINs, aggregations, GROUP BY, NoSQL criteria, hybrid vector search, and fluent queries</description>
 
     <properties>
@@ -18,12 +18,12 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.junify.db</groupId>
-            <artifactId>junify-db-core</artifactId>
+            <groupId>org.embeddedjnosql.db</groupId>
+            <artifactId>embed-jnosql-core</artifactId>
             <version>1.0.0</version>
         </dependency>
         <dependency>
-            <groupId>org.junify.db.demo</groupId>
+            <groupId>org.embeddedjnosql.db.demo</groupId>
             <artifactId>demo-common</artifactId>
             <version>1.0.0</version>
         </dependency>

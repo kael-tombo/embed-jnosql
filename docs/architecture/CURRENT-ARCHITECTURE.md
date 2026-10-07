@@ -6,10 +6,10 @@ The current repository is organized into a core multi-engine library and framewo
 
 ```
 JNoSQL-EMBED/
-├── pom.xml                                  (Root build file for junify-db-core)
-├── src/main/java/org/junify/db/
-│   ├── JunifyDB.java                        (Main engine facade)
-│   ├── config/                              (JunifyDBConfig builder & options)
+├── pom.xml                                  (Root build file for embed-jnosql-core)
+├── src/main/java/org/embeddedjnosql/db/
+│   ├── EmbedJNoSQL.java                        (Main engine facade)
+│   ├── config/                              (EmbedJNoSQLConfig builder & options)
 │   ├── console/http/                        (Embedded HTTP server & REST console)
 │   ├── core/
 │   │   ├── cdc/                             (Change Data Capture engine)
@@ -26,14 +26,14 @@ JNoSQL-EMBED/
 │   └── transaction/mvcc/                    (Transaction, MVCCManager)
 ├── spring-boot-starter/                     (Spring Boot 3.x Starter)
 │   ├── pom.xml
-│   └── src/main/java/org/junify/db/spring/boot/
+│   └── src/main/java/org/embeddedjnosql/db/spring/boot/
 ├── quarkus-extension/                       (Quarkus 3.x Extension)
 │   ├── pom.xml
-│   ├── runtime/                             (Runtime module: JunifyConfig, Producer, Recorder)
-│   └── deployment/                          (Deployment module: JunifyExtensionProcessor)
+│   ├── runtime/                             (Runtime module: JembedConfig, Producer, Recorder)
+│   └── deployment/                          (Deployment module: JembedExtensionProcessor)
 └── micronaut-integration/                   (Micronaut 4.x Integration)
     ├── pom.xml
-    └── src/main/java/org/junify/db/micronaut/
+    └── src/main/java/org/embeddedjnosql/db/micronaut/
 ```
 
 ---
@@ -43,7 +43,7 @@ JNoSQL-EMBED/
 ```mermaid
 sequenceDiagram
     participant App as Application Code
-    participant DB as JunifyDB
+    participant DB as EmbedJNoSQL
     participant DC as DocumentCollection
     participant Idx as SecondaryIndex
     participant Eng as StorageEngine
@@ -71,7 +71,7 @@ sequenceDiagram
 
 ## Subsystem Lifecycle
 
-1. **Instantiation**: `JunifyDB db = JunifyDB.embed().storageEngine(type).build()`. The `StorageEngine` is instantiated based on configuration (`IN_MEMORY`, `FILE`, `B_TREE`, `LSM_TREE`).
+1. **Instantiation**: `EmbedJNoSQL db = EmbedJNoSQL.embed().storageEngine(type).build()`. The `StorageEngine` is instantiated based on configuration (`IN_MEMORY`, `FILE`, `B_TREE`, `LSM_TREE`).
 2. **Execution**: Multiple concurrent threads access collections and buckets without external locking. Concurrent hash tables coordinate namespace isolation.
 3. **Flushing & Persistence**: If `autoFlush` is active, background thread pools flush mutations to disk periodically (default 1000ms).
 4. **Shutdown**: `db.close()` invokes `engine.flush()`, closes file channels, stops background timers, and shuts down any active HTTP management server.

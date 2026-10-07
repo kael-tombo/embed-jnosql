@@ -68,6 +68,6 @@ Verify that the dashboard telemetry endpoints accurately reflect the embedded da
 
 ## 4. Multithreading & Asynchronous Concurrency Verification
 
-- `JunifyDBServer` was refactored with a cached thread pool (`Executors.newCachedThreadPool`).
+- `EmbedJNoSQLServer` was refactored with a cached thread pool (`Executors.newCachedThreadPool`).
 - Verified that long-lived SSE connections on `/api/metrics/stream` no longer block standard REST or asset requests.
 - Server response times for telemetry remain under 5ms.

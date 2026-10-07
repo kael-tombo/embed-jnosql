@@ -4,7 +4,7 @@
 
 The numbered files (`00-*.md` … `74-*.md`) plus the `baseline/`, `evidence/`, and older subfolders of
 `docs/release-audit/` were written against the product **before** the NoSQL-only refocus. At that
-time JunifyDB also shipped a relational SQL engine, a JDBC driver, a JPA `EntityManager`,
+time EmbedJNoSQL also shipped a relational SQL engine, a JDBC driver, a JPA `EntityManager`,
 `/api/sql` routes, and a SQL Studio console screen.
 
 Those surfaces are gone. In the current product:

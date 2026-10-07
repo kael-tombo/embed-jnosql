@@ -15,7 +15,7 @@ Schema handling (schema-free documents + optional registered schemas), metadata 
 **Regression added**: `ReleaseAuditRegressionTest.persistedCollectionsAreRediscoveredAfterRestart` — creates a collection via SQL, closes, reopens, asserts `getCollectionNames().contains("products")` + SQL + document reads. **Failed pre-fix** (`expected: <true> but was: <false>` — see `.freebuff/prefix-failures.log`), **passes post-fix**.
 
 ## Evidence
-- Fix: `JunifyDB.create()` now calls `materializePersistedCollections()`, backed by the new `StorageEngine.collectionNames()` SPI (FileEngine implements it from on-disk state).
+- Fix: `EmbedJNoSQL.create()` now calls `materializePersistedCollections()`, backed by the new `StorageEngine.collectionNames()` SPI (FileEngine implements it from on-disk state).
 
 ## Findings
 | ID | Status | Severity | Description |

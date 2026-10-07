@@ -37,7 +37,7 @@ A `context` block is read from the **live configuration**, never guessed by the 
 | Field | Source | Example (FILE engine) |
 |---|---|---|
 | `engine` | `config.storageEngine()` | `FILE` |
-| `relationalEngine` / `nosqlEngine` | engine identity | `JUNIFYDB-RDBMS` / `JUNIFYDB-NOSQL` |
+| `relationalEngine` / `nosqlEngine` | engine identity | `EMBEDJNOSQL-RDBMS` / `EMBEDJNOSQL-NOSQL` |
 | `storageMode` | engine type + `autoFlush()` | `sync` |
 | `durability` | engine type + flush interval | `periodic flush every 1000 ms` |
 | `database` / `dataDir` | `config.dataDir()` | `target/preview-data` |
@@ -181,11 +181,11 @@ Registered preview `http://localhost:8081` (rebuilt jar), then drove it as a use
 
 | File | Change |
 |---|---|
-| `console/http/JunifyDBServer.java` | `context` block, `buildContext`, `currentUser`, correlation id in `sendJson`, `withCorrelationId` |
+| `console/http/EmbedJNoSQLServer.java` | `context` block, `buildContext`, `currentUser`, correlation id in `sendJson`, `withCorrelationId` |
 | `static/index.html` | `#statusbar`, confirmation dialog, SQL selection/cancel/export/destructive controls |
 | `static/css/console.css` | grid row for the status bar, `.statusbar`, `.state-banner`, `.modal` |
 | `static/js/console.js` | `STATES`/`ApiError`/`errorBanner`, `confirmAction`, `destructiveReason`, `pollStatus`, `exportSql`, cancel + run-selection |
-| `src/test/java/org/junify/db/ConsoleTaskSuccessTest.java` | new, 7 tests |
+| `src/test/java/org/embeddedjnosql/db/ConsoleTaskSuccessTest.java` | new, 7 tests |
 
 ---
 

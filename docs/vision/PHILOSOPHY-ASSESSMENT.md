@@ -1,4 +1,4 @@
-# JunifyDB — Design Philosophy Assessment
+# EmbedJNoSQL — Design Philosophy Assessment
 
 **Status**: Grounded & Verified  
 **Date**: September 9, 2026  
@@ -7,7 +7,7 @@
 
 ## 1. Foundational Core Principles
 
-JunifyDB adheres to five uncompromised architectural principles:
+EmbedJNoSQL adheres to five uncompromised architectural principles:
 
 ### 1.1 In-Process, Zero-Daemon Execution
 - **Principle**: Developers should never need to launch Docker containers, provision Kubernetes pods, or install local daemon services (mongod, redis-server, cassandra) merely to write integration tests, run local microservices, or build edge JVM applications.

@@ -1,7 +1,7 @@
 # 73 · JDBC Driver — Evidence Record (R-76)
 
 **Date:** 2026-09-23
-**Slice:** JDBC driver (`org.junify.db.jdbc`)
+**Slice:** JDBC driver (`org.embeddedjnosql.db.jdbc`)
 **Status:** DONE — `PARTIAL` by design, honestly bounded
 **Related:** `27-jdbc-and-sql-compatibility.md`, `71-constraint-enforcement-evidence.md`,
 `72-referential-constraint-evidence.md`
@@ -28,8 +28,8 @@ driver explicitly bounded — an unsupported call **throws**, so nothing silentl
 
 | Type | Role |
 |---|---|
-| `JunifyDriver` | `java.sql.Driver`; registers itself in a `static {}` block; `jdbcCompliant()` returns **false** |
-| `JdbcSupport` | URL parsing (`jdbc:junifydb:memory:` / `jdbc:junifydb:file:<dir>`) and value coercion |
+| `JembedDriver` | `java.sql.Driver`; registers itself in a `static {}` block; `jdbcCompliant()` returns **false** |
+| `JdbcSupport` | URL parsing (`jdbc:embedjnosql:memory:` / `jdbc:embedjnosql:file:<dir>`) and value coercion |
 | `ConnectionHandler` | `Connection`: autocommit, metadata, statement factories; transactions throw |
 | `StatementHandler` | `Statement` + `PreparedStatement` with `?` binding |
 | `ResultSetHandler` | forward-only, read-only navigation, typed getters, `wasNull` |
@@ -55,8 +55,8 @@ binds the value `u'1 OR '1'='1` and proves it matches nothing.
 **The driver was discoverable but not registered.** Surefire's class loader hides
 `META-INF/services/` from `DriverManager`'s `ServiceLoader`, so the in-suite test registered the
 driver explicitly and passed. A **compiled consumer run against the shaded jar** (the real-world
-case) then showed `ServiceLoader` loading `JunifyDriver` while
-`DriverManager.getConnection("jdbc:junifydb:...")` still failed: `DriverManager` relies on the
+case) then showed `ServiceLoader` loading `JembedDriver` while
+`DriverManager.getConnection("jdbc:embedjnosql:...")` still failed: `DriverManager` relies on the
 driver's **static initializer** to call `registerDriver`, and the class had none.
 
 Fixed with a `static {}` block. Re-verified on the packaged jar with a compiled consumer — the
@@ -74,7 +74,7 @@ than the behaviour (a consumer can connect).
 | Full suite | **872/872 green**, 0 failures / 0 errors / 0 skipped |
 | Coverage (JaCoCo line) | **74.4%** (30,625 / 41,140) — above the 70% gate |
 | Shaded jar | **3,164,082 B (3.16 MB)**, SHA-1 `323b098b…` — under the 5 MB gate |
-| Falsification | Pre-change jar: no driver accepts `jdbc:junifydb:` — the URL cannot be connected at all |
+| Falsification | Pre-change jar: no driver accepts `jdbc:embedjnosql:` — the URL cannot be connected at all |
 | Discovery | Compiled consumer against the shaded jar connects with no explicit registration |
 | Durability | A file-backed connection persists rows **and** the declared primary key across reopen |
 

@@ -1,4 +1,4 @@
-# Final Public Release Decision — JUNIFY-DB
+# Final Public Release Decision — EMBED-DB
 
 **Status:** canonical public-release decision. Supersedes
 `63-final-go-no-go-decision.md` (the round-3 internal verdict, which referenced v1.0.0) —
@@ -16,7 +16,7 @@ modified files were left untouched. No gate changed direction.
 
 **Same day, four further slices landed (R-74 … R-81).** (1) `PRIMARY KEY`, `UNIQUE` and
 `NOT NULL` are declared and enforced; (2) `REFERENCES` (foreign key, in both directions) and
-`CHECK` are enforced; (3) a working **JDBC driver** ships (`jdbc:junifydb:...`), explicitly
+`CHECK` are enforced; (3) a working **JDBC driver** ships (`jdbc:embedjnosql:...`), explicitly
 `PARTIAL` — `Driver.jdbcCompliant()` is `false`, and explicit transactions and schema reflection
 are not implemented; (4) a **Console task-success layer** (R-77…R-81) adds an always-visible
 orientation context (engine, database, data directory, storage mode **with its durability
@@ -62,8 +62,8 @@ workloads (verified for WAL recovery and hard kill, not stress-tested for weeks)
 ## Baseline Snapshot Location
 
 `docs/release-audit/baseline/` — identifier
-`junifydb-baseline-before-public-release-audit-20260922`, anchored to commit `b10b6cd` on
-branch `junifydb-baseline-before-public-release-audit-20260922`.
+`embedjnosql-baseline-before-public-release-audit-20260922`, anchored to commit `b10b6cd` on
+branch `embedjnosql-baseline-before-public-release-audit-20260922`.
 
 Contains: `BASELINE-MANIFEST.md`, `REPOSITORY-STATUS.txt`, `FILE-CHECKSUMS.txt` (663
 entries), `BUILD-BASELINE.txt`, `TEST-BASELINE.txt`, `RESTORE-INSTRUCTIONS.md`,
@@ -121,7 +121,7 @@ DBMS.**
   **Extended 2026-09-23 (R-75):** `REFERENCES` (foreign key) and `CHECK` are now enforced too —
   an orphan child row is rejected on INSERT/UPDATE, a referenced parent cannot be removed by
   DELETE or DROP TABLE, and `CHECK` predicates (column- and table-level) are evaluated per row.
-  **Added 2026-09-23 (R-76):** a working JDBC driver now ships under `org.junify.db.jdbc`,
+  **Added 2026-09-23 (R-76):** a working JDBC driver now ships under `org.embeddedjnosql.db.jdbc`,
   discoverable via `META-INF/services/java.sql.Driver`. It is `PARTIAL` and **not**
   JDBC-compliant (`jdbcCompliant()` returns `false`): explicit transactions, savepoints, batch
   execution and `DatabaseMetaData` schema reflection are not implemented and throw
@@ -256,7 +256,7 @@ live site still shows the pre-correction copy until those commits are pushed.
 ## Branding Verdict
 
 **PASS.** Website and Console share the yellow-primary/white-surface token set, the same logo
-(`junifydb-logo*`), the same mark/mascot (`junifydb-mark-{64,256,512}`, also served by the
+(`embedjnosql-logo*`), the same mark/mascot (`embedjnosql-mark-{64,256,512}`, also served by the
 Console as `logo.svg`), and the same favicon, with transparent variants for each background
 and correct aspect ratios. Terminology is synchronised ("Relational SQL Engine",
 "Non-Relational NoSQL Engine", collection/table/document/KV-store/query), and the SQL and
@@ -306,7 +306,7 @@ plugin and profile, a discrepancy that is recorded as OPEN rather than smoothed 
 Console's automated-test coverage of its own JavaScript is **structural** (presence of
 controls and vocabulary), not behavioural — the behavioural evidence is the manual browser
 journey, which is not repeatable by CI; and `demo/` projects resolve a stale installed
-`junify-db-core` unless `mvn install` is run first — a trap that once produced a false-negative
+`embed-jnosql-core` unless `mvn install` is run first — a trap that once produced a false-negative
 demo run and is now documented in `35-demo-project-audit.md`.
 
 ## Security Verdict
@@ -376,7 +376,7 @@ not a documented limitation.
 
 ## Deferred Work (safe post-release)
 
-Splitting `junify-db-core` into per-engine artifacts (ADR-001, ADR-002) · JDBC explicit
+Splitting `embed-jnosql-core` into per-engine artifacts (ADR-001, ADR-002) · JDBC explicit
 transactions, savepoints, batch execution and schema reflection (the driver is `PARTIAL`) ·
 indexing of `UNIQUE` and foreign-key columns (currently O(n) scans) · sequences, views,
 procedures, and triggers · a query planner and `EXPLAIN` · persisting HNSW indexes for `IN_MEMORY` decision

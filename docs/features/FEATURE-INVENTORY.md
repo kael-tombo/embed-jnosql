@@ -31,13 +31,13 @@ This inventory documents every feature in JNOSQL-EMBED with standardized status 
 | **File WAL Engine** | Storage SPI | `StorageEngineType.FILE` (`FileEngine`) | `IMPLEMENTED` | Yes (10+ tests) |
 | **B-Tree Disk Engine** | Storage SPI | `StorageEngineType.B_TREE` (`BTreeEngine`) | `IMPLEMENTED` | Yes (8+ tests) |
 | **LSM-Tree Engine** | Storage SPI | `StorageEngineType.LSM_TREE` (`LSMTreeEngine`) | `IMPLEMENTED` | Yes (8+ tests) |
-| **MVCC Transactions** | Transactions | `JunifyDB.beginTransaction()`, `tx.commit()`, `tx.rollback()` | `IMPLEMENTED` | Yes (43+ tests) |
+| **MVCC Transactions** | Transactions | `EmbedJNoSQL.beginTransaction()`, `tx.commit()`, `tx.rollback()` | `IMPLEMENTED` | Yes (43+ tests) |
 | **In-Process EventBus** | Observability | `EventBus.on(EventType, handler)`, `emit()` | `IMPLEMENTED` | Yes (9+ tests) |
 | **Database Metrics** | Observability | `DatabaseMetrics.snapshot()`, atomic operation counters | `IMPLEMENTED` | Yes (10+ tests) |
 | **Change Data Capture**| CDC | `CDCManager.recordInsert()`, File/Kafka connectors | `PARTIALLY_IMPLEMENTED`| Yes (5+ tests) |
-| **Embedded Web Console**| Tooling | `JunifyDB.startServer(port)`, `/api/health`, `/api/collections`| `IMPLEMENTED` | Yes (72+ tests) |
+| **Embedded Web Console**| Tooling | `EmbedJNoSQL.startServer(port)`, `/api/health`, `/api/collections`| `IMPLEMENTED` | Yes (72+ tests) |
 | **HNSW Vector Index** | Indexing | `HNSWVectorIndex` (in-memory nearest neighbor stub) | `EXPERIMENTAL` | Yes (3 tests) |
-| **Spring Boot 3 Starter**| Framework | `junifydb-spring-boot-starter`, `JunifyDBTemplate` | `IMPLEMENTED` | Yes (12 integration tests) |
-| **Quarkus 3 Extension** | Framework | `junify-db-quarkus-extension`, `@ConfigMapping` | `IMPLEMENTED` | Verified (`mvn compile`) |
-| **Micronaut 4 Adapter** | Framework | `junifydb-micronaut-integration`, `JunifyDBEntityManager`| `IMPLEMENTED` | Verified (`mvn compile`) |
+| **Spring Boot 3 Starter**| Framework | `embedjnosql-spring-boot-starter`, `EmbedJNoSQLTemplate` | `IMPLEMENTED` | Yes (12 integration tests) |
+| **Quarkus 3 Extension** | Framework | `embed-jnosql-quarkus-extension`, `@ConfigMapping` | `IMPLEMENTED` | Verified (`mvn compile`) |
+| **Micronaut 4 Adapter** | Framework | `embedjnosql-micronaut-integration`, `EmbedJNoSQLEntityManager`| `IMPLEMENTED` | Verified (`mvn compile`) |
 | **SQL Relational Engine**| Relational | Cross-table relational joins, SQL parser, JDBC | `DEPRECATED` | Removed in favor of NoSQL |

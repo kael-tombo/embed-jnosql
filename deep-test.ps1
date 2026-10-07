@@ -52,7 +52,7 @@ function TNoAuth {
     }
 }
 
-Write-Host "=== JunifyDB DEEP FEATURE TEST SUITE ===" -ForegroundColor Magenta
+Write-Host "=== EmbedJNoSQL DEEP FEATURE TEST SUITE ===" -ForegroundColor Magenta
 
 # ---- 1. HEALTH ----
 Write-Host "`n--- 1. HEALTH CHECK ---" -ForegroundColor Cyan

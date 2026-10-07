@@ -32,7 +32,7 @@ Ordered remediation plan with why/what/priority/risk/dependencies/acceptance/ver
 | ID | Item | Why | What |
 |---|---|---|---|
 | P2-1 | Maven Central publication (46-MC-01/02) | consumer adoption | source/javadoc/GPG plugins, staging, consumer-resolution proof — **PARTIAL 2026-09-21: `maven-central` profile added (source/javadoc/GPG/central-publishing + reproducible-build timestamp); staging run still pending credentials** |
-| P2-2 | Typed exception hierarchy (21) | programmatic error handling | `JunifyDBException` tree + shims |
+| P2-2 | Typed exception hierarchy (21) | programmatic error handling | `EmbedJNoSQLException` tree + shims |
 | P2-3 | CDC wiring behind flag or removal (23) | finish or remove | producer in doc write path, feature flag — **DONE 2026-09-21: CDC wired via EventBus system channel (R-15 closed)** |
 | P2-4 | CVE scan in CI (45-SC-02) | supply chain | OWASP dependency-check — **DONE 2026-09-21: `deps-scan` job, failBuildOnCVSS=9** |
 | P2-5 | Index-hint query planning (12-IX-01) | performance | planner uses SecondaryIndex for equality filters |
@@ -41,7 +41,7 @@ Ordered remediation plan with why/what/priority/risk/dependencies/acceptance/ver
 | P2-8 | Crash-injection CI harness (15) | durability confidence | kill-during-write tests on FILE/LSM |
 
 ## P3 — 1.2+ (from ROADMAP + audit)
-Paged B-Tree or engine renaming; JNoSQL `StorageManager` driver bridge; JDBC wrapper; JunifyDB JUnit extension; JCStress concurrency suite; namespace strategy for model collisions (07-MM-01); responsive console pass.
+Paged B-Tree or engine renaming; JNoSQL `StorageManager` driver bridge; JDBC wrapper; EmbedJNoSQL JUnit extension; JCStress concurrency suite; namespace strategy for model collisions (07-MM-01); responsive console pass.
 
 ## Final Status
 **PASS** (plan complete and traceable to 53)

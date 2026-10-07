@@ -17,7 +17,7 @@ Analysis of current test coverage metrics across modules and subsystems.
 
 ## 2. Line & Branch Coverage Analysis
 
-- **JaCoCo Analysis**: Analyzed bundle `JunifyDB NoSQL` with 164 classes.
+- **JaCoCo Analysis**: Analyzed bundle `EmbedJNoSQL NoSQL` with 164 classes.
 - **High-Coverage Areas (> 85%)**:
   - `DocumentCollection`, `Document`, `Query`
   - `KeyValueBucket`, `ListBucket`, `SetBucket`, `HashBucket`
@@ -26,7 +26,7 @@ Analysis of current test coverage metrics across modules and subsystems.
   - `InMemoryEngine`, `FileEngine`
 - **Moderate-Coverage Areas (60%–80%)**:
   - `BTreeEngine`, `LSMTreeEngine`
-  - `JunifyDBServer` HTTP handlers
+  - `EmbedJNoSQLServer` HTTP handlers
   - `JsonSerde`
 - **Low-Coverage Areas (< 50%)**:
   - `KafkaCDCConnector` (stub connector without external cluster)

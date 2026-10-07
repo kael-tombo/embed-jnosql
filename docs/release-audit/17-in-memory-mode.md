@@ -1,7 +1,7 @@
 # 17 — In-Memory Mode
 
 ## Scope
-`JunifyDB.inMemory()` and the IN_MEMORY engine.
+`EmbedJNoSQL.inMemory()` and the IN_MEMORY engine.
 
 ## Expected Behavior
 Zero-config, zero-dependency, fastest startup; ephemeral by definition; identical API to persistent modes.

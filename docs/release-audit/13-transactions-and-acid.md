@@ -9,7 +9,7 @@ README (corrected): snapshot isolation with optimistic write-write conflict dete
 ## Current Implementation
 - `MVCCManager`: monotonic `AtomicLong` clock, per-key immutable version chains, staged `WriteBuffer` per tx, `vacuum(long)`/`vacuumAggressive()` GC.
 - `Transaction`: local operation buffer, snapshot `readTimestamp`, commit applies to engine only after MVCC commit succeeds; conflict → `IllegalStateException`, status `ROLLED_BACK`.
-- Facade: `beginTransaction()`; JPA-style `JunifyEntityTransaction` wraps it.
+- Facade: `beginTransaction()`; JPA-style `JembedEntityTransaction` wraps it.
 
 ## Validation Performed
 **Defect R-01 (Critical, fixed):** `commit(txId, commitTs)` rejected a commit only if `chain.head.commitTs > commitTs`. Timestamps come from the same monotonic allocator that assigns commit timestamps in commit order, so `head.commitTs` — the newest committed version — could never exceed the current commit's timestamp. **Conflict detection was unreachable**: last-writer-wins in all cases, including concurrent modification of the same key.
@@ -20,7 +20,7 @@ README (corrected): snapshot isolation with optimistic write-write conflict dete
 
 ## Evidence
 - Pre-fix source: `MVCCManager.java` line 116 (`chain.head.commitTs > commitTs`).
-- Regression file: `src/test/java/org/junify/db/ReleaseAuditRegressionTest.java`.
+- Regression file: `src/test/java/org/embeddedjnosql/db/ReleaseAuditRegressionTest.java`.
 
 ## Findings
 | ID | Status | Severity | Description |

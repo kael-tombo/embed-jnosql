@@ -1,7 +1,7 @@
 # JNOSQL-EMBED: Product Positioning & Value Proposition
 
 > **⚠ SUPERSEDED — pre-refactor document (SQL / dual-engine).**
-> JunifyDB is now NoSQL-only. The relational engine, SQL parser/planning, JDBC driver, JPA
+> EmbedJNoSQL is now NoSQL-only. The relational engine, SQL parser/planning, JDBC driver, JPA
 > `EntityManager`, `/api/sql` routes, and the SQL Studio console screen were removed from the
 > product. Statements in this file that describe SQL, JDBC, SQL schemas, or an engine selector no
 > longer describe shipped behavior.
@@ -14,13 +14,13 @@
 
 ## Strategic Positioning
 
-JNOSQL-EMBED (JunifyDB) occupies a unique and vacant niche in the modern JVM landscape: **The Embedded Multi-Model NoSQL Engine**.
+JNOSQL-EMBED (EmbedJNoSQL) occupies a unique and vacant niche in the modern JVM landscape: **The Embedded Multi-Model NoSQL Engine**.
 
 ```
                            Embedded / In-Process
                                      ▲
                                      │
-                 H2 / SQLite         │   ★ JNOSQL-EMBED (JunifyDB)
+                 H2 / SQLite         │   ★ JNOSQL-EMBED (EmbedJNoSQL)
              (Relational Embedded)   │   (Multi-Model NoSQL Embedded)
                                      │
 ─────────────────────────────────────┼─────────────────────────────────────► Multi-Model / NoSQL

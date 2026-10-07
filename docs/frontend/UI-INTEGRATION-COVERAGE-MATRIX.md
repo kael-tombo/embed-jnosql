@@ -1,4 +1,4 @@
-# JunifyDB — UI Integration Coverage Matrix
+# EmbedJNoSQL — UI Integration Coverage Matrix
 
 **Audit Date**: September 9, 2026  
 **Auditor**: Full-Stack Verification Lead  

@@ -1,7 +1,7 @@
-# JunifyDB Console UI — Deep Assessment & Modernization Blueprint
+# EmbedJNoSQL Console UI — Deep Assessment & Modernization Blueprint
 
 > **⚠ SUPERSEDED — pre-refactor document (SQL / dual-engine).**
-> JunifyDB is now NoSQL-only. The relational engine, SQL parser/planning, JDBC driver, JPA
+> EmbedJNoSQL is now NoSQL-only. The relational engine, SQL parser/planning, JDBC driver, JPA
 > `EntityManager`, `/api/sql` routes, and the SQL Studio console screen were removed from the
 > product. Statements in this file that describe SQL, JDBC, SQL schemas, or an engine selector no
 > longer describe shipped behavior.
@@ -20,7 +20,7 @@
 
 ## Executive Summary
 
-The JunifyDB Administration Console provides a browser-based management interface for the embedded dual-engine database. While functionally rich across all 15 discrete capabilities (ranging from ANSI SQL Studio to HNSW Vector Search and ACID Transactions), a comprehensive UX audit revealed crucial friction points in layout ergonomics, visual hierarchy, feedback loops, error states, and responsive accessibility.
+The EmbedJNoSQL Administration Console provides a browser-based management interface for the embedded dual-engine database. While functionally rich across all 15 discrete capabilities (ranging from ANSI SQL Studio to HNSW Vector Search and ACID Transactions), a comprehensive UX audit revealed crucial friction points in layout ergonomics, visual hierarchy, feedback loops, error states, and responsive accessibility.
 
 This assessment analyzes each feature, documents architectural and visual gaps, and details an improvement plan to elevate the console into an enterprise-grade developer tool.
 

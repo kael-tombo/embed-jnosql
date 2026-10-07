@@ -7,7 +7,7 @@ Structural guidelines for authoring tests in JNOSQL-EMBED.
 ## 1. Test Harness Base Classes & Fixtures
 
 ```
-src/test/java/org/junify/db/
+src/test/java/org/embeddedjnosql/db/
 ├── (Standard Unit Tests)          - Fast in-memory JUnit 5 tests
 ├── deep/                          - Stress, concurrency, and volume test suites
 └── integration/                   - Multi-model and persistence integration suites
@@ -16,11 +16,11 @@ src/test/java/org/junify/db/
 ### Standard In-Memory Test Pattern:
 ```java
 class MyFeatureTest {
-    private JunifyDB db;
+    private EmbedJNoSQL db;
 
     @BeforeEach
     void setUp() {
-        db = JunifyDB.embed()
+        db = EmbedJNoSQL.embed()
                 .storageEngine(StorageEngineType.IN_MEMORY)
                 .build();
     }
@@ -38,12 +38,12 @@ class MyFeatureTest {
 ```java
 class MyPersistenceTest {
     private Path tempDir;
-    private JunifyDB db;
+    private EmbedJNoSQL db;
 
     @BeforeEach
     void setUp() throws IOException {
-        tempDir = Files.createTempDirectory("junify-test-");
-        db = JunifyDB.embed()
+        tempDir = Files.createTempDirectory("embeddedjnosql-test-");
+        db = EmbedJNoSQL.embed()
                 .storageEngine(StorageEngineType.FILE)
                 .persistTo(tempDir.toString())
                 .build();

@@ -61,10 +61,10 @@ None
 Inherited from session cookie.
 
 ## Backend Service
-`StatsHandler` in `JunifyDBServer`
+`StatsHandler` in `EmbedJNoSQLServer`
 
 ## JNOSQL-EMBED Library API
-`JunifyDB.config().storageEngine()`
+`EmbedJNoSQL.config().storageEngine()`
 
 ## Storage Engine
 Reflects active engine (`IN_MEMORY`, `FILE`, `B_TREE`, `LSM_TREE`).
@@ -141,7 +141,7 @@ Added engine name badge rendering in header and overview card.
 `JNoSQLServerTest.healthEndpoint()`
 
 ## Exact Test Commands
-`mvn test -Dtest=JunifyDBServerTest`
+`mvn test -Dtest=EmbedJNoSQLServerTest`
 
 ## Test Output
 Tests run: 9, Failures: 0, Errors: 0.

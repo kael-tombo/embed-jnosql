@@ -1,4 +1,4 @@
-# JunifyDB — UI Action Inventory
+# EmbedJNoSQL — UI Action Inventory
 
 **Audit Date**: September 9, 2026  
 **Auditor**: UI QA Specialist  

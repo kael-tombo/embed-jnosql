@@ -33,13 +33,13 @@ After this slice:
 
 ## Files
 
-- `src/main/java/org/junify/db/sql/ast/SqlStatement.java` — `ColumnDefinition`; `CreateTableStatement.getColumns()`.
-- `src/main/java/org/junify/db/sql/parser/SqlParser.java` — real parsing of the column list (column-level and table-level constraints).
-- `src/main/java/org/junify/db/sql/SqlTableSchema.java` — **new** — the constraint model.
-- `src/main/java/org/junify/db/sql/SqlSchemaCatalog.java` — **new** — durable schema storage in the reserved collection `__junify_sql_schema`.
-- `src/main/java/org/junify/db/sql/SqlConstraintViolationException.java` — **new**.
-- `src/main/java/org/junify/db/sql/engine/SqlEngine.java` — enforcement on INSERT/UPDATE, schema save on CREATE, schema removal on DROP.
-- `src/test/java/org/junify/db/sql/SqlConstraintTest.java` — **new** — 14 tests.
+- `src/main/java/org/embeddedjnosql/db/sql/ast/SqlStatement.java` — `ColumnDefinition`; `CreateTableStatement.getColumns()`.
+- `src/main/java/org/embeddedjnosql/db/sql/parser/SqlParser.java` — real parsing of the column list (column-level and table-level constraints).
+- `src/main/java/org/embeddedjnosql/db/sql/SqlTableSchema.java` — **new** — the constraint model.
+- `src/main/java/org/embeddedjnosql/db/sql/SqlSchemaCatalog.java` — **new** — durable schema storage in the reserved collection `__embeddedjnosql_sql_schema`.
+- `src/main/java/org/embeddedjnosql/db/sql/SqlConstraintViolationException.java` — **new**.
+- `src/main/java/org/embeddedjnosql/db/sql/engine/SqlEngine.java` — enforcement on INSERT/UPDATE, schema save on CREATE, schema removal on DROP.
+- `src/test/java/org/embeddedjnosql/db/sql/SqlConstraintTest.java` — **new** — 14 tests.
 
 ## Design decisions (honest)
 

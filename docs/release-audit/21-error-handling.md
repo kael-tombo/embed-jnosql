@@ -24,7 +24,7 @@ Prior console sessions; `SqlEngineTest` invalid-SQL cases; handler code read.
 | E-02 | CONFIRMED | Low | Engine flush failures print to stderr instead of a callback/metric — mitigated by WAL replay. |
 
 ## Improvement Plan
-Introduce `JunifyDBException` hierarchy in 1.1 with deprecation shims.
+Introduce `EmbedJNoSQLException` hierarchy in 1.1 with deprecation shims.
 
 ## Acceptance Criteria
 Errors surfaced in UI/API verified (met); no silent data-path swallowing post-fix (met by WAL replay).

@@ -1,7 +1,7 @@
 # 00 — Current Codebase Assessment
 
-Deep assessment of JUNIFY-DB **as it actually exists**, performed after the recoverable
-baseline (`junifydb-baseline-before-public-release-audit-20260922` @ `b10b6cd`) and before
+Deep assessment of EMBED-DB **as it actually exists**, performed after the recoverable
+baseline (`embedjnosql-baseline-before-public-release-audit-20260922` @ `b10b6cd`) and before
 any transformation work. Every claim below is grounded in an executed command or an
 existing audit file; where the code and the aspiration differ, the code wins and the gap
 is stated.
@@ -21,7 +21,7 @@ under `docs/release-audit/`.
 
 | Dimension | Reality |
 |---|---|
-| Build system | Maven, **single module** — `org.junify:junify-db-core`, `<packaging>jar</packaging>`, `<modules>` **empty** |
+| Build system | Maven, **single module** — `org.embeddedjnosql:embed-jnosql-core`, `<packaging>jar</packaging>`, `<modules>` **empty** |
 | Main sources | **97** `.java` files |
 | Test sources | **62** `.java` files |
 | Demos | 10 Maven sub-projects under `demo/` (spring-boot, quarkus, vertx, micronaut, batch, advanced-queries, annotation-showcase, load-and-stress, end-to-end-validation, demo-common) |
@@ -36,13 +36,13 @@ under `docs/release-audit/`.
 ### 1.2 The single most important structural fact
 
 **The 14-module architecture the product vision describes does not exist.** There is no
-`junify-db-sql`, `junify-db-nosql`, `junify-db-storage-*`, `junify-db-jdbc`, or
-`junify-db-console` artifact. There is one 3.11 MB shaded jar whose *packages* provide
+`embed-jnosql-sql`, `embed-jnosql-nosql`, `embed-jnosql-storage-*`, `embed-jnosql-jdbc`, or
+`embed-jnosql-console` artifact. There is one 3.11 MB shaded jar whose *packages* provide
 those separations:
 
 ```
-org.junify.db
-├── JunifyDB.java        (public entry point)
+org.embeddedjnosql.db
+├── EmbedJNoSQL.java        (public entry point)
 ├── api/                 (public API surface)
 ├── core/                (lifecycle, config, schema validation, MVCC)
 ├── nosql/               (document, kv, columns, repositories)
@@ -96,12 +96,12 @@ pollution and no web server inside it.
 | Circular dependencies | **None detected** |
 | Coupling direction | `sql` → `nosql.document` (3 imports: `SqlEngine` ×2, `SqlRow` ×1). The reverse does not exist |
 
-**Honest characterisation:** JUNIFY-DB is a **multi-model database with two genuine query
+**Honest characterisation:** EMBED-DB is a **multi-model database with two genuine query
 engines over one shared storage and catalog substrate** — not two independently evolvable
 database products. This is a coherent, defensible design (it is how "multi-model" engines
 are normally built), and it is the basis of the engine-separation verdict in the final
 report. It also explains every behaviour found in the R-48 round: because SQL resolves its
-tables through `JunifyDB.documentCollection()`, SQL reads inherited the document store's
+tables through `EmbedJNoSQL.documentCollection()`, SQL reads inherited the document store's
 auto-create semantics until that was fixed.
 
 ### 2.3 Shared infrastructure inventory
@@ -126,7 +126,7 @@ and lifecycle. All are legitimately shared — none erases the SQL/NoSQL semanti
 `SqlUnknownTableException`).
 
 **Note on JDBC (updated 2026-09-23, R-76):** a JDBC driver now ships under
-`org.junify.db.jdbc` and is discoverable through `META-INF/services/java.sql.Driver`. It is
+`org.embeddedjnosql.db.jdbc` and is discoverable through `META-INF/services/java.sql.Driver`. It is
 **not** JDBC-compliant — `Driver.jdbcCompliant()` returns `false` — and does not implement
 explicit transactions, savepoints, batch execution, or schema reflection. See
 `27-jdbc-and-sql-compatibility.md` and `73-jdbc-driver-evidence.md`.
@@ -140,7 +140,7 @@ explicit transactions, savepoints, batch execution, or schema reflection. See
 | ALTER TABLE / CREATE INDEX / CREATE VIEW / CREATE SEQUENCE | NOT IMPLEMENTED | parser contains only the `TABLE` DDL keyword — no `ALTER`, `INDEX`, `VIEW`, or `SEQUENCE` tokens |
 | Aggregations, expressions, CAST | PARTIALLY VERIFIED | doc 08 |
 | Transactions / savepoints over SQL | PARTIALLY VERIFIED | shares `core` transaction machinery; doc 13 |
-| **JDBC driver** | **PARTIAL** (2026-09-23, R-76) | `org.junify.db.jdbc` + `META-INF/services/java.sql.Driver`; `JdbcDriverTest` (13) + compiled-consumer run |
+| **JDBC driver** | **PARTIAL** (2026-09-23, R-76) | `org.embeddedjnosql.db.jdbc` + `META-INF/services/java.sql.Driver`; `JdbcDriverTest` (13) + compiled-consumer run |
 | Constraints: PRIMARY KEY / UNIQUE / NOT NULL / FOREIGN KEY / CHECK | **ENFORCED** (2026-09-23, R-74 + R-75; inline + table-level, durable, both FK directions) | docs 71, 72 |
 | Indexes (SQL-managed, `CREATE INDEX`) | NOT IMPLEMENTED (probe-level indexes exist) | doc 12 |
 | Sequences, identity columns, views, procedures, functions, triggers | NOT IMPLEMENTED | parser has no keywords for them |
@@ -173,7 +173,7 @@ this.
 
 ## 4. Console assessment
 
-**Backend:** `console/http/JunifyDBServer.java` registers **22 distinct `/api/...` routes**
+**Backend:** `console/http/EmbedJNoSQLServer.java` registers **22 distinct `/api/...` routes**
 covering collections, columns, indexes, KV, vectors, SQL, CDC, backup, bulk, transactions,
 schema, health, metrics, stats, CORS. **Frontend:** `index.html` (SPA workspace), `login.html`,
 `console.js`, `console.css`.
@@ -201,8 +201,8 @@ visually and terminologically distinguished, corrected SQL hint text this round.
 ## 5. Website assessment
 
 - **Source:** `docs/index.html` + `docs/assets/` (GitHub Pages from `docs/`).
-- **Brand assets present:** `junifydb-logo*.png`, `junifydb-mark-{64,256,512}.png`,
-  `junifydb-banner*.png`, transparent variants, `favicon-{64,256}.png`. No separate "mascot"
+- **Brand assets present:** `embedjnosql-logo*.png`, `embedjnosql-mark-{64,256,512}.png`,
+  `embedjnosql-banner*.png`, transparent variants, `favicon-{64,256}.png`. No separate "mascot"
   artwork exists — the **mark** is the mascot; consistent across website, README, Console,
   favicon.
 - **Corrections made this round (R-docs):** removed the false "no DDL" claim (the parser
@@ -235,7 +235,7 @@ readable" assertion) and were inverted.
 
 **Weak spots recorded honestly:** the JDBC driver covers a `PARTIAL` surface (no explicit
 transactions or schema reflection) and records a discovery defect found and fixed this round
-(R-76); `demo/` projects resolve a **stale installed `junify-db-core`** unless `mvn install` is
+(R-76); `demo/` projects resolve a **stale installed `embed-jnosql-core`** unless `mvn install` is
 run first — documented in doc 35 after it caused a false-negative demo run.
 
 ---

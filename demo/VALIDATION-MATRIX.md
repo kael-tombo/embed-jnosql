@@ -1,20 +1,20 @@
 # Demonstration Validation Matrix
 
-This matrix documents the real test execution results across all demonstration applications and frameworks in the JunifyDB ecosystem.
+This matrix documents the real test execution results across all demonstration applications and frameworks in the EmbedJNoSQL ecosystem.
 
 ## Framework Execution Matrix
 
 | Demo Application | Framework & Version | Integration Mechanism | Test Class | Tests Run | Failures | Errors | Status | Execution Time |
 |---|---|---|---|---|---|---|---|---|
 | **[annotation-showcase-demo](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/annotation-showcase-demo)** | Jakarta NoSQL / JPA / Hibernate | Tri-standard annotations & SQL | `AnnotationShowcaseTest` | 5 | 0 | 0 | **PASS** | 0.68 s |
-| **[spring-boot-demo](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/spring-boot-demo)** | Spring Boot 3.2.5 | `junify-db-spring-boot-starter` | `EcommerceApplicationTest` | 6 | 0 | 0 | **PASS** | 4.78 s |
-| **[quarkus-demo](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/quarkus-demo)** | Quarkus 3.8.0 | `junify-db-quarkus-extension-runtime` | `ProductResourceTest` | 4 | 0 | 0 | **PASS** | 17.74 s |
-| **[micronaut-demo](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/micronaut-demo)** | Micronaut 4.2.0 | `junifydb-micronaut-integration` | `EcommerceControllerTest` | 4 | 0 | 0 | **PASS** | 3.59 s |
-| **[vertx-demo](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/vertx-demo)** | Eclipse Vert.x 4.5.4 | `junify-db-core` (`executeBlocking`) | `EcommerceVerticleTest` | 4 | 0 | 0 | **PASS** | 2.00 s |
+| **[spring-boot-demo](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/spring-boot-demo)** | Spring Boot 3.2.5 | `embed-jnosql-spring-boot-starter` | `EcommerceApplicationTest` | 6 | 0 | 0 | **PASS** | 4.78 s |
+| **[quarkus-demo](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/quarkus-demo)** | Quarkus 3.8.0 | `embed-jnosql-quarkus-extension-runtime` | `ProductResourceTest` | 4 | 0 | 0 | **PASS** | 17.74 s |
+| **[micronaut-demo](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/micronaut-demo)** | Micronaut 4.2.0 | `embedjnosql-micronaut-integration` | `EcommerceControllerTest` | 4 | 0 | 0 | **PASS** | 3.59 s |
+| **[vertx-demo](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/vertx-demo)** | Eclipse Vert.x 4.5.4 | `embed-jnosql-core` (`executeBlocking`) | `EcommerceVerticleTest` | 4 | 0 | 0 | **PASS** | 2.00 s |
 | **[end-to-end-validation](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/end-to-end-validation)** | JUnit 5.10.2 | Native Multi-Engine Matrix | `MultiEngineE2EValidationTest` | 4 | 0 | 0 | **PASS** | 0.76 s |
-| **[batch-processing-demo](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/batch-processing-demo)** | JunifyDB Core — Document + KV + List | Atomic batch, chunked ingestion, fault injection | `BatchProcessingDemoTest` | 5 | 0 | 0 | **PASS** | — |
-| **[advanced-queries-demo](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/advanced-queries-demo)** | JunifyDB SQL + NoSQL Dual-Engine | SQL JOINs, aggregations, entity fluent API | `AdvancedQueriesDemoTest` | 5 | 0 | 0 | **PASS** | — |
-| **[load-and-stress-demo](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/load-and-stress-demo)** | JunifyDB Core — Concurrent load & charge | CountDownLatch burst, latency percentiles | `LoadAndChargeTest` | 6 | 0 | 0 | **PASS** | 2.927 s |
+| **[batch-processing-demo](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/batch-processing-demo)** | EmbedJNoSQL Core — Document + KV + List | Atomic batch, chunked ingestion, fault injection | `BatchProcessingDemoTest` | 5 | 0 | 0 | **PASS** | — |
+| **[advanced-queries-demo](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/advanced-queries-demo)** | EmbedJNoSQL SQL + NoSQL Dual-Engine | SQL JOINs, aggregations, entity fluent API | `AdvancedQueriesDemoTest` | 5 | 0 | 0 | **PASS** | — |
+| **[load-and-stress-demo](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/load-and-stress-demo)** | EmbedJNoSQL Core — Concurrent load & charge | CountDownLatch burst, latency percentiles | `LoadAndChargeTest` | 6 | 0 | 0 | **PASS** | 2.927 s |
 
 ---
 

@@ -19,7 +19,7 @@ An embedded database must maintain data consistency even when:
 ### Pattern A: Abrupt Close Simulation
 1. Write 1,000 documents across 3 collections in `FileEngine`.
 2. Terminate the storage channel abruptly without invoking graceful `close()`.
-3. Re-open a new `JunifyDB` instance against the same data directory.
+3. Re-open a new `EmbedJNoSQL` instance against the same data directory.
 4. **Invariant**: `WALManager` must replay the log and restore all 1,000 documents without missing records or corrupt JSON errors.
 
 ### Pattern B: Mid-Transaction Power Failure Simulation

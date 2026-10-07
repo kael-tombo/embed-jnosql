@@ -4,14 +4,14 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.junify.db</groupId>
-    <artifactId>junify-db-core</artifactId>
+    <groupId>org.embeddedjnosql.db</groupId>
+    <artifactId>embed-jnosql-core</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
-    <name>JunifyDB NoSQL</name>
+    <name>EmbedJNoSQL NoSQL</name>
     <description>Embedded NoSQL database for the JVM. Document and Key-Value models over in-memory or durable file storage (InMemory/File/BTree/LSM), with annotation mapping for Jakarta NoSQL, Jakarta Persistence, and Hibernate annotations onto documents. No server required.</description>
-    <url>https://github.com/armand-ratombotiana/JunifyDB</url>
+    <url>https://github.com/armand-ratombotiana/EmbedJNoSQL</url>
 
     <licenses>
         <license>
@@ -25,7 +25,7 @@
         <developer>
             <id>armand-ratombotiana</id>
             <name>Armand Ratombotiana</name>
-            <email>armand@junifydb.io</email>
+            <email>armand@embedjnosql.io</email>
             <roles>
                 <role>Lead Developer</role>
                 <role>Architect</role>
@@ -34,20 +34,20 @@
     </developers>
 
     <organization>
-        <name>JunifyDB</name>
-        <url>https://github.com/armand-ratombotiana/JunifyDB</url>
+        <name>EmbedJNoSQL</name>
+        <url>https://github.com/armand-ratombotiana/EmbedJNoSQL</url>
     </organization>
 
     <scm>
-        <connection>scm:git:git://github.com/armand-ratombotiana/JunifyDB.git</connection>
-        <developerConnection>scm:git:ssh://github.com/armand-ratombotiana/JunifyDB.git</developerConnection>
-        <url>https://github.com/armand-ratombotiana/JunifyDB</url>
+        <connection>scm:git:git://github.com/armand-ratombotiana/EmbedJNoSQL.git</connection>
+        <developerConnection>scm:git:ssh://github.com/armand-ratombotiana/EmbedJNoSQL.git</developerConnection>
+        <url>https://github.com/armand-ratombotiana/EmbedJNoSQL</url>
         <tag>HEAD</tag>
     </scm>
 
     <issueManagement>
         <system>GitHub Issues</system>
-        <url>https://github.com/armand-ratombotiana/JunifyDB/issues</url>
+        <url>https://github.com/armand-ratombotiana/EmbedJNoSQL/issues</url>
     </issueManagement>
 
     <properties>
@@ -129,7 +129,7 @@
             Eclipse JNoSQL Mapping API — optional, provided.
             Allows entities annotated with jakarta.nosql.@Entity / @Id / @Column
             to be mapped transparently. Users who want JNoSQL annotations must add
-            this dependency to their own project; JunifyDB detects it via reflection.
+            this dependency to their own project; EmbedJNoSQL detects it via reflection.
         -->
         <dependency>
             <groupId>org.eclipse.jnosql.mapping</groupId>
@@ -142,7 +142,7 @@
         <!--
             Jakarta Persistence (JPA / Hibernate) API — optional, provided.
             Allows entities annotated with jakarta.persistence.@Entity / @Id /
-            @Column / @Transient to be used directly with JunifyDB without any
+            @Column / @Transient to be used directly with EmbedJNoSQL without any
             JPA runtime. Detected at runtime via reflection; zero-impact if absent.
         -->
         <dependency>
@@ -189,7 +189,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>org.junify.db.JunifyDB</mainClass>
+                            <mainClass>org.embeddedjnosql.db.EmbedJNoSQL</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -215,7 +215,7 @@
                             </artifactSet>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>org.junify.db.JunifyDB</mainClass>
+                                    <mainClass>org.embeddedjnosql.db.EmbedJNoSQL</mainClass>
                                 </transformer>
                             </transformers>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
@@ -238,23 +238,23 @@
                         <!-- JVM internals -->
                         <exclude>sun/**</exclude>
                         <!-- Example/demo entry points: not production code -->
-                        <exclude>org/junify/db/example/**</exclude>
+                        <exclude>org/embeddedjnosql/db/example/**</exclude>
                         <!-- Benchmark harness: not production code -->
-                        <exclude>org/junify/db/benchmark/**</exclude>
+                        <exclude>org/embeddedjnosql/db/benchmark/**</exclude>
                         <!-- Kafka CDC connector: optional external integration -->
-                        <exclude>org/junify/db/core/cdc/KafkaCDCConnector*</exclude>
+                        <exclude>org/embeddedjnosql/db/core/cdc/KafkaCDCConnector*</exclude>
                         <!-- Database compactor: internal maintenance utility -->
-                        <exclude>org/junify/db/storage/spi/DatabaseCompactor*</exclude>
+                        <exclude>org/embeddedjnosql/db/storage/spi/DatabaseCompactor*</exclude>
                         <!-- File engine pool: advanced pooling (covered via FileEngine) -->
-                        <exclude>org/junify/db/storage/spi/FileEnginePool*</exclude>
+                        <exclude>org/embeddedjnosql/db/storage/spi/FileEnginePool*</exclude>
                         <!-- Connection pool: advanced pooling utility -->
-                        <exclude>org/junify/db/core/pool/JunifyDBPool*</exclude>
+                        <exclude>org/embeddedjnosql/db/core/pool/EmbedJNoSQLPool*</exclude>
                         <!-- Migration manager: tested through integration paths -->
-                        <exclude>org/junify/db/core/migration/MigrationManager*</exclude>
+                        <exclude>org/embeddedjnosql/db/core/migration/MigrationManager*</exclude>
                         <!-- Vector HNSW graph index: experimental feature -->
-                        <exclude>org/junify/db/index/hnsw/HNSWIndex*</exclude>
+                        <exclude>org/embeddedjnosql/db/index/hnsw/HNSWIndex*</exclude>
                         <!-- Console HTTP inner handlers: tested via integration tests -->
-                        <exclude>org/junify/db/console/http/JunifyDBServer$*</exclude>
+                        <exclude>org/embeddedjnosql/db/console/http/EmbedJNoSQLServer$*</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -277,7 +277,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.1.0</version>
                 <configuration>
-                    <mainClass>org.junify.db.example.JunifyDBFeatureDemo</mainClass>
+                    <mainClass>org.embeddedjnosql.db.example.EmbedJNoSQLFeatureDemo</mainClass>
                 </configuration>
             </plugin>
         </plugins>

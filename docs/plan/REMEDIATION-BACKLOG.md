@@ -18,7 +18,7 @@ This backlog tracks identified opportunities for performance tuning, API enhance
 
 | ID | Component | Issue / Opportunity | Planned Remediation | Impact |
 |---|---|---|---|---|
-| **REM-04** | `JunifyDBServer` | Simple HTTP server lacks TLS/SSL support | Add built-in lightweight SSL context configuration for secure remote HTTP debugging | Hardens admin server against sniffing |
+| **REM-04** | `EmbedJNoSQLServer` | Simple HTTP server lacks TLS/SSL support | Add built-in lightweight SSL context configuration for secure remote HTTP debugging | Hardens admin server against sniffing |
 | **REM-05** | `ColumnFamily` | Range scans over row keys sort the entire key set in memory | Maintain an internal skip-list or sorted index of row keys | Reduces latency of wide-range scans |
 | **REM-06** | `cdcManager` | CDC event listeners execute synchronously on worker threads | Offer option for asynchronous backpressure-aware event queueing | Prevents slow CDC listeners from delaying writes |
 

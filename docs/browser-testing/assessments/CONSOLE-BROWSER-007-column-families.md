@@ -10,7 +10,7 @@
 
 ## 1. Objective & Scope
 
-Verify console interaction with JunifyDB Wide-Column families, including column insertion by row key and retrieval of structured column families and cells.
+Verify console interaction with EmbedJNoSQL Wide-Column families, including column insertion by row key and retrieval of structured column families and cells.
 
 ---
 

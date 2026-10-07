@@ -1,4 +1,4 @@
-# JunifyDB — Claims and Evidence Matrix
+# EmbedJNoSQL — Claims and Evidence Matrix
 
 **Audit Date**: September 9, 2026  
 **Evaluation Standard**: Strict empirical proof rule. Claims without executable tests are classified as `NOT_IMPLEMENTED` or `UNKNOWN`.
@@ -22,9 +22,9 @@
 | **Wide-Column Families**| NoSQL | Supported | Row keys, column qualifiers, timestamps, TTL expiration. | `ColumnFamilyTest`, `ColumnFamilyAdvancedTest`| **PASS** |
 | **Relational SQL / DDL**| Relational | Unsupported | No SQL parser or relational table engine exists in codebase. | Codebase inspection | **NOT_IMPLEMENTED** |
 | **SQL JOIN / GROUP BY** | Relational | Unsupported | Aggregations exist on documents; relational SQL joins do not. | Codebase inspection | **NOT_IMPLEMENTED** |
-| **Jakarta NoSQL TCK** | Jakarta | Partial | Provides API adapter (`DocumentTemplate`, `@Entity`), not TCK certified. | `org.junify.db.adapter.jnosql` inspection | **PARTIAL** |
-| **Embedded Web Console**| UI | Supported | Single-page UI at `/`, REST endpoints for CRUD and metrics. | `JunifyDBServerTest`, `deep-test.ps1` | **PASS** |
-| **Spring Boot 3.x** | Integration | Supported | Starter auto-configures `JunifyDB`, `@EnableJunifyDB`. | `JunifyDBAutoConfigurationTest`, `EcommerceApplicationTest` | **PASS** |
+| **Jakarta NoSQL TCK** | Jakarta | Partial | Provides API adapter (`DocumentTemplate`, `@Entity`), not TCK certified. | `org.embeddedjnosql.db.adapter.jnosql` inspection | **PARTIAL** |
+| **Embedded Web Console**| UI | Supported | Single-page UI at `/`, REST endpoints for CRUD and metrics. | `EmbedJNoSQLServerTest`, `deep-test.ps1` | **PASS** |
+| **Spring Boot 3.x** | Integration | Supported | Starter auto-configures `EmbedJNoSQL`, `@EnableEmbedJNoSQL`. | `EmbedJNoSQLAutoConfigurationTest`, `EcommerceApplicationTest` | **PASS** |
 | **Quarkus 3.x** | Integration | Supported | CDI extension provides `@DefaultBean` producers. | `ProductResourceTest` | **PASS** |
-| **Micronaut 4.x** | Integration | Supported | Factory bean registers `JunifyDB` and repositories. | `EcommerceControllerTest` | **PASS** |
+| **Micronaut 4.x** | Integration | Supported | Factory bean registers `EmbedJNoSQL` and repositories. | `EcommerceControllerTest` | **PASS** |
 | **Eclipse Vert.x** | Integration | Supported | Verticle uses `executeBlocking` for non-blocking persistence. | `EcommerceVerticleTest` | **PASS** |

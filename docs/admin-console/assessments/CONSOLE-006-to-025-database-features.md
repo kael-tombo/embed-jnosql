@@ -1,4 +1,4 @@
-# JunifyDB Administration Console: Features 006 to 025 Assessments
+# EmbedJNoSQL Administration Console: Features 006 to 025 Assessments
 
 ## CONSOLE-006: Static Console UI Asset Serving
 - **Endpoint**: `GET /`, `GET /index.html`, `/css/*`, `/js/*`
@@ -86,6 +86,6 @@
 
 ## CONSOLE-020: Security Headers Injection
 - **Endpoint**: All endpoints
-- **Handler**: `JunifyDBServer#addSecurityHeaders`
+- **Handler**: `EmbedJNoSQLServer#addSecurityHeaders`
 - **Evidence**: `SecurityEnforcementTest#testSecurityHeadersPresent` — Verified presence of `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `X-XSS-Protection: 1; mode=block`, `Referrer-Policy`, and `Content-Security-Policy`.
 - **Verdict**: **VERIFIED**

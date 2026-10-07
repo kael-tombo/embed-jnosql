@@ -8,7 +8,7 @@ Standard JUnit 5 works naturally with the facade lifecycle; no special extension
 
 ## Current Implementation
 - The project's own 677-test suite is JUnit 5 (5.10.2); `inMemory()` fits `@BeforeEach`, `temporary()` gives per-test dirs with cleanup hook.
-- No dedicated `junify-db-junit` extension module exists (rule 16: documented absence, not a defect).
+- No dedicated `embed-jnosql-junit` extension module exists (rule 16: documented absence, not a defect).
 
 ## Validation Performed
 Entire suite green on JUnit 5 in baseline and post-fix runs.
@@ -19,7 +19,7 @@ Suite logs; facade lifecycle factories.
 ## Findings
 | ID | Status | Severity | Description |
 |---|---|---|---|
-| JT-01 | ACCEPTABLE | Low | A small `@ExtendWith(JunifyDBExtension)` with auto temp-dir + close would improve DX; post-release polish, not a blocker. |
+| JT-01 | ACCEPTABLE | Low | A small `@ExtendWith(EmbedJNoSQLExtension)` with auto temp-dir + close would improve DX; post-release polish, not a blocker. |
 
 ## Improvement Plan
 Add the extension module in 1.1.

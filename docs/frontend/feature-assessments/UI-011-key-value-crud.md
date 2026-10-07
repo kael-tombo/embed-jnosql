@@ -141,7 +141,7 @@ Integrated JSON auto-formatting for structured values in KV editor.
 `JNoSQLServerTest.kvPutAndGet()`
 
 ## Exact Test Commands
-`mvn test -Dtest=JunifyDBServerTest`
+`mvn test -Dtest=EmbedJNoSQLServerTest`
 
 ## Test Output
 Tests run: 9, Failures: 0, Errors: 0.

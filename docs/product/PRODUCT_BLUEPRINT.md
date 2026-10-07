@@ -1,4 +1,4 @@
-# JUNIFY-DB — Product Blueprint
+# EMBED-DB — Product Blueprint
 
 **Status:** canonical product blueprint for the public release.
 **Date:** 2026-09-23
@@ -12,7 +12,7 @@ does not exist, it is listed as **NOT IMPLEMENTED** rather than described in the
 
 ## 1. Product Vision
 
-> **JUNIFY-DB is a lightweight embedded JVM database platform providing a relational SQL engine
+> **EMBED-DB is a lightweight embedded JVM database platform providing a relational SQL engine
 > for structured data and a non-relational NoSQL engine for flexible workloads.**
 
 Both engines:
@@ -20,7 +20,7 @@ Both engines:
 - run **inside the JVM** (no ports, no daemons, no child processes for basic usage);
 - work **in-memory** with zero configuration and **on disk** via a write-ahead log;
 - are **independently configurable and independently testable**;
-- share one addressable substrate (`JunifyDB` instance) while keeping **separate query languages,
+- share one addressable substrate (`EmbedJNoSQL` instance) while keeping **separate query languages,
   parsers, ASTs, and execution pipelines**.
 
 The honest one-line summary, measured against the code: *a multi-model embedded database whose
@@ -34,7 +34,7 @@ SQL surface is a query/DDL dialect over the same document store as the NoSQL sur
                            Embedded / In-Process
                                      ▲
                                      │
-                 H2 / HSQLDB         │   ★ JunifyDB
+                 H2 / HSQLDB         │   ★ EmbedJNoSQL
              (Relational Embedded)   │   (Multi-Model Embedded)
                                      │
 ────────────────────────────────────-┼──────────────────────────────────► Multi-Model
@@ -46,7 +46,7 @@ SQL surface is a query/DDL dialect over the same document store as the NoSQL sur
                            Client-Server / External
 ```
 
-JUNIFY-DB sits in the **embedded + multi-model** quadrant. The nearest neighbours are H2 (embedded,
+EMBED-DB sits in the **embedded + multi-model** quadrant. The nearest neighbours are H2 (embedded,
 relational-only, has JDBC and constraints) and embeddable NoSQL harnesses (not JVM-native). The
 product must **not** claim H2's relational completeness or MongoDB's distribution semantics.
 
@@ -56,7 +56,7 @@ product must **not** claim H2's relational completeness or MongoDB's distributio
 
 | Persona | Primary need | Success looks like |
 |---|---|---|
-| **P1 — Application developer (plain Java)** | A database in one line, no infra | `JunifyDB.inMemory()` works, data survives if file-backed |
+| **P1 — Application developer (plain Java)** | A database in one line, no infra | `EmbedJNoSQL.inMemory()` works, data survives if file-backed |
 | **P2 — Test engineer** | Fast, dependency-free fixture store | Deterministic tests, no Docker, isolated per test |
 | **P3 — Framework developer (Spring/Quarkus/Micronaut/Vert.x)** | Auto-wired bean, config binding | Starter/extensions compile and run a real demo |
 | **P4 — Data/platform engineer** | Observe and operate the store | Console shows real state; metrics are truthful |
@@ -78,7 +78,7 @@ product must **not** claim H2's relational completeness or MongoDB's distributio
 
 **Logical engines (2), independent at the semantic level:**
 
-| | `JUNIFYDB-RDBMS` | `JUNIFYDB-NOSQL` |
+| | `EMBEDJNOSQL-RDBMS` | `EMBEDJNOSQL-NOSQL` |
 |---|---|---|
 | Entry points | `db.sql(...)`, `db.from(Entity.class)` | `db.documentCollection(...)`, `db.keyValueBucket(...)`, `db.listBucket/setBucket/hashBucket`, `db.columnFamily(...)` |
 | Language | implementation-defined SQL dialect | fluent criteria + MongoDB-style JSON filter |
@@ -94,7 +94,7 @@ control is the SQL/NoSQL contract gate).
 
 ## 5. Module & Package Map (measured)
 
-- **Single Maven module**: `org.junify.db:junify-db-core:1.0.0` (`pom.xml` at root).
+- **Single Maven module**: `org.embeddedjnosql.db:embed-jnosql-core:1.0.0` (`pom.xml` at root).
 - **98** main Java sources, **72** test Java sources; **832** tests green.
 - Satellite projects (separate POMs, not aggregated): `cli/`, `spring-boot-starter/`,
   `quarkus-extension/`, `micronaut-integration/`, and **10** `demo/` projects.
@@ -132,7 +132,7 @@ Everything else is `provided`, `runtime`, or `optional`:
 
 | Artifact | Measured 2026-09-23 |
 |---|---|
-| Shaded core jar `junify-db-core-1.0.0.jar` | **3,122,887 bytes (3.12 MB)** |
+| Shaded core jar `embed-jnosql-core-1.0.0.jar` | **3,122,887 bytes (3.12 MB)** |
 | + three mandatory runtime deps | **combined runtime < 5 MB** (gate satisfied) |
 | Scope of the number | core jar + 3 deps only; excludes Console, framework
  integrations, demos, test deps (all correctly scoped) |
@@ -220,7 +220,7 @@ claim.
 
 
 > **⚠ SUPERSEDED — pre-refactor document (SQL / dual-engine).**
-> JunifyDB is now NoSQL-only. The relational engine, SQL parser/planning, JDBC driver, JPA
+> EmbedJNoSQL is now NoSQL-only. The relational engine, SQL parser/planning, JDBC driver, JPA
 > `EntityManager`, `/api/sql` routes, and the SQL Studio console screen were removed from the
 > product. Statements in this file that describe SQL, JDBC, SQL schemas, or an engine selector no
 > longer describe shipped behavior.

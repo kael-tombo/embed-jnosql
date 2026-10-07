@@ -1,4 +1,4 @@
-# JunifyDB — Crash Recovery and WAL Architecture
+# EmbedJNoSQL — Crash Recovery and WAL Architecture
 
 **Architecture Component**: Durability, Persistence, and Crash Consistency  
 **Date**: September 9, 2026  
@@ -7,7 +7,7 @@
 
 ## 1. Write-Ahead Log (WAL) Architecture
 
-Durability across unexpected JVM crashes or power outages is guaranteed by `org.junify.db.storage.wal.WriteAheadLog`:
+Durability across unexpected JVM crashes or power outages is guaranteed by `org.embeddedjnosql.db.storage.wal.WriteAheadLog`:
 
 ```mermaid
 sequenceDiagram
@@ -34,7 +34,7 @@ Every WAL record is written sequentially with fixed framing:
 | CRC32 (8 bytes)| Commit (1 byte)|
 +----------------+----------------+
 ```
-- **Magic Number**: Identifies valid JunifyDB WAL files.
+- **Magic Number**: Identifies valid EmbedJNoSQL WAL files.
 - **Type**: `INSERT`, `UPDATE`, `DELETE`, `TX_BEGIN`, `TX_COMMIT`, `TX_ROLLBACK`.
 - **CRC32**: Checksum covering the payload to immediately detect torn writes or bit-rot.
 - **fsync Guarantees**: Configurable between immediate `autoFlush=true` or scheduled background group-commit flushing.
@@ -43,7 +43,7 @@ Every WAL record is written sequentially with fixed framing:
 
 ## 2. Crash Recovery Workflow
 
-Upon database startup (`JunifyDB.create(config)`):
+Upon database startup (`EmbedJNoSQL.create(config)`):
 1. **Engine Detection**: The engine checks for the presence of the WAL log file (`dataDir/wal.log`).
 2. **Replay Cursor Initialization**: Reads log file from offset 0, verifying CRC32 checksums sequentially.
 3. **Transaction Reconciliation**:
@@ -59,4 +59,4 @@ Upon database startup (`JunifyDB.create(config)`):
 Crash recovery and cold-restart persistence are proven in:
 - `FilePersistenceTest.testFileEngineColdRestart` (process recreation with verified data integrity).
 - `DeepInfrastructureTest.testWalReplayAndRecovery` (simulated torn writes and log corruption).
-- `demo/end-to-end-validation/src/test/java/org/junify/db/demo/e2e/MultiEngineE2EValidationTest.java` (restarting across all storage engines).
+- `demo/end-to-end-validation/src/test/java/org/embeddedjnosql/db/demo/e2e/MultiEngineE2EValidationTest.java` (restarting across all storage engines).

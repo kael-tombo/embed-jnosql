@@ -16,7 +16,7 @@ Spinning up Docker containers for MongoDB, Redis, or Cassandra in CI/CD pipeline
 - Consumes gigabytes of RAM on CI runners.
 
 ### JNOSQL-EMBED Solution
-Developers replace Testcontainers with the embedded `junify-db-spring-boot-starter` or `junify-db-quarkus-extension`:
+Developers replace Testcontainers with the embedded `embed-jnosql-spring-boot-starter` or `embed-jnosql-quarkus-extension`:
 - Test suites boot in **under 15 milliseconds**.
 - No Docker daemon or network sockets required.
 - Integration tests execute against real Document collections and Key-Value buckets with complete transaction rollback between tests.
@@ -67,5 +67,5 @@ Engineers prototyping a new microservice or proof-of-concept who want to write c
 Developers waste hours configuring local database servers, fixing port collisions, and managing local environment drifts across teammates.
 
 ### JNOSQL-EMBED Solution
-- Add the Maven dependency, call `JunifyDB.embed().build()`, and start inserting documents.
+- Add the Maven dependency, call `EmbedJNoSQL.embed().build()`, and start inserting documents.
 - Optional built-in Web Console (`db.startServer(8080)`) allows inspecting collections, viewing documents, and testing queries directly from a local browser.

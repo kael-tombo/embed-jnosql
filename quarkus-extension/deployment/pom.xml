@@ -5,15 +5,15 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.junify.db</groupId>
-        <artifactId>junify-db-quarkus-extension</artifactId>
+        <groupId>org.embeddedjnosql.db</groupId>
+        <artifactId>embed-jnosql-quarkus-extension</artifactId>
         <version>1.0.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>junify-db-quarkus-extension-deployment</artifactId>
-    <name>JunifyDB Quarkus Extension - Deployment</name>
-    <description>Quarkus extension deployment (build-time) module for JunifyDB</description>
+    <artifactId>embed-jnosql-quarkus-extension-deployment</artifactId>
+    <name>EmbedJNoSQL Quarkus Extension - Deployment</name>
+    <description>Quarkus extension deployment (build-time) module for EmbedJNoSQL</description>
 
     <properties>
         <maven.compiler.release>17</maven.compiler.release>
@@ -45,8 +45,8 @@
 
         <!-- Runtime module: deployment depends on runtime -->
         <dependency>
-            <groupId>org.junify.db</groupId>
-            <artifactId>junify-db-quarkus-extension-runtime</artifactId>
+            <groupId>org.embeddedjnosql.db</groupId>
+            <artifactId>embed-jnosql-quarkus-extension-runtime</artifactId>
             <version>1.0.0</version>
         </dependency>
 

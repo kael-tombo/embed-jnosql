@@ -6,7 +6,7 @@
 > the release decision.**
 
 ## Scope
-The evidence-based release decision for JunifyDB 1.0.0, applying the release-blocker policy to every finding in this audit.
+The evidence-based release decision for EmbedJNoSQL 1.0.0, applying the release-blocker policy to every finding in this audit.
 
 ## Decision Basis (strongest evidence)
 1. **The worst problems were real, and they are now fixed with proof.** Four critical/high correctness defects — unreachable write-write conflict detection, FileEngine WAL never replayed, LSM WAL replay skipped whenever SSTables existed, collections invisible after restart — were each demonstrated failing against pre-fix HEAD (`.freebuff/prefix-failures.log`: `Tests run: 4, Failures: 4` with explicit data-loss assertions like `expected <{"total":42}> but was <null>`), fixed minimally, and locked in by `ReleaseAuditRegressionTest` (8 tests, green).

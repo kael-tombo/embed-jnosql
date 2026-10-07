@@ -1,6 +1,6 @@
 # Release Readiness Assessment
 
-## Release Target: JunifyDB 1.0.0 General Availability (GA)
+## Release Target: EmbedJNoSQL 1.0.0 General Availability (GA)
 
 ### Quality Gates Checklist
 
@@ -17,6 +17,6 @@
 ---
 
 ## Production Recommendation
-**JunifyDB version 1.0.0 is declared READY FOR RELEASE.**
+**EmbedJNoSQL version 1.0.0 is declared READY FOR RELEASE.**
 
 All quality gates, performance invariants, and multi-model consistency guarantees have been independently asserted with empirical evidence.

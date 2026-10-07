@@ -10,7 +10,7 @@
 
 ## 1. Objective & Scope
 
-Verify console interaction with JunifyDB's embedded vector search engine (HNSW index), validating vector insertion with dimension validation (128 dimensions) and cosine/kNN similarity searches.
+Verify console interaction with EmbedJNoSQL's embedded vector search engine (HNSW index), validating vector insertion with dimension validation (128 dimensions) and cosine/kNN similarity searches.
 
 ---
 

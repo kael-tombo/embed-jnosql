@@ -14,7 +14,7 @@ canonical mark applied) is superseded by this round and is summarized here.
 
 | Asset | Source of truth | Website | Console | README |
 |---|---|---|---|---|
-| Logo / mark | `docs/assets/junifydb-logo-512-transparent.png` (owner-supplied, 1254², background removed) | nav 54px, hero 252px, footer 44px | `/logo.svg` (256px raster embed) in navy brand-tile, 34px | banner 220px |
+| Logo / mark | `docs/assets/embedjnosql-logo-512-transparent.png` (owner-supplied, 1254², background removed) | nav 54px, hero 252px, footer 44px | `/logo.svg` (256px raster embed) in navy brand-tile, 34px | banner 220px |
 | Favicon | `favicon-64.png` / `favicon-256.png` (site), `favicon.svg` (console) | 2 PNG links | `/favicon.svg` | n/a |
 | Mascot glyph | amber bolt in navy tile | CTA band inline SVG | `/logo.svg` + `.empty-logo` glyph | n/a |
 | Primary accent | amber `#fbbf24` family (`--accent` `#fcd34d` dark / `#b45309` light in console) | gold gradient tokens | `--accent` var family | n/a |
@@ -44,7 +44,7 @@ branding remains (grep scan: zero off-brand hex, zero old project names).
 | WC-15 | Broken JS | playground tab switch crashed when re-invoked (implicit `event.currentTarget`) | n/a | working interactions | **FIXED**: explicit element param | exception observed live → re-run green | PASS after fix | fix handler | browser-verified |
 | WC-16 | Console a11y | n/a | engine tags color-only? | never color-only | PASS by design: tags carry text + glyph + title; statuses use dot + text | DOM | PASS | none | verified |
 | WC-17 | Deployment | stale gh-pages vs main | n/a | remote reflects latest | **FIXED**: gh-pages republished (`2ebcc14`, `4e5d7cd`); live fetch shows new copy | curl of live URL with cache-buster | PASS after fix | publish | live-verified |
-| WC-18 | Console features not connected to backend | n/a | every control maps to an existing `/api/*` handler (audited earlier rounds 36/37) | no fake controls | PASS | handlers present in `JunifyDBServer` | PASS | none | source-verified |
+| WC-18 | Console features not connected to backend | n/a | every control maps to an existing `/api/*` handler (audited earlier rounds 36/37) | no fake controls | PASS | handlers present in `EmbedJNoSQLServer` | PASS | none | source-verified |
 | WC-19 | Console dark/light theme support | site is dark-themed marketing | console supports light via toggle | theme variants allowed | PASS (light console theme = documented variant, not a divergence) | theme toggle run | PASS | none | browser-verified |
 
 ## Shared design tokens

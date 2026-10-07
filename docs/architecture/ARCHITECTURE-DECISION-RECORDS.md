@@ -12,10 +12,10 @@ Chronological record of key architectural decisions made throughout the evolutio
 
 ---
 
-## ADR-002: Package Consolidation to `org.junify.db.*`
+## ADR-002: Package Consolidation to `org.embeddedjnosql.db.*`
 - **Status**: Accepted
-- **Context**: The codebase suffered from dual package identities (`org.jnosql.embed.*` vs `org.junify.db.*`) across Spring Boot and Quarkus extensions.
-- **Decision**: Standardize all packages under `org.junify.db.*` across Core, Spring Boot (`org.junify.db.spring.boot`), Quarkus (`org.junify.db.quarkus`), and Micronaut (`org.junify.db.micronaut`).
+- **Context**: The codebase suffered from dual package identities (`org.jnosql.embed.*` vs `org.embeddedjnosql.db.*`) across Spring Boot and Quarkus extensions.
+- **Decision**: Standardize all packages under `org.embeddedjnosql.db.*` across Core, Spring Boot (`org.embeddedjnosql.db.spring.boot`), Quarkus (`org.embeddedjnosql.db.quarkus`), and Micronaut (`org.embeddedjnosql.db.micronaut`).
 - **Consequences**: Consistent developer experience and elimination of duplicate processors and config mappings.
 
 ---

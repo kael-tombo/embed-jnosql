@@ -1,6 +1,6 @@
-# JunifyDB Roadmap
+# EmbedJNoSQL Roadmap
 
-JunifyDB is an embedded **NoSQL** database for the JVM (Document + Key-Value, plus wide-column
+EmbedJNoSQL is an embedded **NoSQL** database for the JVM (Document + Key-Value, plus wide-column
 and experimental vector surfaces). This roadmap is NoSQL only: there is no relational engine,
 SQL dialect, or dual-engine track, and none is planned.
 

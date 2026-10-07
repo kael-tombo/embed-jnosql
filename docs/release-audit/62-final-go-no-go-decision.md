@@ -35,7 +35,7 @@ in-jar console, experimental vectors) are justified in doc 01, not hidden.
 ## Footprint Verdict
 
 **PASS — 2.89 MB < 5 MB.** Included in the measurement: the published
-`junify-db-core` jar with bundled Jackson (JSON), slf4j-api (no backend), and
+`embed-jnosql-core` jar with bundled Jackson (JSON), slf4j-api (no backend), and
 JNoSQL/CDI annotation APIs. Excluded: junit (test), jmh/micrometer (profile),
 framework starters and cli (separate artifacts). CI now enforces the limit on
 every build (`Enforce core jar size limit (5 MB)` step, doc 02).
@@ -83,10 +83,10 @@ confirmations (docs 36–38, 58–59 matrices).
 ## Website Verdict
 
 **Source: corrected. Live: pending redeploy.** The deployed site
-(kael-tombo.github.io/JunifyDB) carried false claims (ANSI SQL, <15 ms,
+(kael-tombo.github.io/EmbedJNoSQL) carried false claims (ANSI SQL, <15 ms,
 85k–124k ops/s "measured", tamper-evident audit) and wrong Maven coordinates
-(`org.junify:junify-db`). All fixed in `docs/index.html` (post-fix grep
-counts = 0; coordinates = `org.junify.db:junify-db-core`); the live URL
+(`org.embeddedjnosql:embed-jnosql`). All fixed in `docs/index.html` (post-fix grep
+counts = 0; coordinates = `org.embeddedjnosql.db:embed-jnosql-core`); the live URL
 updates when Pages redeploys from main. Deployment-origin mismatch
 (53-WC-08) flagged to the owner.
 
@@ -124,7 +124,7 @@ primary buttons `rgb(180,83,9)` / `rgb(252,211,77)`; `/logo.svg` and
 
 **None.** All previously identified blockers are closed:
 1. ~~Live site redeploy~~ — **closed 2026-09-21**: the Pages deployment mechanism was the **`gh-pages` branch** (every Actions `Deploy GitHub Pages` run fails harmlessly and always has); the corrected page was published to gh-pages as `bbd87ca` and the live URL was re-fetched: old-claim patterns **0**, corrected claims present, `Last-Modified` same day (53-WC-04..07).
-2. ~~Pages deployment-origin mismatch~~ — **dissolved with evidence**: `kael-tombo/JunifyDB` and `armand-ratombotiana/JunifyDB` are the **same repository** (owner rename + GitHub redirect; a commit pushed only to the armand remote is visible at the kael API path). The live site has always been this project's.
+2. ~~Pages deployment-origin mismatch~~ — **dissolved with evidence**: `kael-tombo/EmbedJNoSQL` and `armand-ratombotiana/EmbedJNoSQL` are the **same repository** (owner rename + GitHub redirect; a commit pushed only to the armand remote is visible at the kael API path). The live site has always been this project's.
 3. ~~CI demos job red~~ — **closed**: root cause (missing starter install for framework demos, R-27/RB-24) fixed in `1bc94a9`; run #33 shows demos ✅ on a fresh runner.
 
 ## Required Pre-Release Fixes
@@ -135,7 +135,7 @@ primary buttons `rgb(180,83,9)` / `rgb(252,211,77)`; `/logo.svg` and
 
 ## Safe Post-Release Improvements
 
-- Thin-jar publication; `junify-db-sql` / storage / console module split (1.1)
+- Thin-jar publication; `embed-jnosql-sql` / storage / console module split (1.1)
 - Playwright UI suite (P1-5); README screenshots (39-WS-03)
 - Planner range-query index use; HNSW config surface widening
 - Maven Central staging once credentials exist (R-13)

@@ -8,7 +8,7 @@ This document details the inter-dependencies between subsystems and features wit
 
 ```mermaid
 graph TD
-    A[Public Application Layer] --> B[JunifyDB Facade]
+    A[Public Application Layer] --> B[EmbedJNoSQL Facade]
     
     B --> C[DocumentCollection]
     B --> D[KeyValueBucket]

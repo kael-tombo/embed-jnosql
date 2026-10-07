@@ -1,4 +1,4 @@
-# JunifyDB — UI Repository Inventory
+# EmbedJNoSQL — UI Repository Inventory
 
 **Audit Date**: September 9, 2026  
 **Auditor**: Frontend Architecture Lead  

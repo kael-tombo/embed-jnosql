@@ -1,4 +1,4 @@
-# JunifyDB — Security Verification Test Results
+# EmbedJNoSQL — Security Verification Test Results
 
 **Auditor**: Application Security Specialist  
 

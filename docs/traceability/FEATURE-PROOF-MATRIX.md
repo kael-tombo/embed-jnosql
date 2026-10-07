@@ -1,4 +1,4 @@
-# JunifyDB — Feature Proof Matrix
+# EmbedJNoSQL — Feature Proof Matrix
 
 **Audit Date**: September 9, 2026  
 **Auditor**: Systems Traceability Lead  
@@ -17,5 +17,5 @@
 | **Wide-Column Model** | Column Family | `ColumnFamily` | `/api/columns/{family}/{key}`| Columns Tab | Sparse Cell Map | `ColumnFamilyTest` | **PROVEN** |
 | **Crash Consistency** | ACID Transactions | `Transaction`, `MVCCManager` | `/api/transactions` | Transaction Simulator | WAL + Undo Log | `TransactionTest`, `DeepTransactionTest` | **PROVEN** |
 | **Crash Consistency** | Crash Recovery | `WriteAheadLog` | Background / auto-flush | Backup & Restore Panel | Append-Only Disk WAL | `DeepInfrastructureTest` | **PROVEN** |
-| **Developer Ergonomics** | Web Console | `JunifyDBServer` | `/`, `/index.html` | Browser Console | Embedded HTTP Server | `JunifyDBServerTest` | **PROVEN** |
-| **Enterprise Security** | Session Security | `SecureSessionManager` | `/api/auth/login`, `/api/auth/logout` | Login Modal | In-Memory Token Store | `JunifyDBServerTest` | **PROVEN** |
+| **Developer Ergonomics** | Web Console | `EmbedJNoSQLServer` | `/`, `/index.html` | Browser Console | Embedded HTTP Server | `EmbedJNoSQLServerTest` | **PROVEN** |
+| **Enterprise Security** | Session Security | `SecureSessionManager` | `/api/auth/login`, `/api/auth/logout` | Login Modal | In-Memory Token Store | `EmbedJNoSQLServerTest` | **PROVEN** |

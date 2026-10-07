@@ -1,7 +1,7 @@
 # 3. Context Model
 
 > **SUPERSEDED - pre-refactor document (SQL / dual-engine).**
-> JunifyDB is now NoSQL-only. The relational engine, SQL parser/planning, JDBC driver, JPA
+> EmbedJNoSQL is now NoSQL-only. The relational engine, SQL parser/planning, JDBC driver, JPA
 > `EntityManager`, `/api/sql` routes, and the SQL Studio console screen were removed from the
 > product. Statements in this file that describe SQL, JDBC, SQL schemas, or an engine selector no
 > longer describe shipped behavior.
@@ -17,7 +17,7 @@
 
 The status bar (`#statusbar`) renders six context items exclusively from `/api/health` `context{}` — engine, relational/nosql engine names, storageMode, durability, database/dataDir, auth state, user, activeTransactions, transactionalConsoleWrites. Nothing is guessed client-side; the poll runs every 10 s and also feeds the topbar chips (health dot, engine, version, uptime).
 
-This round added **`#chipVersion`** (CD-10): `/api/health` `version` comes from the new `JunifyDBServer.resolveVersion()` (jar manifest `Implementation-Version`, fallback `1.0.0`); `HealthHandler` uses the same source, so topbar and API can never disagree.
+This round added **`#chipVersion`** (CD-10): `/api/health` `version` comes from the new `EmbedJNoSQLServer.resolveVersion()` (jar manifest `Implementation-Version`, fallback `1.0.0`); `HealthHandler` uses the same source, so topbar and API can never disagree.
 
 ## Task states (US-139)
 

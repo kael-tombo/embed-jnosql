@@ -1,7 +1,7 @@
 # Startup Results
 
 - **Backend Command**: `java -jar target/spring-boot-demo-1.0.0.jar`
-- **Frontend / Console**: Embedded JunifyDB HTTP Console (`JunifyDBServer`)
+- **Frontend / Console**: Embedded EmbedJNoSQL HTTP Console (`EmbedJNoSQLServer`)
 - **Configured URL**: `http://localhost:9090/jnosql-admin/`
 - **Effective URL**: `http://localhost:9090/jnosql-admin/`
 - **Selected Port**: `9090` (preferred port bound successfully)

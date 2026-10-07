@@ -7,7 +7,7 @@ Javadoc coverage and published API reference.
 Public classes carry meaningful Javadoc; publication configured.
 
 ## Current Implementation
-- Key classes (`JunifyDB`, `MVCCManager`, `Transaction`, `StorageEngine`, engines) carry real Javadoc including the audit-added method contracts (`commit(txId, commitTs, readTimestamp)` fully documented with @param/@return semantics).
+- Key classes (`EmbedJNoSQL`, `MVCCManager`, `Transaction`, `StorageEngine`, engines) carry real Javadoc including the audit-added method contracts (`commit(txId, commitTs, readTimestamp)` fully documented with @param/@return semantics).
 - No javadoc-jar/publication configured in POM; no generated API site.
 
 ## Validation Performed

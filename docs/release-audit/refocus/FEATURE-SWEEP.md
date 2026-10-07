@@ -8,12 +8,12 @@ round, not only inspected.
   (log: [verify-run.log](verify-run.log); count includes the round-3 experimental-label assertion
   and the 11 phrase-contract tests from the Finding 1 fix below). Demo layer: spring-boot-demo
   **28/28** incl. the 22-test Hibernate-integration suite (row 22 in the table above)
-- New sweep class: `src/test/java/org/junify/db/ReleaseFeatureSweepTest.java` — 22 tests: one per
+- New sweep class: `src/test/java/org/embeddedjnosql/db/ReleaseFeatureSweepTest.java` — 22 tests: one per
   capability family exercising the library surface directly, plus the experimental-label contract
   assertion added after the round-3 product decision.
-- New phrase-contract class: `src/test/java/org/junify/db/TextIndexPhraseTest.java` — 11 tests
+- New phrase-contract class: `src/test/java/org/embeddedjnosql/db/TextIndexPhraseTest.java` — 11 tests
   pinning positional phrase matching after the Finding 1 fix (this round).
-- New HTTP cases: `src/test/java/org/junify/db/ConsoleWorkspaceEndpointsTest.java` — 4 added tests
+- New HTTP cases: `src/test/java/org/embeddedjnosql/db/ConsoleWorkspaceEndpointsTest.java` — 4 added tests
   covering the Redis-style structure routes, `/api/stats`, and the retired-route 404 contract.
 - Pre-existing HTTP/console coverage (re-run green, not re-derived): **22 test classes call `/api/...`
   endpoints directly and contribute 185 tests** — including `FullFeatureTest` (72), ten of the eleven
@@ -53,7 +53,7 @@ the only assertions strengthened were the three vacuous `FullFeatureTest` ones o
 | 17 | Document validation | registered schema accepts valid fields, rejects a missing required field with errors, leaves unregistered collections schemaless, `dropSchema` | PASS |
 | 18 | Events + metrics | one `AFTER_INSERT` per insert, `snapshot`/`memoryStats`/`contentionStats`, insert/read counters advance, listener count reported | PASS |
 | 19 | CDC | file connector registers, `start`/`stop` observes inserts/updates/deletes, `getStatus` non-empty, `removeFileConnector` | PASS |
-| 20 | Jakarta NoSQL adapter | `@Entity` names the collection, `@Id` becomes the document id, `@Column` renames fields, mapping alone persists nothing, `JunifyRepository` save/findById/existsById/count/findBy/findAll/deleteById, and the fluent `db.from(Book).where("price < ?", …).orderBy("price ASC").list()/count()/first()` | PASS |
+| 20 | Jakarta NoSQL adapter | `@Entity` names the collection, `@Id` becomes the document id, `@Column` renames fields, mapping alone persists nothing, `EmbedRepository` save/findById/existsById/count/findBy/findAll/deleteById, and the fluent `db.from(Book).where("price < ?", …).orderBy("price ASC").list()/count()/first()` | PASS |
 | 21 | Lifecycle | `isOpen`/`isClosed` transitions, `flush`, and a closed database failing loudly (`IllegalStateException`) instead of silently | PASS |
 | 22 | **Hibernate support inside Spring Boot (deep, this round)** | real `@SpringBootTest` in the Spring Boot demo: Hibernate/JPA-annotated entities map through `EntityMapper`/`EclipseDocumentTemplate` with auto-configured beans — `@Table` collection naming + lowercase fallback, `@UuidGenerator` id backfill vs. explicit `@Id`, `@PrePersist`/`@PostLoad`, `@CreationTimestamp`/`@UpdateTimestamp` columns, `@Formula` derived on load and tracking inputs after update, `@Column(name=…)` alias keys, `@Enumerated(STRING)` stored as names + `Query.eq` on them, `@Transient` excluded, `java.util.Date`↔ISO-string symmetry (write/read bug found and fixed in this round), batch/windowed queries, storage-level enum grouping, `@Immutable` update refusal, `@NaturalId` recognition, whole-stack column audit — 22 tests, log: [demo-spring-hibernate.log](demo-spring-hibernate.log) | PASS |
 | 22 | Document aggregation (README: “aggregate with the document helpers”) | `DocumentAggregation.count/filter-count/min/max/sum/avg/groupBy/groupByDocuments/groupBy(transformer)/distinct/distinctValues/first/last/limit/skip/orderBy` + `AggregationResult` — covered by the aggregation block in `UtilityClassTest` (functional assertions on every helper) and the annotation demo's invoice roll-up (`AnnotationShowcaseTest`) | PASS |
@@ -105,11 +105,11 @@ the only assertions strengthened were the three vacuous `FullFeatureTest` ones o
    while the three durable modes restore the catalog, documents, and KV entries; `restore` is
    additive, not a rollback. Both are asserted as the contract.
 7. **Three shipped public classes have no functional tests, no callers, and no current
-   documentation:** `core/pool/JunifyDBPool`, `api/reactive/ReactiveJNoSQL`, and
+   documentation:** `core/pool/EmbedJNoSQLPool`, `api/reactive/ReactiveJNoSQL`, and
    `core/migration/MigrationManager`. All three are excluded from the JaCoCo gate in `pom.xml`
    (lines ~251–253) and all three are in the released jar.
    *Resolution (review round 3, product decision: keep and label, don't delete):* each class now
-   carries the new runtime-visible `org.junify.db.Experimental` annotation plus a class javadoc
+   carries the new runtime-visible `org.embeddedjnosql.db.Experimental` annotation plus a class javadoc
    stating it has no production caller, no functional coverage, and may change or be removed
    without notice. The label is machine-checked by `experimentalClassesAreLabeled` in
    `ReleaseFeatureSweepTest`, and the JaCoCo excludes stay because the classes remain intentionally
@@ -128,7 +128,7 @@ Both scripts previously only syntax-checked were run against the shaded jar from
 
 ## 5. Live browser verification (review round 2)
 
-A real browser session was driven against `java -jar junify-db-core-1.0.0.jar --engine IN_MEMORY`:
+A real browser session was driven against `java -jar embed-jnosql-core-1.0.0.jar --engine IN_MEMORY`:
 
 - Console loads with 12 panels — `overview, collections, kv, columns, vectors, schema, tx, indexes,
   backup, cdc, audit, server` — and no SQL panel anywhere in the navigation.
@@ -152,5 +152,5 @@ updates after a drop — zero console errors throughout.
 |---|---|
 | Browser screenshots/video export | NOT RUN — the webview produces no frames ("not compositing"); retried twice on a live server. Browser verification above is DOM/network-level, which proves the DOM, not the pixels |
 | Maven Central publish / Pages deploy | BLOCKED by policy (no credentials, nothing pushed) |
-| `docs/assets/junifydb-banner.png` wording | NOT VERIFIED (raster, no text chunks) |
-| `JunifyDBPool`, `ReactiveJNoSQL`, `MigrationManager` | LABELED EXPERIMENTAL (round-3 decision: keep, don't delete) — `@Experimental` + javadoc on each, enforced by the sweep's label assertion; still no caller, no functional test, still JaCoCo-excluded (see Finding 7) |
+| `docs/assets/embedjnosql-banner.png` wording | NOT VERIFIED (raster, no text chunks) |
+| `EmbedJNoSQLPool`, `ReactiveJNoSQL`, `MigrationManager` | LABELED EXPERIMENTAL (round-3 decision: keep, don't delete) — `@Experimental` + javadoc on each, enforced by the sweep's label assertion; still no caller, no functional test, still JaCoCo-excluded (see Finding 7) |

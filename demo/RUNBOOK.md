@@ -1,6 +1,6 @@
 # Demonstration Runbook & Troubleshooting Guide
 
-This runbook provides step-by-step instructions to build, launch, test, and troubleshoot the JunifyDB demonstration suite.
+This runbook provides step-by-step instructions to build, launch, test, and troubleshoot the EmbedJNoSQL demonstration suite.
 
 ---
 
@@ -16,7 +16,7 @@ This runbook provides step-by-step instructions to build, launch, test, and trou
 Run the following commands from the project root:
 
 ```bash
-# 1. Install JunifyDB Core and integration extensions
+# 1. Install EmbedJNoSQL Core and integration extensions
 mvn clean install -DskipTests
 
 # 2. Build and install common demo domain
@@ -72,7 +72,7 @@ mvn test
 
 ### Issue: "The process cannot access the file because it is being used by another process" (Windows)
 - **Cause**: An unclosed `FileOutputStream` or `FileChannel` in persistent engines (`FileEngine`, `LSMTreeEngine`, `BTreeEngine`).
-- **Remedy**: Always ensure `wal.close()` or `db.close()` is explicitly invoked in teardown blocks (`@AfterEach`). JunifyDB ensures all file descriptors, background flusher executors, and WAL sync threads are cleanly terminated upon `close()`.
+- **Remedy**: Always ensure `wal.close()` or `db.close()` is explicitly invoked in teardown blocks (`@AfterEach`). EmbedJNoSQL ensures all file descriptors, background flusher executors, and WAL sync threads are cleanly terminated upon `close()`.
 
 ### Issue: "No serializable introspection present for type Product" in Micronaut
 - **Cause**: Micronaut serde requires `@Serdeable` or `@SerdeImport`.

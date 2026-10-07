@@ -1,4 +1,4 @@
-# JunifyDB — Baseline Security Audit
+# EmbedJNoSQL — Baseline Security Audit
 
 **Audit Date**: September 9, 2026  
 **Auditor**: Security Engineer  

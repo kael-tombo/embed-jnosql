@@ -9,7 +9,7 @@ Validates identical multi-model business workflows across all four supported sto
 - Multi-model consistency across persistence backends
 
 ## Feature Under Test
-`JunifyDBConfig.StorageEngineType` (IN_MEMORY, FILE, LSM_TREE, B_TREE), `DocumentCollection`, `KeyValueBucket`, `ColumnFamily`.
+`EmbedJNoSQLConfig.StorageEngineType` (IN_MEMORY, FILE, LSM_TREE, B_TREE), `DocumentCollection`, `KeyValueBucket`, `ColumnFamily`.
 
 ## What the Test Actually Verifies
 - Executes an identical full e-commerce scenario against:

@@ -4,13 +4,13 @@
          xsi:schemaLocation="http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.junify.db</groupId>
-    <artifactId>junify-db-cli</artifactId>
+    <groupId>org.embeddedjnosql.db</groupId>
+    <artifactId>embed-jnosql-cli</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
-    <name>JunifyDB CLI Shell</name>
-    <description>Interactive developer shell for a local JunifyDB instance (recovered orphan module, audit R-25).</description>
+    <name>EmbedJNoSQL CLI Shell</name>
+    <description>Interactive developer shell for a local EmbedJNoSQL instance (recovered orphan module, audit R-25).</description>
 
     <properties>
         <junit.version>5.10.2</junit.version>
@@ -21,8 +21,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.junify.db</groupId>
-            <artifactId>junify-db-core</artifactId>
+            <groupId>org.embeddedjnosql.db</groupId>
+            <artifactId>embed-jnosql-core</artifactId>
             <version>1.0.0</version>
         </dependency>
         <dependency>
@@ -42,7 +42,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>org.junify.db.integration.standalone.JunifyDBShell</mainClass>
+                            <mainClass>org.embeddedjnosql.db.integration.standalone.EmbedJNoSQLShell</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

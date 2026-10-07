@@ -32,9 +32,9 @@ final decision in `63-final-go-no-go-decision.md`.
   +7 `BenchmarkOptionValidationTest`, +2 `DocumentUpdateMergeTest`, +1 `SchemaNumericTypeTest`,
   +2 `DocumentTtlPersistenceTest`, +3 `KvTtlPersistenceTest`, +2 `ColumnFamilyTtlPersistenceTest`,
   then this session's 26).
-- `cli/` module: **4/4 tests** (`JunifyDBShellArgsTest`) — the recovered module had
+- `cli/` module: **4/4 tests** (`EmbedJNoSQLShellArgsTest`) — the recovered module had
   no test harness at all before this round; JUnit 5.10.2 added to its pom.
-- First clean attempt failed to delete `target/junify-db-core-1.0.0.jar` because
+- First clean attempt failed to delete `target/embed-jnosql-core-1.0.0.jar` because
   two orphaned audit servers from earlier rounds still held it (ports 8092/8093);
   both were stopped and the build re-run clean — noted so the failure mode is not
   mistaken for a code regression.
@@ -54,7 +54,7 @@ final decision in `63-final-go-no-go-decision.md`.
 
 | Artifact | Bytes |
 |---|---|
-| `target/junify-db-core-1.0.0.jar` (published, shaded) | **3,100,496** (2.96 MB) |
+| `target/embed-jnosql-core-1.0.0.jar` (published, shaded) | **3,100,496** (2.96 MB) |
 | 5 MB CI gate limit | 5,242,880 → PASS |
 
 Included in measurement: core jar with bundled Jackson 2.17, slf4j-api (no
@@ -65,20 +65,20 @@ framework starters, console assets are inside the jar but replaceable.
 
 | Pattern | Files | Result |
 |---|---|---|
-| "ANSI SQL" in `src/main` | `JunifyDB.java` javadoc ×2 | **FIXED this round** → "built-in SQL dialect" |
-| "JNoSQL-EMBED" in CHANGELOG.md header | 1 | **FIXED this round** → "JunifyDB" |
-| "JNoSQL-EMBED" in LICENSE copyright | 1 | **FIXED this round** → "JunifyDB Contributors" |
+| "ANSI SQL" in `src/main` | `EmbedJNoSQL.java` javadoc ×2 | **FIXED this round** → "built-in SQL dialect" |
+| "JNoSQL-EMBED" in CHANGELOG.md header | 1 | **FIXED this round** → "EmbedJNoSQL" |
+| "JNoSQL-EMBED" in LICENSE copyright | 1 | **FIXED this round** → "EmbedJNoSQL Contributors" |
 | ANSI SQL / BM25 / 85k / 124k / tamper-evident / zero-loss in README + docs | 0 | clean |
 | Same patterns on the **live site** | 0 | clean (below) |
 
 ## Console smoke (rebuilt 1.0.0 jar, fresh process, port 8092)
 
-- `java -jar junify-db-core-1.0.0.jar --console --port 8092` → `/api/health` **200**
+- `java -jar embed-jnosql-core-1.0.0.jar --console --port 8092` → `/api/health` **200**
   (`"status":"ok"`, uptime, memory, threads reported).
 - `POST /api/auth/login` → **authenticated** with CSRF token issued.
 - **Follow-up investigation turned the `--storage` observation into a real
   defect (R-29, fixed this round).** `--storage`/`--console`/`--password` are
-  not supported flags, and `JunifyDB.main` silently ignored every
+  not supported flags, and `EmbedJNoSQL.main` silently ignored every
   unrecognized option: `--storage IN_MEMORY` ran the **FILE** engine (health
   showed `"engine":"FILE"`) and the login above succeeded only because
   console auth is **off by default** (`authEnabled=false`), not because a
@@ -91,13 +91,13 @@ framework starters, console assets are inside the jar but replaceable.
   | `--engine IN_MEMORY --port 8095` | n/a | starts, health `"engine":"IN_MEMORY"`, log `Storage engine: IN_MEMORY` |
 
   Also corrected the usage banner, which still advertised the retired
-  `junify-embed.jar` name. Regression: `LaunchOptionValidationTest` (6 tests).
+  `embeddedjnosql-embed.jar` name. Regression: `LaunchOptionValidationTest` (6 tests).
 - Browser-workflow regression (`BrowserConsoleWorkflowVerificationTest` 10/10)
   ran inside the 692-test suite.
 
 ## Live website re-verification (2026-09-22)
 
-`https://kael-tombo.github.io/JunifyDB/` (cache-busted fetch):
+`https://kael-tombo.github.io/EmbedJNoSQL/` (cache-busted fetch):
 
 | Check | Result |
 |---|---|
@@ -106,15 +106,15 @@ framework starters, console assets are inside the jar but replaceable.
 | Canonical logo asset references | 3 (nav, hero, footer) |
 | BM25 / 85k / zero-loss / Crash-Safe / ANSI SQL / "fully production" / JNoSQL-EMBED | **0 each** |
 | `assets/favicon-64.png` | HTTP 200 |
-| `assets/junifydb-banner.png` (og:image) | HTTP 200 |
+| `assets/embedjnosql-banner.png` (og:image) | HTTP 200 |
 
 ## Documentation ↔ implementation mismatches found and fixed
 
 | # | Mismatch | Resolution |
 |---|---|---|
 | 1 | `src/main` javadoc promised "ANSI SQL" in two public API methods | reworded to built-in SQL dialect |
-| 2 | CHANGELOG header + LICENSE copyright carried the retired `JNoSQL-EMBED` name | renamed to JunifyDB |
-| 3 | `--help` banner advertised the retired `junify-embed.jar` artifact name | corrected to `junify-db-core.jar` |
+| 2 | CHANGELOG header + LICENSE copyright carried the retired `JNoSQL-EMBED` name | renamed to EmbedJNoSQL |
+| 3 | `--help` banner advertised the retired `embeddedjnosql-embed.jar` artifact name | corrected to `embed-jnosql-core.jar` |
 | 4 | CI `integrations` job comment still described `cli/` as an orphan with no pom (citing R-24) and excluded it, while register R-25 records it repaired | `cli/` verified locally (`BUILD SUCCESS`, now 4/4 tests) and added to the CI module loop; comment + step name corrected to R-25 |
 | 5 | `--workload` accepted any string; a typo produced a "successful" run with zero benchmarks (also undocumented anywhere) | validated against `all,document,kv,mixed`, unknown token → exit 2 (R-30) |
 
@@ -125,9 +125,9 @@ existed (`demo/*` mains are framework bootstraps with no parsing):
 
 | Entry point | Defect found | Post-fix live result |
 |---|---|---|
-| `JunifyDB` (jar) | unknown flags, bad engine silently defaulted | `--storage IN_MEMORY` → exit **2**; `--engine bogus` → exit **2**; `--engine IN_MEMORY` → health `"engine":"IN_MEMORY"` |
+| `EmbedJNoSQL` (jar) | unknown flags, bad engine silently defaulted | `--storage IN_MEMORY` → exit **2**; `--engine bogus` → exit **2**; `--engine IN_MEMORY` → health `"engine":"IN_MEMORY"` |
 | `BenchmarkRunner` | unknown flags ignored; unknown `--engine` → IN_MEMORY; typo `--workload` → **zero benchmarks reported as success** | `--storage FILE` → exit **2**; `--engine mongo` → exit **2**; `--workload kv-reads` → exit **2**; happy path (`--ops 200 --workload kv --engine IN_MEMORY`) → exit **0** with real results |
-| `JunifyDBShell` (cli) | every argument after the first silently ignored (no options supported) | `--port 9000` → exit **2** + usage; `--help` → usage |
+| `EmbedJNoSQLShell` (cli) | every argument after the first silently ignored (no options supported) | `--port 9000` → exit **2** + usage; `--help` → usage |
 
 ## Live-preview seeding round (same day) — R-31, R-32, R-33
 
@@ -432,7 +432,7 @@ R-55 collection-resolution and **R-59** transactional-catalog tests — see the 
 - `git ls-remote --tags origin` → **no tags yet** (v1.0.0 tag + GitHub
   Release remain the only mechanical release steps).
 - Working tree contains unrelated pre-existing modifications (retry-after
-  lockout work in `JunifyDBServer.java` + test files, trace JSONs, pages.yml,
+  lockout work in `EmbedJNoSQLServer.java` + test files, trace JSONs, pages.yml,
   proof doc) — deliberately not committed by the brand-alignment commit
   `b822f9f`; they do not affect this round's evidence.
 

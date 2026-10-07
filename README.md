@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/assets/junifydb-mark-512.png" alt="JunifyDB — the embedded NoSQL database for Java" width="220" />
+<img src="docs/assets/embedjnosql-mark-512.png" alt="EmbedJNoSQL — the embedded NoSQL database for Java" width="220" />
 
 **The embedded NoSQL database for the JVM — Document and Key-Value.**  
 One JAR, zero infrastructure. No server, no Docker, no daemon, no network.
@@ -16,20 +16,20 @@ One JAR, zero infrastructure. No server, no Docker, no daemon, no network.
 
 ---
 
-## Why JunifyDB?
+## Why EmbedJNoSQL?
 
-> **"JunifyDB is to Document and Key-Value stores what H2 is to Relational databases."**
+> **"EmbedJNoSQL is to Document and Key-Value stores what H2 is to Relational databases."**
 
 Java developers carry a hidden tax on every project: before writing a single line of business
 logic they must provision infrastructure — Docker containers, Redis daemons, MongoDB processes.
 Even for a unit test. Even for a local prototype.
 
-**JunifyDB removes that tax.** Embed a NoSQL database directly inside your JVM process. Call one
+**EmbedJNoSQL removes that tax.** Embed a NoSQL database directly inside your JVM process. Call one
 line of code. Write your business logic. Ship.
 
 ```java
 // Everything you need. Nothing you don't.
-try (var db = JunifyDB.inMemory()) {
+try (var db = EmbedJNoSQL.inMemory()) {
     db.documentCollection("users").insert(Document.of(user.toMap()).id(user.id()));
     db.keyValueBucket("sessions").put("tok-1", "active");
     db.setBucket("permissions").sadd("admin", "write", "delete");
@@ -40,11 +40,11 @@ try (var db = JunifyDB.inMemory()) {
 
 ## What this product is (and is not)
 
-JunifyDB is **NoSQL only**: Document and Key-Value are data models of one product, and
+EmbedJNoSQL is **NoSQL only**: Document and Key-Value are data models of one product, and
 in-memory vs file-backed is a *storage mode*, not an engine choice. There is no relational
 database, no SQL engine, no dual-engine selector, and no JDBC driver.
 
-| | **JunifyDB** | H2 | MongoDB / Redis |
+| | **EmbedJNoSQL** | H2 | MongoDB / Redis |
 |---|---|---|---|
 | **Primary model** | Document + Key-Value (+ wide-column, experimental vector) | Relational SQL | Single-model daemons |
 | **Deployment** | Embedded, in-process | Embedded | External server |
@@ -55,20 +55,20 @@ database, no SQL engine, no dual-engine selector, and no JDBC driver.
 | **SQL** | ❌ intentionally removed | ✅ | ❌ |
 | **Persistence** | In-memory, file snapshots + WAL, B-Tree, LSM tree | Page store | WiredTiger / RDB |
 
-H2 appears here only as the reference point for *embedded simplicity*. JunifyDB's scope is
+H2 appears here only as the reference point for *embedded simplicity*. EmbedJNoSQL's scope is
 NoSQL: it does not implement SQL, and does not aim to.
 
 ---
 
 ## Installation
 
-> **Not on Maven Central (yet).** JunifyDB is distributed from **GitHub Releases**; no artifact is
+> **Not on Maven Central (yet).** EmbedJNoSQL is distributed from **GitHub Releases**; no artifact is
 > published to a public repository, so the coordinates below do **not** resolve on their own.
 > Install locally first — then they work exactly as written.
 
 ```bash
 git clone <repository-url> && cd JNoSQL-EMBED
-./mvnw -DskipTests install     # installs junify-db-core and the starters into your local repo
+./mvnw -DskipTests install     # installs embed-jnosql-core and the starters into your local repo
 ```
 
 Alternatively, download the shaded jar from the GitHub Release and put it on your classpath.
@@ -82,8 +82,8 @@ Quarkus, Micronaut, Jakarta CDI, Hibernate annotations, Micrometer — is option
 
 ```xml
 <dependency>
-    <groupId>org.junify.db</groupId>
-    <artifactId>junify-db-core</artifactId>
+    <groupId>org.embeddedjnosql.db</groupId>
+    <artifactId>embed-jnosql-core</artifactId>
     <version>1.0.0</version>
 </dependency>
 ```
@@ -92,8 +92,8 @@ Quarkus, Micronaut, Jakarta CDI, Hibernate annotations, Micrometer — is option
 
 | Artifact | Bytes | Human |
 |---|---|---|
-| Shaded core jar (`target/junify-db-core-1.0.0.jar`: core classes + Jackson + slf4j-api + console assets) | 3,080,060 | 2.94 MiB / 3.08 MB |
-| Core classes only (`target/original-junify-db-core-1.0.0.jar`, no bundled dependencies) | 582,121 | 568 KiB |
+| Shaded core jar (`target/embed-jnosql-core-1.0.0.jar`: core classes + Jackson + slf4j-api + console assets) | 3,080,060 | 2.94 MiB / 3.08 MB |
+| Core classes only (`target/original-embed-jnosql-core-1.0.0.jar`, no bundled dependencies) | 582,121 | 568 KiB |
 
 The **whole distribution** target (< 5 MB for the bundled, ready-to-run core jar) is met with
 headroom; the "core JAR" in the narrow sense is 568 KiB. Framework starters, the Quarkus
@@ -105,22 +105,22 @@ figures.
 ```xml
 <!-- Spring Boot 3.x -->
 <dependency>
-    <groupId>org.junify.db</groupId>
-    <artifactId>junify-db-spring-boot-starter</artifactId>
+    <groupId>org.embeddedjnosql.db</groupId>
+    <artifactId>embed-jnosql-spring-boot-starter</artifactId>
     <version>1.0.0</version>
 </dependency>
 
 <!-- Quarkus -->
 <dependency>
-    <groupId>org.junify.db</groupId>
-    <artifactId>junify-db-quarkus-extension-runtime</artifactId>
+    <groupId>org.embeddedjnosql.db</groupId>
+    <artifactId>embed-jnosql-quarkus-extension-runtime</artifactId>
     <version>1.0.0</version>
 </dependency>
 
 <!-- Micronaut -->
 <dependency>
-    <groupId>org.junify.db</groupId>
-    <artifactId>junifydb-micronaut-integration</artifactId>
+    <groupId>org.embeddedjnosql.db</groupId>
+    <artifactId>embedjnosql-micronaut-integration</artifactId>
     <version>1.0.0</version>
 </dependency>
 ```
@@ -132,7 +132,7 @@ figures.
 ### In-Memory Database (tests and microservices)
 
 ```java
-try (var db = JunifyDB.inMemory()) {
+try (var db = EmbedJNoSQL.inMemory()) {
 
     // ── Document Collection ───────────────────────────────────
     var users = db.documentCollection("users");
@@ -177,7 +177,7 @@ predicates and run on the document engine.
 ### File-Backed Persistent Database
 
 ```java
-try (var db = JunifyDB.create(JunifyDB.embed()
+try (var db = EmbedJNoSQL.create(EmbedJNoSQL.embed()
         .storageEngine(StorageEngineType.FILE)   // or IN_MEMORY, B_TREE, LSM_TREE
         .persistTo("data/myapp")
         .autoFlush(true)
@@ -190,10 +190,10 @@ try (var db = JunifyDB.create(JunifyDB.embed()
 
 ### Annotation-Driven Mapping
 
-JunifyDB reads your existing entity annotations at runtime with **zero** additional classpath
+EmbedJNoSQL reads your existing entity annotations at runtime with **zero** additional classpath
 requirements:
 
-| Standard | Package | What JunifyDB resolves |
+| Standard | Package | What EmbedJNoSQL resolves |
 |---|---|---|
 | **Eclipse JNoSQL** | `jakarta.nosql.*` | `@Entity`, `@Column`, `@Id` |
 | **Jakarta Persistence** | `jakarta.persistence.*` | `@Entity`, `@Table`, `@Column`, `@Id`, `@Transient`, `@Enumerated` |
@@ -273,7 +273,7 @@ The console is a **local management UI**, not a requirement for using the databa
 starts an HTTP server unless you ask for it.
 
 ```java
-try (var db = JunifyDB.create(JunifyDB.embed()
+try (var db = EmbedJNoSQL.create(EmbedJNoSQL.embed()
         .storageEngine(StorageEngineType.FILE)
         .persistTo("data")
         .console(ConsoleConfig.builder().enabled(true).port(8080).build())
@@ -285,7 +285,7 @@ try (var db = JunifyDB.create(JunifyDB.embed()
 Or from the shaded jar:
 
 ```bash
-java -jar target/junify-db-core-1.0.0.jar --port 8080 --engine FILE --data-dir ./data
+java -jar target/embed-jnosql-core-1.0.0.jar --port 8080 --engine FILE --data-dir ./data
 ```
 
 Panels: **Overview, Collections (documents), Key-Value & Redis Structures, Wide-Column
@@ -344,7 +344,7 @@ The removed `/api/sql` and `/api/sql/schema` routes answer 404.
 
 ## Migration from the SQL-enabled builds
 
-JunifyDB 1.0.0 removed the relational product. If you used an earlier build:
+EmbedJNoSQL 1.0.0 removed the relational product. If you used an earlier build:
 
 | Removed | What to use instead |
 |---|---|
@@ -352,8 +352,8 @@ JunifyDB 1.0.0 removed the relational product. If you used an earlier build:
 | `CREATE TABLE`, `DROP TABLE`, column types, `PRIMARY KEY`/`FOREIGN KEY`/`UNIQUE`/`CHECK` | There is no schema DDL. Collections appear on first write; constraints are not enforced. Use `SchemaValidator` (`/api/schema`) for insert-time validation rules. |
 | `JOIN`, `GROUP BY`, `HAVING` | Resolve related documents in your application through stored ids; aggregate with the document helpers (`DocumentAggregation`) or your own code. A document reference is **not** a foreign key and carries no referential guarantee. |
 | `POST /api/sql`, `POST /api/sql/schema` | `POST /api/collections/{name}/query`; `/api/storage/status` |
-| JDBC driver (`jdbc:junifydb:...`) | Not available. Use the document/key-value API, or a JDBC driver for a different database if you need SQL. |
-| `JunifyPersistence.createEntityManager(...)`, `EntityManager`, JPQL | JNoSQL-style repositories (`JunifyRepository`, `CrudRepository`) and the fluent entity query. Annotation mapping is retained. |
+| JDBC driver (`jdbc:embedjnosql:...`) | Not available. Use the document/key-value API, or a JDBC driver for a different database if you need SQL. |
+| `JembedPersistence.createEntityManager(...)`, `EntityManager`, JPQL | JNoSQL-style repositories (`EmbedRepository`, `CrudRepository`) and the fluent entity query. Annotation mapping is retained. |
 | Console "SQL Studio" | Collections and Key-Value panels. |
 
 **Data compatibility:** SQL tables were stored as document collections, so rows written by the
@@ -387,7 +387,7 @@ Spring Boot starter **12 tests, 0 failures**; the CLI **4 tests, 0 failures**.
 - **Integration testing without Docker** — start in milliseconds in the same JVM.
 - **Edge & desktop JVM applications** — one jar, file-backed persistence, WAL recovery.
 - **In-process caching & session stores** — local key-value with TTL, no Redis round-trip.
-- **Local prototypes** — add the dependency, call `JunifyDB.inMemory()`, ship.
+- **Local prototypes** — add the dependency, call `EmbedJNoSQL.inMemory()`, ship.
 - **Microservice state** — rate limiters, feature flags, task queues inside the app boundary.
 
 ---
@@ -400,6 +400,6 @@ Spring Boot starter **12 tests, 0 failures**; the CLI **4 tests, 0 failures**.
 
 <div align="center">
 
-**JunifyDB** — Write code. Not infrastructure.
+**EmbedJNoSQL** — Write code. Not infrastructure.
 
 </div>

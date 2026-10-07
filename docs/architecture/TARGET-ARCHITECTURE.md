@@ -12,7 +12,7 @@ The target architecture of JNOSQL-EMBED refines the multi-model core into a clea
                                    │
 ┌──────────────────────────────────▼─────────────────────────────────────┐
 │                          Public API Layer                              │
-│  JunifyDB | DocumentCollection | KeyValueBucket | ColumnFamily | Query │
+│  EmbedJNoSQL | DocumentCollection | KeyValueBucket | ColumnFamily | Query │
 └──────────────────────────────────┬─────────────────────────────────────┘
                                    │
 ┌──────────────────────────────────▼─────────────────────────────────────┐
@@ -38,9 +38,9 @@ The target architecture of JNOSQL-EMBED refines the multi-model core into a clea
 ## Key Target Architectural Principles
 
 ### 1. Pure API / SPI Decoupling
-- **API (`org.junify.db.*`, `org.junify.db.nosql.*`)**: Only clean interfaces, fluent builders, and immutable records visible to consumers.
-- **SPI (`org.junify.db.storage.spi.*`)**: Storage engine interfaces allowing third-party or custom persistence backends to be plugged in seamlessly.
-- **Internal (`org.junify.db.core.*`)**: Internal plumbing (serialization, caching, metrics) shielded from public consumer code.
+- **API (`org.embeddedjnosql.db.*`, `org.embeddedjnosql.db.nosql.*`)**: Only clean interfaces, fluent builders, and immutable records visible to consumers.
+- **SPI (`org.embeddedjnosql.db.storage.spi.*`)**: Storage engine interfaces allowing third-party or custom persistence backends to be plugged in seamlessly.
+- **Internal (`org.embeddedjnosql.db.core.*`)**: Internal plumbing (serialization, caching, metrics) shielded from public consumer code.
 
 ### 2. Unified Record Abstraction
 Every stored object adheres to `UnifiedRecord` with `RecordMetadata` tracking:
@@ -55,5 +55,5 @@ Every stored object adheres to `UnifiedRecord` with `RecordMetadata` tracking:
 - Atomic commit guarantees all staged operations write together or none do.
 
 ### 4. Enterprise Framework Alignment
-- Single configuration namespace (`junifydb.*`) across Spring Boot (`application.yml`), Quarkus (`application.properties`), and Micronaut (`application.yml`).
+- Single configuration namespace (`embedjnosql.*`) across Spring Boot (`application.yml`), Quarkus (`application.properties`), and Micronaut (`application.yml`).
 - Automatic lifecycle registration (closing database cleanly on Spring context shutdown, Quarkus shutdown event, or Micronaut stop).

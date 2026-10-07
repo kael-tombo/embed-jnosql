@@ -1,7 +1,7 @@
 # Evidence — Collections journey (2026-09-24)
 
 > **SUPERSEDED - pre-refactor document (SQL / dual-engine).**
-> JunifyDB is now NoSQL-only. The relational engine, SQL parser/planning, JDBC driver, JPA
+> EmbedJNoSQL is now NoSQL-only. The relational engine, SQL parser/planning, JDBC driver, JPA
 > `EntityManager`, `/api/sql` routes, and the SQL Studio console screen were removed from the
 > product. Statements in this file that describe SQL, JDBC, SQL schemas, or an engine selector no
 > longer describe shipped behavior.
@@ -14,7 +14,7 @@
 Server/seed: collection `catalog` with docs `c1` (sku KB-01, price 49.9, spec `{layout, keys}`, tags array) and `c2` (sku MS-02, price 19.5, spec `{dpi}`, tags).
 
 ## 1. Collection chips (CD-08)
-- `#colPicker` renders the live engine list as chips with doc counts: `__junify_sql_schema 1 · session_cache 1 · test 0 · meta_store 1 · catalog 2 · ws_products 4`.
+- `#colPicker` renders the live engine list as chips with doc counts: `__embeddedjnosql_sql_schema 1 · session_cache 1 · test 0 · meta_store 1 · catalog 2 · ws_products 4`.
 - Clicking `catalog` loads its documents; the chip now gets `.active` styling **and** `aria-pressed="true"` (both added during validation — selected state was previously indistinguishable).
 
 ## 2. Document table (US-080)

@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to **JunifyDB** will be documented in this file.
+All notable changes to **EmbedJNoSQL** will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed — the product is NoSQL only
 
-JunifyDB no longer ships a relational database, a SQL engine, or a JDBC driver. The product is
+EmbedJNoSQL no longer ships a relational database, a SQL engine, or a JDBC driver. The product is
 one embedded NoSQL database (Document + Key-Value, plus wide-column and experimental vector
 surfaces). Removed in this change:
 
@@ -19,23 +19,23 @@ surfaces). Removed in this change:
   GROUP BY), table catalogs, and relational constraints (PRIMARY KEY/FOREIGN KEY/UNIQUE/
   CHECK/NOT NULL).
 - The JDBC driver and its `META-INF/services/java.sql.Driver` registration.
-- The Jakarta Persistence provider (`JunifyPersistence`, `JunifyEntityManager`, JPQL).
+- The Jakarta Persistence provider (`JembedPersistence`, `JembedEntityManager`, JPQL).
   Annotation mapping for `jakarta.persistence.*` / `org.hibernate.annotations.*` onto
   documents is retained; the `EntityManager`/JPQL runtime is not.
-- Public API: `JunifyDB.sql(...)` and `JunifyDB.sqlEngine()`.
+- Public API: `EmbedJNoSQL.sql(...)` and `EmbedJNoSQL.sqlEngine()`.
 - Console: `/api/sql`, `/api/sql/schema`, the SQL Studio panel, and the SQL/NoSQL engine
   selector. A `#sql` deep link now falls back to a valid NoSQL panel.
 - Docs, examples, and tests that demonstrated SQL.
 
 ### Changed
 
-- `db.from(Entity.class)` (fluent entity query) and `JunifyRepository` finders now compile to
+- `db.from(Entity.class)` (fluent entity query) and `EmbedRepository` finders now compile to
   native document `Query` predicates instead of SQL text.
 - Console navigation describes data models rather than an engine split.
 
 ### Added
 
-- `Query.matching(Predicate<Document>)` and `JunifyRepository.findByQuery(Query)` as the
+- `Query.matching(Predicate<Document>)` and `EmbedRepository.findByQuery(Query)` as the
   native extension points for the fluent/entity layers.
 - Migration and removal documentation: `docs/release-audit/refocus/`.
 
@@ -101,12 +101,12 @@ surfaces). Removed in this change:
   - Atomic commit, rollback, and conflict detection.
   - Write-Ahead Log (WAL) with deterministic fsync crash durability.
 - **JVM Framework Integrations**:
-  - `junify-db-spring-boot-starter`: Spring Boot auto-configuration and `JunifyDBTemplate`.
-  - `junify-db-quarkus-extension`: Quarkus SmallRye config and CDI `@DefaultBean` producers.
-  - `junifydb-micronaut-integration`: Micronaut `@Factory` and Serde reflection-free serialization.
+  - `embed-jnosql-spring-boot-starter`: Spring Boot auto-configuration and `EmbedJNoSQLTemplate`.
+  - `embed-jnosql-quarkus-extension`: Quarkus SmallRye config and CDI `@DefaultBean` producers.
+  - `embedjnosql-micronaut-integration`: Micronaut `@Factory` and Serde reflection-free serialization.
   - Eclipse Vert.x: Non-blocking reactive verticle examples with event loop protection.
 - **Developer Experience & Administration**:
-  - Built-in HTTP Admin Server and Developer Console (`JunifyDBServer`).
+  - Built-in HTTP Admin Server and Developer Console (`EmbedJNoSQLServer`).
   - API Key authentication and audit logging.
   - Production Demonstration Suite with canonical E-Commerce domain (`demo/`).
   - Comprehensive documentation covering Vision, Architecture, Features, Testing, and Runbooks.
@@ -117,7 +117,7 @@ surfaces). Removed in this change:
   - MVCC write-write conflict detection was unreachable; commits now validate the write set against the transaction's snapshot timestamp (first-writer-wins). `MVCCManager.commit(txId, commitTs, readTimestamp)` added; the 2-arg overload is retained.
   - `FileEngine` now replays its write-ahead log on startup (entries newer than the last checkpoint), so writes not yet flushed to JSON snapshots are no longer lost on an unclean shutdown.
   - `LSMTreeEngine` now replays its WAL even when SSTables exist, adds recovered keys to the bloom filter, and initializes its WAL writer after recovery; compaction and SSTable ordering are consistently oldest-to-newest with newest-first reads.
-  - Collections persisted by a previous run are re-exposed after restart via the new `StorageEngine.collectionNames()` SPI (`JunifyDB.getCollectionNames()` now reflects on-disk state for the FILE engine).
+  - Collections persisted by a previous run are re-exposed after restart via the new `StorageEngine.collectionNames()` SPI (`EmbedJNoSQL.getCollectionNames()` now reflects on-disk state for the FILE engine).
 - Resolved LSM-Tree bloom filter cold-restart bug by populating filter directly from loaded SSTables.
 - Fixed B-Tree engine shutdown check-open order to guarantee dirty keys flush before marking engine closed.
 - **Improvement round 1 (September 2026):**
@@ -127,7 +127,7 @@ surfaces). Removed in this change:
   - CORS: wildcard origins are no longer combined with `Allow-Credentials: true`.
   - CI: 70% coverage gate enforced, starter/CLI module job, demo suites job, OWASP dependency scan; canonical `mvnw` wrapper.
 - **Improvement round 2 (September 2026):**
-  - Typed exception hierarchy (`JunifyDBException` → `StorageException` / `SerializationException`) replaces bare `RuntimeException` wraps.
+  - Typed exception hierarchy (`EmbedJNoSQLException` → `StorageException` / `SerializationException`) replaces bare `RuntimeException` wraps.
   - Transaction commits are serialized under a commit lock, staged deletes are now conflict-checked, and the apply phase uses an undo log so engine failure rolls back partial effects.
   - Secondary-index queries perform true point lookups (`lookup(value)`) instead of scanning the entire index.
   - Vector indexes derive dimensionality from the first stored vector (or an explicit `dims` request) instead of a hardcoded 128.
@@ -137,4 +137,4 @@ surfaces). Removed in this change:
   - Core runtime footprint reduced from 6.9 MB to **2.89 MB** by excluding the unused byte-buddy transitive; a CI size gate enforces the 5 MB limit.
   - Console rebranded to the canonical yellow/amber Volt identity (accessible contrast pairings, shared Volt favicon/logo with the website).
   - The SQL console (`POST /api/sql`) audits mutation statements the same way as REST CRUD (`SqlAuditTrailTest`); reads are not audited.
-  - Public website corrected to claim only reproducible facts (built-in SQL dialect, indicative performance figures, real Maven coordinates `org.junify.db:junify-db-core`).
+  - Public website corrected to claim only reproducible facts (built-in SQL dialect, indicative performance figures, real Maven coordinates `org.embeddedjnosql.db:embed-jnosql-core`).

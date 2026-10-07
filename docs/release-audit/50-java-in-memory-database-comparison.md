@@ -4,7 +4,7 @@
 Comparison vs the common Java in-memory options per the Baeldung reference.
 
 ## Verified Comparison
-| Dimension | JunifyDB | Redis-embedded style (e.g. ephemeral KV libs) | MapDB-style | HSQLDB/H2 (in-mem) |
+| Dimension | EmbedJNoSQL | Redis-embedded style (e.g. ephemeral KV libs) | MapDB-style | HSQLDB/H2 (in-mem) |
 |---|---|---|---|---|
 | Pure Java, no daemon | ✅ | ✅ | ✅ | ✅ |
 | Document model + queries | ✅ native | ❌ | ⚠️ manual | ⚠️ JSON funcs |

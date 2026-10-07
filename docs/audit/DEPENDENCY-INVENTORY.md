@@ -1,4 +1,4 @@
-# JunifyDB — Dependency Inventory
+# EmbedJNoSQL — Dependency Inventory
 
 **Audit Date**: September 9, 2026  
 **Auditor**: Security & Dependency Auditor  

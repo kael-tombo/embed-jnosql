@@ -18,6 +18,6 @@
 5. **Column Family Flow**:
    - Cell put $\rightarrow$ `POST /api/columns/{family}/{key}` $\rightarrow$ `ColumnFamily.put()` $\rightarrow$ 2D sparse matrix grid updated.
 6. **Transaction Sandbox Flow**:
-   - Begin/Commit/Rollback $\rightarrow$ `POST /api/transactions` $\rightarrow$ `JunifyDB.beginTransaction()` / `tx.commit()` / `tx.rollback()` $\rightarrow$ Private workspace applied/discarded $\rightarrow$ Status badge updated.
+   - Begin/Commit/Rollback $\rightarrow$ `POST /api/transactions` $\rightarrow$ `EmbedJNoSQL.beginTransaction()` / `tx.commit()` / `tx.rollback()` $\rightarrow$ Private workspace applied/discarded $\rightarrow$ Status badge updated.
 
 **Conclusion**: All 20 UI features have proven end-to-end integration with the real backend library and underlying storage engines.

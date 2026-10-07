@@ -1,6 +1,6 @@
-# JunifyDB Deep Assessment: NoSQL Engine & Multi-Model Storage Substrate
+# EmbedJNoSQL Deep Assessment: NoSQL Engine & Multi-Model Storage Substrate
 
-**Subsystem**: `org.junify.db.nosql`, `org.junify.db.storage`, `org.junify.db.core`  
+**Subsystem**: `org.embeddedjnosql.db.nosql`, `org.embeddedjnosql.db.storage`, `org.embeddedjnosql.db.core`  
 **Components**: `DocumentCollection`, `KeyValueBucket`, `ColumnFamily`, `VectorIndex`, `HybridQuery`, Storage Engines (`IN_MEMORY`, `FILE`, `B_TREE`, `LSM_TREE`)  
 **Status**: Fully Functional Multi-Model Storage  
 
@@ -8,7 +8,7 @@
 
 ## 1. Multi-Model Paradigms
 
-JunifyDB eliminates the need for separate databases for different data shapes:
+EmbedJNoSQL eliminates the need for separate databases for different data shapes:
 
 | Model Paradigm | Core Interface | Storage Mechanism | Primary Use Case |
 |---|---|---|---|
@@ -41,6 +41,6 @@ Developers can configure the underlying persistence tier with zero external conf
 
 ## 4. Identified Gaps & Opportunities for Improvement
 
-1. **Storage Engine Auto-Selection**: Novice developers should not need to choose storage engine enums manually; `JunifyDB.embedded()` should auto-select based on usage patterns (ephemeral test vs persistent service).
+1. **Storage Engine Auto-Selection**: Novice developers should not need to choose storage engine enums manually; `EmbedJNoSQL.embedded()` should auto-select based on usage patterns (ephemeral test vs persistent service).
 2. **Vector Quantization**: HNSW indexes currently store full 32-bit float vectors; adding Product Quantization (PQ) or Scalar Quantization (SQ8) would reduce memory footprint by 75%.
 3. **Column Family Secondary Indexing**: Column families currently only index row keys; column-value indexing would enable fast column scans.

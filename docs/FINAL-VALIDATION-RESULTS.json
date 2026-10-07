@@ -1,5 +1,5 @@
 {
-  "project": "JNOSQL-EMBED (JunifyDB)",
+  "project": "JNOSQL-EMBED (EmbedJNoSQL)",
   "version": "1.0.0-GA",
   "assessmentDate": "2026-09-09T09:30:00Z",
   "status": "RELEASE_READY",
@@ -12,7 +12,7 @@
     "skipped": 0,
     "suites": [
       {
-        "name": "junify-db-core",
+        "name": "embed-jnosql-core",
         "tests": 507,
         "status": "PASS",
         "durationSeconds": 31.8
@@ -116,25 +116,25 @@
     {
       "framework": "Spring Boot",
       "version": "3.2.0",
-      "integration": "junify-db-spring-boot-starter",
+      "integration": "embed-jnosql-spring-boot-starter",
       "status": "VERIFIED"
     },
     {
       "framework": "Quarkus",
       "version": "3.8.0",
-      "integration": "junify-db-quarkus-extension-runtime",
+      "integration": "embed-jnosql-quarkus-extension-runtime",
       "status": "VERIFIED"
     },
     {
       "framework": "Micronaut",
       "version": "4.2.0",
-      "integration": "junifydb-micronaut-integration",
+      "integration": "embedjnosql-micronaut-integration",
       "status": "VERIFIED"
     },
     {
       "framework": "Eclipse Vert.x",
       "version": "4.5.4",
-      "integration": "junify-db-core (executeBlocking)",
+      "integration": "embed-jnosql-core (executeBlocking)",
       "status": "VERIFIED"
     }
   ],

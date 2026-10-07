@@ -1,7 +1,7 @@
 # SQL / Relational Removal Manifest
 
 Scope: remove the relational database product, the SQL engine, and the dual-engine
-architecture from JunifyDB, leaving one embedded multi-model **NoSQL** product
+architecture from EmbedJNoSQL, leaving one embedded multi-model **NoSQL** product
 (Document + Key-Value, plus the existing wide-column and experimental vector surfaces).
 
 Baseline before this change (recorded, pre-change): `mvn test` → **886 tests, 0 failures**
@@ -13,10 +13,10 @@ After this change: `mvn test` → **819 tests, 0 failures**
 
 | Component / path | Actual purpose | Consumers found | Classification | Action | Retained replacement | Compatibility impact |
 |---|---|---|---|---|---|---|
-| `org/junify/db/sql/**` (11 classes: `engine/SqlEngine`, `parser/SqlLexer`, `parser/SqlParser`, `ast/SqlStatement`, `ast/Expression`, `SqlSchemaCatalog`, `SqlTableSchema`, `SqlResultSet`, `SqlRow`, `SqlConstraintViolationException`, `SqlUnknownTableException`) | SQL text parsing, relational execution (SELECT/INSERT/UPDATE/DELETE/JOIN/GROUP BY), table constraints | `JunifyDB.sql()`, `JunifyEntityManager`, `JunifyTypedQuery`, console `SqlHandler`, `SqlSchemaHandler`, tests | SQL-exclusive | **Removed** | `DocumentCollection.find(Query)` / `insert` / `update` / `deleteById` | `db.sql(...)` no longer exists. SQL-created tables were document collections, so their data is still readable through the document API (see §3). |
-| `org/junify/db/jdbc/**` (7 classes) + `META-INF/services/java.sql.Driver` | JDBC 4 driver over the SQL engine | only its own tests | SQL-exclusive | **Removed** | none | `jdbc:junifydb:` URLs are gone. |
-| `org/junify/db/jpa/**` (5 classes: `JunifyPersistence`, `JunifyEntityManager`, `JunifyEntityManagerFactory`, `JunifyEntityTransaction`, `JunifyTypedQuery`) | Jakarta Persistence `EntityManager` / JPQL provider over the document store | `OrderInvoiceService` in `demo/annotation-showcase-demo` | Relational persistence API (JPQL is a SQL-like query language) | **Removed** | `EclipseDocumentTemplate` / `CrudRepository` (JNoSQL-style) and `db.from(Entity.class)` | `JunifyPersistence.createEntityManager(...)` gone. **Annotation mapping is retained**: `@jakarta.persistence.Entity/@Id/@Column/@Transient` and Hibernate annotations are still resolved by `EntityMapper`/`AnnotationResolver` onto documents. |
-| `JunifyDB.sql(String, Object...)`, `JunifyDB.sql(String, Class, Object...)`, `JunifyDB.sqlEngine()` | public SQL surface | repository, entity query, console, tests | SQL-exclusive | **Removed** | `db.from()` + document collection API | source-incompatible; migration note in README. |
+| `org/embeddedjnosql/db/sql/**` (11 classes: `engine/SqlEngine`, `parser/SqlLexer`, `parser/SqlParser`, `ast/SqlStatement`, `ast/Expression`, `SqlSchemaCatalog`, `SqlTableSchema`, `SqlResultSet`, `SqlRow`, `SqlConstraintViolationException`, `SqlUnknownTableException`) | SQL text parsing, relational execution (SELECT/INSERT/UPDATE/DELETE/JOIN/GROUP BY), table constraints | `EmbedJNoSQL.sql()`, `JembedEntityManager`, `JembedTypedQuery`, console `SqlHandler`, `SqlSchemaHandler`, tests | SQL-exclusive | **Removed** | `DocumentCollection.find(Query)` / `insert` / `update` / `deleteById` | `db.sql(...)` no longer exists. SQL-created tables were document collections, so their data is still readable through the document API (see §3). |
+| `org/embeddedjnosql/db/jdbc/**` (7 classes) + `META-INF/services/java.sql.Driver` | JDBC 4 driver over the SQL engine | only its own tests | SQL-exclusive | **Removed** | none | `jdbc:embedjnosql:` URLs are gone. |
+| `org/embeddedjnosql/db/jpa/**` (5 classes: `JembedPersistence`, `JembedEntityManager`, `JembedEntityManagerFactory`, `JembedEntityTransaction`, `JembedTypedQuery`) | Jakarta Persistence `EntityManager` / JPQL provider over the document store | `OrderInvoiceService` in `demo/annotation-showcase-demo` | Relational persistence API (JPQL is a SQL-like query language) | **Removed** | `EclipseDocumentTemplate` / `CrudRepository` (JNoSQL-style) and `db.from(Entity.class)` | `JembedPersistence.createEntityManager(...)` gone. **Annotation mapping is retained**: `@jakarta.persistence.Entity/@Id/@Column/@Transient` and Hibernate annotations are still resolved by `EntityMapper`/`AnnotationResolver` onto documents. |
+| `EmbedJNoSQL.sql(String, Object...)`, `EmbedJNoSQL.sql(String, Class, Object...)`, `EmbedJNoSQL.sqlEngine()` | public SQL surface | repository, entity query, console, tests | SQL-exclusive | **Removed** | `db.from()` + document collection API | source-incompatible; migration note in README. |
 | Console `/api/sql`, `/api/sql/schema` routes + `SqlHandler`, `SqlSchemaHandler`, `splitSqlStatements`, `extractSqlTarget` | SQL execution + constraint catalog over HTTP | console UI, tests | SQL-exclusive | **Removed** | `/api/collections/{name}/query` (document filters), `/api/storage/status` | HTTP clients calling `/api/sql` get 404. |
 | Console "SQL Studio" panel, `sql` navigation entry, `engine-tag` dual-engine grouping | SQL editor, autocomplete, saved queries, export | console UI | SQL-exclusive | **Removed** | Collections / Key-Value panels | deep link `#sql` falls back to a valid panel (hash is validated against the panel list at boot). |
 | SQL-only tests | `sql/SqlEngineTest`, `sql/SqlConstraintTest`, `sql/SqlReferentialConstraintTest`, `sql/SqlUnknownTableTest`, `jdbc/JdbcDriverTest`, `jpa/JpaEntityManagerTest`, `SqlAuditTrailTest`, and the `sql/schema` case in `ConsoleWorkspaceEndpointsTest` | — | SQL-exclusive | **Removed** (67 tests) | native equivalents in the surviving suites | — |
@@ -101,9 +101,9 @@ Found by re-reading the console assets and caches after the feature removal:
 - `QueryCache` (`core/cache/QueryCache.java`) — the SQL result cache; its only remaining consumer was
   its own unit test. NoSQL reads use `QueryResultCache` (owned by `DocumentCollection`). Class and its
   10 test methods in `CoverageExtensionTest` removed together, so no assertion was weakened.
-- `JunifyDBServer.buildContext` no longer publishes `relationalEngine=JUNIFYDB-RDBMS`; the console reads
+- `EmbedJNoSQLServer.buildContext` no longer publishes `relationalEngine=EMBEDJNOSQL-RDBMS`; the console reads
   `engine` + `nosqlEngine` only.
-- Stale wording in comments/javadoc that described removed behavior (`JunifyDB`, `StorageEngine`,
+- Stale wording in comments/javadoc that described removed behavior (`EmbedJNoSQL`, `StorageEngine`,
   `Transaction`, `ConsoleInteractiveTestServer`, the backup-restore response note).
 
 ## 8. Retained API that *resembles* SQL (deliberate, documented)

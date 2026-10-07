@@ -38,7 +38,7 @@ The older `1.0.0` framing in the checklist lines below is preserved as history.
 ### Release Mechanics
 - [x] Repo litter removed ($null/server.*)
 - [x] `mvnw` shell script (P1-3) — done 2026-09-21, round 1 (smoke-tested; CI dogfoods it)
-- [ ] GitHub Release: tag **`v0.9.0`** and attach the core jar — **pending**. The earlier `v1.0.0` draft note here is unverified in this environment and is superseded by the canonical decision; the current artifact is `target/junify-db-core-1.0.0.jar` at **3,122,887 bytes (3.12 MB)** (`sha256 931f3862…`, re-measured 2026-09-23 after the WAL/checkpoint round and still byte-for-byte reproducible), size-gated (the shade step replaces the plain jar in place). The earlier "2.89 MB" and "3.11 MB" figures were stale
+- [ ] GitHub Release: tag **`v0.9.0`** and attach the core jar — **pending**. The earlier `v1.0.0` draft note here is unverified in this environment and is superseded by the canonical decision; the current artifact is `target/embed-jnosql-core-1.0.0.jar` at **3,122,887 bytes (3.12 MB)** (`sha256 931f3862…`, re-measured 2026-09-23 after the WAL/checkpoint round and still byte-for-byte reproducible), size-gated (the shade step replaces the plain jar in place). The earlier "2.89 MB" and "3.11 MB" figures were stale
 - [x] Recommended version: **`v0.9.0`** per `final-go-no-go-decision.md` (was `1.0.0` / 47-VER-02 — revised because a 1.0 database is expected to ship JDBC and constraint enforcement, which this build does not)
 - [ ] Maven Central: blocked until 46 items (P2-1) — GitHub-first release is valid without it
 

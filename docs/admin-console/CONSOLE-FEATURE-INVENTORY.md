@@ -1,19 +1,19 @@
-# JunifyDB Administration Console Feature Inventory & Evidence Matrix
+# EmbedJNoSQL Administration Console Feature Inventory & Evidence Matrix
 
 Every administration console feature is tested individually, step-by-step, with automated test evidence and zero unsupported affirmations.
 
 | Feature ID | Feature Name | Protocol / Endpoint | Handler Class | Test Class & Method | Status |
 |---|---|---|---|---|---|
-| **CONSOLE-001** | Dynamic Console Startup | `HttpServer.start()` | `JunifyDBServer` | `ConsoleFeatureValidationTest#testDynamicStartup` | **VERIFIED** |
+| **CONSOLE-001** | Dynamic Console Startup | `HttpServer.start()` | `EmbedJNoSQLServer` | `ConsoleFeatureValidationTest#testDynamicStartup` | **VERIFIED** |
 | **CONSOLE-002** | Intelligent Port Management | Socket bind probing | `PortManager` | `PortManagementTest#testIntelligentFallbackWhenOccupied` | **VERIFIED** |
 | **CONSOLE-003** | Port Range & Strict Failure | `PortConflictException` | `PortManager` | `PortManagementTest#testFailIfPreferredPortUnavailable` | **VERIFIED** |
-| **CONSOLE-004** | Security Barrier (401 Rejection) | `/api/*` | `JunifyDBServer#isAuthValid` | `SecurityEnforcementTest#testAnonymousAccessBlocked` | **VERIFIED** |
+| **CONSOLE-004** | Security Barrier (401 Rejection) | `/api/*` | `EmbedJNoSQLServer#isAuthValid` | `SecurityEnforcementTest#testAnonymousAccessBlocked` | **VERIFIED** |
 | **CONSOLE-005** | Credential Login & Cookie Auth | `POST /api/auth/login` | `AuthLoginHandler` | `SecurityEnforcementTest#testCsrfProtection` | **VERIFIED** |
-| **CONSOLE-006** | API Key Authentication | `X-API-Key` / Bearer | `JunifyDBServer#isAuthValid` | `ConsoleFeatureValidationTest#testAuthenticationFlows` | **VERIFIED** |
+| **CONSOLE-006** | API Key Authentication | `X-API-Key` / Bearer | `EmbedJNoSQLServer#isAuthValid` | `ConsoleFeatureValidationTest#testAuthenticationFlows` | **VERIFIED** |
 | **CONSOLE-007** | Brute-Force Lockout (429) | `POST /api/auth/login` | `FailedLoginTracker` | `SecurityEnforcementTest#testBruteForceLockout` | **VERIFIED** |
 | **CONSOLE-008** | CSRF Synchronizer Token Protection | `X-CSRF-Token` | `CsrfTokenManager` | `SecurityEnforcementTest#testCsrfProtection` | **VERIFIED** |
 | **CONSOLE-009** | Session Invalidation on Logout | `POST /api/auth/logout` | `AuthLogoutHandler` | `SecurityEnforcementTest#testLogoutInvalidation` | **VERIFIED** |
-| **CONSOLE-010** | Security Response Headers | All endpoints | `JunifyDBServer#addSecurityHeaders`| `SecurityEnforcementTest#testSecurityHeadersPresent` | **VERIFIED** |
+| **CONSOLE-010** | Security Response Headers | All endpoints | `EmbedJNoSQLServer#addSecurityHeaders`| `SecurityEnforcementTest#testSecurityHeadersPresent` | **VERIFIED** |
 | **CONSOLE-011** | Static Asset Serving | `GET /`, `/index.html` | `StaticHandler` | `ConsoleFeatureValidationTest#testStaticConsoleServing` | **VERIFIED** |
 | **CONSOLE-012** | Database Health Telemetry | `GET /api/health` | `HealthHandler` | `ConsoleFeatureValidationTest#testHealthAndMetricsTelemetry` | **VERIFIED** |
 | **CONSOLE-013** | Real-time Metrics & Stats | `GET /api/metrics`, `/api/stats` | `MetricsHandler`, `StatsHandler` | `ConsoleFeatureValidationTest#testHealthAndMetricsTelemetry` | **VERIFIED** |

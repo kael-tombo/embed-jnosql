@@ -61,7 +61,7 @@ None
 Inherited from session cookie.
 
 ## Backend Service
-`CollectionsHandler.handle()` in `JunifyDBServer`
+`CollectionsHandler.handle()` in `EmbedJNoSQLServer`
 
 ## JNOSQL-EMBED Library API
 `DocumentCollection.insert(Document)`
@@ -141,7 +141,7 @@ Added client-side JSON lint check before submission.
 `JNoSQLServerTest.insertDocument()`
 
 ## Exact Test Commands
-`mvn test -Dtest=JunifyDBServerTest`
+`mvn test -Dtest=EmbedJNoSQLServerTest`
 
 ## Test Output
 Tests run: 9, Failures: 0, Errors: 0.

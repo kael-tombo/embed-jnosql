@@ -1,6 +1,6 @@
 # Baseline Snapshot — Validation Record
 
-Snapshot: `junifydb-baseline-before-public-release-audit-20260922` @ `b10b6cd` (branch `main`)
+Snapshot: `embedjnosql-baseline-before-public-release-audit-20260922` @ `b10b6cd` (branch `main`)
 Validated: 2026-09-22 (same day, after snapshot creation)
 
 ## Validation results
@@ -12,7 +12,7 @@ Validated: 2026-09-22 (same day, after snapshot creation)
 | Archive is extractable (restore dry-run) | **PASS** — extracted into a scratch directory; root files present (`README.md`, `pom.xml`, `LICENSE`, …) |
 | Repository remains buildable after snapshot | **PASS** — `mvn -DskipTests clean package` → BUILD SUCCESS, shaded jar **3,113,904 bytes** |
 | Tests reproduce the baseline result | **PASS** — `mvn test` → **785/785**, 0 failures/errors/skipped |
-| Baseline comparable with later changes | **PASS** — `git diff junifydb-baseline-before-public-release-audit-20260922..HEAD --stat` works (branch pointer, not a detached state) |
+| Baseline comparable with later changes | **PASS** — `git diff embedjnosql-baseline-before-public-release-audit-20260922..HEAD --stat` works (branch pointer, not a detached state) |
 | No secrets copied into the snapshot | **PASS** — pattern scan of packaged resources and the baseline directory is clean; no `.env`, keystore, `.pem`, or credentials file is tracked in the repository |
 | User changes preserved | **PASS** — the 29 modified-but-uncommitted files were **not** touched; patch captured; `git status` still reports 29 `M` |
 
@@ -47,7 +47,7 @@ detecting tampering of the committed baseline via the archive).
 
 **HIGH.** Either of two independent paths restores the baseline:
 
-- `git worktree add ../restore junifydb-baseline-before-public-release-audit-20260922`
+- `git worktree add ../restore embedjnosql-baseline-before-public-release-audit-20260922`
 - `tar -xzf source-snapshot.tar.gz -C <dir>`
 
 Both were exercised (dry-run extraction, branch listing, diff against the branch).

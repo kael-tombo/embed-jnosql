@@ -1,7 +1,7 @@
-# JunifyDB: Java Developer Productivity Analysis & Strategic Roadmap
+# EmbedJNoSQL: Java Developer Productivity Analysis & Strategic Roadmap
 
 > **⚠ SUPERSEDED — pre-refactor document (SQL / dual-engine).**
-> JunifyDB is now NoSQL-only. The relational engine, SQL parser/planning, JDBC driver, JPA
+> EmbedJNoSQL is now NoSQL-only. The relational engine, SQL parser/planning, JDBC driver, JPA
 > `EntityManager`, `/api/sql` routes, and the SQL Studio console screen were removed from the
 > product. Statements in this file that describe SQL, JDBC, SQL schemas, or an engine selector no
 > longer describe shipped behavior.
@@ -20,12 +20,12 @@
 ## 1. Productivity Friction Points Identified
 
 ### A. Setup & Initialization Boilerplate
-- **Current State**: Developers configure `JunifyDBConfig.builder().engineType(...).baseDirectory(...).build()` and then pass to `JunifyDB.open(config)`.
+- **Current State**: Developers configure `EmbedJNoSQLConfig.builder().engineType(...).baseDirectory(...).build()` and then pass to `EmbedJNoSQL.open(config)`.
 - **Friction**: New developers wanting an instant in-memory database for a unit test or quick prototype have to write 5 lines of configuration.
 - **Solution**: Provide static factory methods with zero configuration:
   ```java
-  JunifyDB db = JunifyDB.inMemory(); // Instant ephemeral database
-  JunifyDB db = JunifyDB.openTemp(); // Temporary disk database with auto-delete
+  EmbedJNoSQL db = EmbedJNoSQL.inMemory(); // Instant ephemeral database
+  EmbedJNoSQL db = EmbedJNoSQL.openTemp(); // Temporary disk database with auto-delete
   ```
 
 ### B. Fluent Query Building & SQL Sugar
@@ -55,7 +55,7 @@
 ## 2. Productivity Enhancement Roadmap
 
 1. **Phase 1: Fluent Developer Factories**
-   - Add `JunifyDB.inMemory()` and `JunifyDB.openTemp()`.
+   - Add `EmbedJNoSQL.inMemory()` and `EmbedJNoSQL.openTemp()`.
    - Add `db.from(Class<T>)` fluent querying helper.
 
 2. **Phase 2: Entity Lifecycle & Annotation Enhancements**

@@ -8,7 +8,7 @@ All checks were run against the **rendered** site and the **running** Console, n
 | Surface | Method | Result |
 |---|---|---|
 | Website (local) | served `docs/` at `http://localhost:8093`, driven in the thread preview browser | all 3 brand images 200; nav/footer/sticky-header verified |
-| Website (remote) | `https://kael-tombo.github.io/JunifyDB/?v=2ebcc14` (cache-buster) after gh-pages push `2ebcc14` | 9× "Relational SQL Engine", 3× canonical mark, 0× BM25, 0× 85k claim |
+| Website (remote) | `https://kael-tombo.github.io/EmbedJNoSQL/?v=2ebcc14` (cache-buster) after gh-pages push `2ebcc14` | 9× "Relational SQL Engine", 3× canonical mark, 0× BM25, 0× 85k claim |
 | Console login | preview browser on rebuilt jar (port 8091) | badge "Dual-Engine • Relational SQL + Non-Relational NoSQL"; aria-labels on all inputs |
 | Console shell | logged in, DOM snapshot of `#overview` | nav groups: General / **Relational SQL Engine** / **Non-Relational NoSQL Engine** / Data Model / Both Engines |
 | Console SQL Studio | typed `SELEC broken FROM x`, ran | `role=alert` error card: "✖ SQL error — Unsupported or invalid SQL statement" + dialect boundary note |
@@ -25,7 +25,7 @@ All checks were run against the **rendered** site and the **running** Console, n
 |---|---|---|---|
 | "ANSI SQL" | 0 (fixed earlier round) | 0 | doc 05/08: built-in dialect |
 | "tamper-evident" | 0 | 0 | doc 22: memory ring + JSONL copy |
-| `org.junify:` wrong coords | 0 | 0 | pom.xml: `org.junify.db:junify-db-core` |
+| `org.embeddedjnosql:` wrong coords | 0 | 0 | pom.xml: `org.embeddedjnosql.db:embed-jnosql-core` |
 | "85k+ ops/sec" (twitter) | **1 — removed this round** | 0 | doc 43: indicative only |
 | "BM25 full-text indexing" | **1 — removed this round** | 0 | `TextIndex.java` = inverted index, no BM25 ranking |
 | "zero-loss crash recovery" | **1 — replaced** | 0 ("writes replay from the WAL") | doc 15: conditional pass, WAL replay proven, narrow rotation window |
@@ -40,7 +40,7 @@ All checks were run against the **rendered** site and the **running** Console, n
 
 ## Final live gate (post-restart re-verification, 2026-09-22)
 
-Re-fetched `https://kael-tombo.github.io/JunifyDB/` after session restart:
+Re-fetched `https://kael-tombo.github.io/EmbedJNoSQL/` after session restart:
 `BM25` 0 · `85k` 0 · `zero-loss` 0 · `Crash-Safe` 0 · `ANSI SQL` 0 ·
 `fully production` 0 · `JNoSQL-EMBED` 0 · `jakarta.nosql Compatibility` 0 ·
 `assets/favicon-64.png` HTTP 200. Deployment still reflects the latest implementation.

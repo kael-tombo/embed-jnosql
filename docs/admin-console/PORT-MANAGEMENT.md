@@ -4,7 +4,7 @@
 
 In embedded microservice deployments, test execution environments, CI/CD pipelines, and local developer workstations, port collisions on static ports (such as `8080` or `9090`) are frequent causes of startup failure.
 
-JunifyDB provides authoritative, kernel-level port detection and collision avoidance through `PortManager`.
+EmbedJNoSQL provides authoritative, kernel-level port detection and collision avoidance through `PortManager`.
 
 ## 2. Binding Lifecycle & Behavior
 
@@ -48,5 +48,5 @@ When a collision occurs and an alternate port is bound, the server logs a clear 
 ```
 [PortManager] Preferred port 9090 on 127.0.0.1 is occupied
 [PortManager] Intelligent fallback: bound to port 9091 on 127.0.0.1
-[JunifyDBServer] Administration Console available at: http://localhost:9091/jnosql-admin/
+[EmbedJNoSQLServer] Administration Console available at: http://localhost:9091/jnosql-admin/
 ```

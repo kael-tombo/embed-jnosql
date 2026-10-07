@@ -2,11 +2,11 @@
 
 ## Snapshot Identifier
 
-`junifydb-baseline-before-public-release-audit-20260922`
+`embedjnosql-baseline-before-public-release-audit-20260922`
 
 ## Purpose
 
-Recoverable, verified snapshot of the JUNIFY-DB codebase exactly as it stood
+Recoverable, verified snapshot of the EMBED-DB codebase exactly as it stood
 immediately before the public-release audit implementation phase. Nothing in
 this directory is a working copy — it is evidence and recovery material.
 
@@ -18,7 +18,7 @@ this directory is a working copy — it is evidence and recovery material.
 | Repository path | `C:\Users\jratombo-adm\Desktop\JNoSQL-EMBED` |
 | Branch | `main` |
 | Commit | `b10b6cd` — "docs: align public claims with the audited behavior" |
-| Remote | `origin` → `https://github.com/armand-ratombotiana/JunifyDB.git` |
+| Remote | `origin` → `https://github.com/armand-ratombotiana/EmbedJNoSQL.git` |
 | Tags | 2 (`v0.1.0-package-migration`, `v0.2.0-mvcc-kernel`) — no 1.0 tag |
 | Uncommitted tracked changes | 29 files (another session's `pages.yml` + console-validation proof + 27 network-trace JSONs) — **preserved untouched**, captured in `uncommitted-tracked-changes.patch` |
 | Untracked files | 1 (`docs/release-audit/baseline/` itself — this directory) |

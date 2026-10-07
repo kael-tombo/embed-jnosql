@@ -1,4 +1,4 @@
-# JunifyDB — Full-Stack Validation Log
+# EmbedJNoSQL — Full-Stack Validation Log
 
 **Auditor**: QA & Verification Lead  
 **Date**: September 9, 2026  

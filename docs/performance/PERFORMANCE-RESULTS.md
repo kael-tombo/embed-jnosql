@@ -1,4 +1,4 @@
-# JunifyDB — Performance Benchmarks & Results
+# EmbedJNoSQL — Performance Benchmarks & Results
 
 **Date**: September 9, 2026  
 **Auditor**: Performance Lead  

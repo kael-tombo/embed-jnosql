@@ -2,7 +2,7 @@
 
 ## 1. Project Verification Information
 
-- **Database Engine**: JunifyDB Embedded NoSQL
+- **Database Engine**: EmbedJNoSQL Embedded NoSQL
 - **Console Version**: 1.0.0
 - **Running Backend**: Spring Boot Demo PID `6552` on Java 23
 - **Tested Administration URL**: `http://localhost:9090/jnosql-admin/`
@@ -81,7 +81,7 @@ docs/browser-testing/
 | Code | Name | Scope Tested | Verified State | Status |
 | :--- | :--- | :--- | :--- | :--- |
 | `CONSOLE-BROWSER-001` | Console Asset Delivery | Root index, login page, SVG logo | Served under context path `/jnosql-admin/` with HTTP security headers (`nosniff`, `DENY`). | **PASS** |
-| `CONSOLE-BROWSER-002` | Authentication Barrier | 401 unauth barrier, bad login rejection, session cookie & CSRF token issuance | Cookie `JUNIFY_SESSION` (HttpOnly, SameSite=Lax), token `X-CSRF-Token`, brute-force tracker active. | **PASS** |
+| `CONSOLE-BROWSER-002` | Authentication Barrier | 401 unauth barrier, bad login rejection, session cookie & CSRF token issuance | Cookie `EMBED_SESSION` (HttpOnly, SameSite=Lax), token `X-CSRF-Token`, brute-force tracker active. | **PASS** |
 | `CONSOLE-BROWSER-003` | Dashboard Telemetry | Health status, uptime, throughput metrics, thread pool concurrency | Reports engine `IN_MEMORY`, accurate operation counts, multithreaded worker pool. | **PASS** |
 | `CONSOLE-BROWSER-004` | Document Store CRUD | Collection listing, document insertion, field updates, deletion | Verified in storage engine via read-backs. Status codes 200, 201, 204 correctly returned. | **PASS** |
 | `CONSOLE-BROWSER-005` | Query Runner | Criteria filtering (`$gt`), structured projection | Accurately returns pre-seeded products matching query filters. | **PASS** |

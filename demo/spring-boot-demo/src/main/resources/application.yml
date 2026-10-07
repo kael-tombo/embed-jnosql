@@ -1,7 +1,7 @@
 server:
   port: 8081
 
-junifydb:
+embedjnosql:
   enabled: true
   storage-engine: IN_MEMORY
   data-dir: data/spring-demo
@@ -10,7 +10,7 @@ junifydb:
   console:
     enabled: true
     port: 9090
-    context-path: /junify-console
+    context-path: /embeddedjnosql-console
     intelligent-port: true
     max-port-attempts: 50
     host: 127.0.0.1

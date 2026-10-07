@@ -1,4 +1,4 @@
-# JunifyDB Console Feature Assessment: Performance Benchmarks & System Tools
+# EmbedJNoSQL Console Feature Assessment: Performance Benchmarks & System Tools
 
 **Feature ID**: CONSOLE-FEAT-15  
 **Console Tab / Location**: `dropdown: More -> Benchmarks, Export, Import`  
@@ -52,7 +52,7 @@ The deep analysis across this feature revealed the following UX and operational 
 ---
 
 ## 5. Verification & Acceptance Criteria
-1. **Visual Consistency**: Conforms with JunifyDB dark/light glassmorphic design language.
+1. **Visual Consistency**: Conforms with EmbedJNoSQL dark/light glassmorphic design language.
 2. **Robust Error Handling**: Network errors, validation failures, and server exceptions display clear, actionable toast notifications.
 3. **No Breaking Changes**: Full backwards compatibility with existing REST endpoints and server handlers.
 4. **Automated Test Validation**: Verified via browser interaction and automated test suites.

@@ -1,7 +1,7 @@
 # Implementation Plan & Engineering Strategy
 
 ## Strategy Overview
-JunifyDB aims to become the standard embedded NoSQL database for the JVM, mirroring H2's ubiquitous presence in the relational world. To achieve this, the project adheres to a structured, wave-based engineering roadmap.
+EmbedJNoSQL aims to become the standard embedded NoSQL database for the JVM, mirroring H2's ubiquitous presence in the relational world. To achieve this, the project adheres to a structured, wave-based engineering roadmap.
 
 ---
 
@@ -9,7 +9,7 @@ JunifyDB aims to become the standard embedded NoSQL database for the JVM, mirror
 
 ```mermaid
 gantt
-    title JunifyDB Engineering Strategy
+    title EmbedJNoSQL Engineering Strategy
     dateFormat  YYYY-MM-DD
     section Wave 1-4
     Core Refactoring & Deep Docs        :done,    des1, 2026-09-01, 2026-09-08

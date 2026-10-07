@@ -61,10 +61,10 @@ None
 Inherited from session cookie.
 
 ## Backend Service
-`AuditLogHandler` in `JunifyDBServer`
+`AuditLogHandler` in `EmbedJNoSQLServer`
 
 ## JNOSQL-EMBED Library API
-`JunifyDBServer.auditLog` ring buffer.
+`EmbedJNoSQLServer.auditLog` ring buffer.
 
 ## Storage Engine
 Bounded in-memory deque (10,000 max entries).

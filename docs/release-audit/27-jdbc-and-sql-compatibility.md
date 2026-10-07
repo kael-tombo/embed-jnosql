@@ -7,10 +7,10 @@ JDBC driver existence/claims, and SQL compatibility boundary.
 No JDBC *compliance* claim unless the driver genuinely is compliant; no false absence either.
 
 ## Current Implementation (2026-09-23)
-**A working JDBC driver ships** under `org.junify.db.jdbc`, registered for discovery via
+**A working JDBC driver ships** under `org.embeddedjnosql.db.jdbc`, registered for discovery via
 `META-INF/services/java.sql.Driver`:
 
-- `Driver` — accepts `jdbc:junifydb:memory:` and `jdbc:junifydb:file:<dir>`; **`jdbcCompliant()`
+- `Driver` — accepts `jdbc:embedjnosql:memory:` and `jdbc:embedjnosql:file:<dir>`; **`jdbcCompliant()`
   returns `false`** (this driver is not compliant and does not claim to be).
 - `Connection` / `Statement` / `PreparedStatement` — `?` parameters are bound by the engine
   (`db.sql(sql, params...)`), never spliced into SQL text.
@@ -31,11 +31,11 @@ result sets, and schema reflection (`DatabaseMetaData.getTables`/`getColumns`/`g
   typed getters/`wasNull`, closed-set behaviour, the unsupported-call boundary, `getTableTypes`,
   file-backed persistence across reopen, and the packaged discovery file.
 - **Discovery proven on a real consumer classpath**: a compiled program run with
-  `java -cp junify-db-core-1.0.0.jar:<classes>` connected with **no** `Class.forName` and no
+  `java -cp embed-jnosql-core-1.0.0.jar:<classes>` connected with **no** `Class.forName` and no
   `registerDriver` call, inserted through a `PreparedStatement`, queried, and received the
   primary-key violation as a `SQLException`.
-- **Falsified** against the pre-change jar: `Class.forName("org.junify.db.jdbc.JunifyDriver")`
-  → `ClassNotFoundException`, and `DriverManager.getConnection("jdbc:junifydb:memory:")` →
+- **Falsified** against the pre-change jar: `Class.forName("org.embeddedjnosql.db.jdbc.JembedDriver")`
+  → `ClassNotFoundException`, and `DriverManager.getConnection("jdbc:embedjnosql:memory:")` →
   *"No suitable driver found"*.
 
 ### A real defect found and fixed during this work (now R-76)

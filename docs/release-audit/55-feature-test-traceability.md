@@ -6,7 +6,7 @@ Every advertised feature mapped to the tests and evidence proving it.
 ## Matrix
 | Feature | Automated Tests | Live/Manual Evidence | Status |
 |---|---|---|---|
-| `JunifyDB.inMemory()` lifecycle | `UtilityClassTest`, most of suite | — | CONFIRMED |
+| `EmbedJNoSQL.inMemory()` lifecycle | `UtilityClassTest`, most of suite | — | CONFIRMED |
 | Document CRUD + query | `DocumentCollectionTest`, `AdvancedQueryTest`, `DeepDocumentTest` | console collections panel | CONFIRMED |
 | Secondary indexes | `DocumentCollectionTest` (index cases) | console index creation | CONFIRMED |
 | Aggregations | `AggregationPipelineTest` | — | CONFIRMED |
@@ -27,7 +27,7 @@ Every advertised feature mapped to the tests and evidence proving it.
 | Vectors (HNSW 128-dim) | — (excluded from coverage as experimental) | live add/search | PARTIALLY VERIFIED |
 | CDC events | — | — | NOT IMPLEMENTED (no producer; status-only UI) |
 | Framework starters | module unit tests (not run in this env) | prior demo runs | PARTIALLY VERIFIED |
-| JNoSQL-style annotations | `JunifyRepositoryTest`, `AnnotationDualSupportTest` | — | CONFIRMED (dialect only) |
+| JNoSQL-style annotations | `EmbedRepositoryTest`, `AnnotationDualSupportTest` | — | CONFIRMED (dialect only) |
 | JPA-style annotations | `JpaEntityManagerTest` | — | CONFIRMED |
 | Text search | `TextSearchTest` | — | CONFIRMED |
 | Reactive API | suite paths | — | PARTIALLY VERIFIED |

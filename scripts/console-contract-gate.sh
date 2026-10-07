@@ -13,7 +13,7 @@
 # suite does not catch that class; a contract probe does.
 #
 # Usage: scripts/console-contract-gate.sh [port]
-# Requires: target/junify-db-core-1.0.0.jar (build with: mvn -DskipTests package)
+# Requires: target/embed-jnosql-core-1.0.0.jar (build with: mvn -DskipTests package)
 set -u
 
 PORT="${1:-8097}"
@@ -22,7 +22,7 @@ PORT="${1:-8097}"
 # assertions by the nature of the engine.
 ENGINE="${ENGINE:-FILE}"
 BASE="http://127.0.0.1:${PORT}"
-JAR="target/junify-db-core-1.0.0.jar"
+JAR="target/embed-jnosql-core-1.0.0.jar"
 DATA_DIR="target/contract-gate-data-${ENGINE}"
 LOG="target/contract-gate-server-${ENGINE}.log"
 
@@ -573,7 +573,7 @@ CORS_BASE="http://127.0.0.1:$CORS_PORT"
 if curl -s -m 2 -o /dev/null "$CORS_BASE/api/health" 2>/dev/null; then
   fail "something is already listening on :$CORS_PORT — cannot verify the CORS opt-in"
 else
-  JUNIFYDB_SECURITY_CORS_ENABLED=true JUNIFYDB_SECURITY_ALLOWED_ORIGINS=https://app.example \
+  EMBEDJNOSQL_SECURITY_CORS_ENABLED=true EMBEDJNOSQL_SECURITY_ALLOWED_ORIGINS=https://app.example \
     java -jar "$JAR" --port "$CORS_PORT" --data-dir "$DATA_DIR-cors" --engine "$ENGINE" --sync >"$LOG.cors" 2>&1 &
   CORS_PID=$!
   CORS_UP=0

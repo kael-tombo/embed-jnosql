@@ -1,4 +1,4 @@
-# JunifyDB — Technical Debt Inventory
+# EmbedJNoSQL — Technical Debt Inventory
 
 **Audit Date**: September 9, 2026  
 **Auditor**: Principal Code Quality Lead  

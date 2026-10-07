@@ -8,10 +8,10 @@
 
 ## 1. Process Restart Test Protocol
 
-1. Initialize `JunifyDB` pointing to a local directory (`target/test-recovery-db`).
+1. Initialize `EmbedJNoSQL` pointing to a local directory (`target/test-recovery-db`).
 2. Insert 1,000 documents and 1,000 key-value pairs.
 3. Flush and close the database instance (`db.close()`).
-4. Re-open a brand new `JunifyDB` instance against the same data directory.
+4. Re-open a brand new `EmbedJNoSQL` instance against the same data directory.
 5. Verify that `collection.count() == 1000` and all keys match original checksums.
 6. Verify secondary indexes rebuild accurately without data loss.
 
@@ -25,7 +25,7 @@
 2. Stream continuous transactions to disk.
 3. Simulate process crash by terminating process without calling `close()`.
 4. Inject partial write / corrupt trailing bytes into `.wal` file.
-5. Launch recovery process (`JunifyDB.create(...)`).
+5. Launch recovery process (`EmbedJNoSQL.create(...)`).
 6. Verify:
    - CRC32 checksum flags the corrupted trailing record and truncates safely.
    - All previously committed transactions are successfully restored.

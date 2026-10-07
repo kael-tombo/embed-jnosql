@@ -1,19 +1,19 @@
-# JunifyDB Deep Assessment: Tri-Standard Annotation Interoperability
+# EmbedJNoSQL Deep Assessment: Tri-Standard Annotation Interoperability
 
-**Subsystem**: `org.junify.db.adapter.jnosql`  
+**Subsystem**: `org.embeddedjnosql.db.adapter.jnosql`  
 **Components**: `AnnotationResolver`, `EntityMapper`, Annotation Definitions  
 **Status**: Production Verified Across All 3 Standards  
 
 ---
 
-## 1. The Tri-Standard Problem & JunifyDB Solution
+## 1. The Tri-Standard Problem & EmbedJNoSQL Solution
 
 Java developers face severe fragmentation when choosing database annotations:
 - **Relational Developers**: Use **Jakarta Persistence (JPA)** annotations (`@jakarta.persistence.Entity`, `@Table`, `@Id`, `@Column`).
 - **NoSQL Developers**: Use **Eclipse JNoSQL** annotations (`@jakarta.nosql.Entity`, `@Id`, `@Column`).
 - **Enterprise Power Users**: Rely on **Hibernate Annotations** (`@UuidGenerator`, `@CreationTimestamp`, `@UpdateTimestamp`, `@Formula`).
 
-JunifyDB resolves this fragmentation with **Tri-Standard Interoperability**: a unified `AnnotationResolver` that dynamically inspects domain classes for any of the three standards.
+EmbedJNoSQL resolves this fragmentation with **Tri-Standard Interoperability**: a unified `AnnotationResolver` that dynamically inspects domain classes for any of the three standards.
 
 ---
 
@@ -21,10 +21,10 @@ JunifyDB resolves this fragmentation with **Tri-Standard Interoperability**: a u
 
 | Feature | Precedence Order | Supported Annotations |
 |---|---|---|
-| **Entity / Collection Name** | 1. JPA `@Table(name)`<br>2. JNoSQL `@Entity(value)`<br>3. JPA `@Entity(name)`<br>4. JunifyDB `@Entity(value)`<br>5. Class Simple Name (lowercase) | `jakarta.persistence.Table`<br>`jakarta.nosql.Entity`<br>`jakarta.persistence.Entity`<br>`org.junify.db.adapter.jnosql.Entity` |
-| **Primary Key (`@Id`)** | Any present: JNoSQL `@Id` OR JPA `@Id` OR JPA `@EmbeddedId` OR JunifyDB `@Id` | `jakarta.nosql.Id`<br>`jakarta.persistence.Id`<br>`jakarta.persistence.EmbeddedId`<br>`org.junify.db.adapter.jnosql.Id` |
-| **Field Mapping (`@Column`)** | Specified name or field name; respects `insertable`/`updatable` | `jakarta.nosql.Column`<br>`jakarta.persistence.Column`<br>`org.junify.db.adapter.jnosql.Column` |
-| **Ignored Fields (`@Transient`)**| Any present: JPA `@Transient`, keyword `transient`, JunifyDB `@Transient` | `jakarta.persistence.Transient`<br>`org.junify.db.adapter.jnosql.Transient` |
+| **Entity / Collection Name** | 1. JPA `@Table(name)`<br>2. JNoSQL `@Entity(value)`<br>3. JPA `@Entity(name)`<br>4. EmbedJNoSQL `@Entity(value)`<br>5. Class Simple Name (lowercase) | `jakarta.persistence.Table`<br>`jakarta.nosql.Entity`<br>`jakarta.persistence.Entity`<br>`org.embeddedjnosql.db.adapter.jnosql.Entity` |
+| **Primary Key (`@Id`)** | Any present: JNoSQL `@Id` OR JPA `@Id` OR JPA `@EmbeddedId` OR EmbedJNoSQL `@Id` | `jakarta.nosql.Id`<br>`jakarta.persistence.Id`<br>`jakarta.persistence.EmbeddedId`<br>`org.embeddedjnosql.db.adapter.jnosql.Id` |
+| **Field Mapping (`@Column`)** | Specified name or field name; respects `insertable`/`updatable` | `jakarta.nosql.Column`<br>`jakarta.persistence.Column`<br>`org.embeddedjnosql.db.adapter.jnosql.Column` |
+| **Ignored Fields (`@Transient`)**| Any present: JPA `@Transient`, keyword `transient`, EmbedJNoSQL `@Transient` | `jakarta.persistence.Transient`<br>`org.embeddedjnosql.db.adapter.jnosql.Transient` |
 | **Auto ID Generation** | Hibernate `@UuidGenerator` or JPA `@GeneratedValue` | `org.hibernate.annotations.UuidGenerator`<br>`jakarta.persistence.GeneratedValue` |
 | **Audit Timestamps** | Automated `Instant` or `LocalDateTime` stamping on insert/update | `org.hibernate.annotations.CreationTimestamp`<br>`org.hibernate.annotations.UpdateTimestamp` |
 | **Computed Fields** | Dynamic expression evaluation on load | `org.hibernate.annotations.Formula` |
@@ -34,7 +34,7 @@ JunifyDB resolves this fragmentation with **Tri-Standard Interoperability**: a u
 
 ## 3. Classpath Resilience (No Forced Dependencies)
 
-All annotation lookups use defensive reflection (`Class.forName()`). If a project does not include Hibernate or Eclipse JNoSQL on its classpath, JunifyDB functions without `ClassNotFoundException` or runtime errors.
+All annotation lookups use defensive reflection (`Class.forName()`). If a project does not include Hibernate or Eclipse JNoSQL on its classpath, EmbedJNoSQL functions without `ClassNotFoundException` or runtime errors.
 
 ---
 

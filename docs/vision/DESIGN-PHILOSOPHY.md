@@ -8,7 +8,7 @@ The design of JNOSQL-EMBED is governed by five unwavering architectural axioms:
 
 ### 1. Embedded-First & Zero-Infrastructure
 The database must never require an external daemon, background operating system service, socket listener, or container runtime to function.
-- A database instance is born in memory via `JunifyDB.embed().build()` and destroyed via `db.close()`.
+- A database instance is born in memory via `EmbedJNoSQL.embed().build()` and destroyed via `db.close()`.
 - No ports need to be opened on localhost unless the embedded management web console is explicitly requested via `db.startServer(port)`.
 - Threading, locking, and memory allocation belong to the host application's JVM boundaries.
 
@@ -16,8 +16,8 @@ The database must never require an external daemon, background operating system 
 
 ### 2. Zero-Configuration Developer Experience
 Default settings must be production-safe and immediately operational without configuration files:
-- Calling `JunifyDB.embed().build()` yields an in-memory database ready for document insertions, key-value lookups, and transaction staging.
-- Calling `JunifyDB.embed().persistTo("data/app").build()` yields a disk-persisted database with WAL recovery and auto-flushing.
+- Calling `EmbedJNoSQL.embed().build()` yields an in-memory database ready for document insertions, key-value lookups, and transaction staging.
+- Calling `EmbedJNoSQL.embed().persistTo("data/app").build()` yields a disk-persisted database with WAL recovery and auto-flushing.
 - In Spring Boot, Quarkus, or Micronaut, merely adding the starter dependency auto-configures a default database bean with zero `application.properties` lines required.
 
 ---

@@ -9,10 +9,10 @@ Validates the Spring Boot starter auto-configuration and multi-model data access
 - Transactional integrity during order placement
 
 ## Feature Under Test
-`JunifyDBAutoConfiguration`, `ProductService`, `OrderService`, Spring REST controllers.
+`EmbedJNoSQLAutoConfiguration`, `ProductService`, `OrderService`, Spring REST controllers.
 
 ## What the Test Actually Verifies
-- Bootstrapping `EcommerceApplication` with embedded JunifyDB.
+- Bootstrapping `EcommerceApplication` with embedded EmbedJNoSQL.
 - `GET /api/products`: Retrieving initialized product documents.
 - `POST /api/products`: Creating a new product document and verifying immediate Key-Value price caching.
 - `POST /api/orders`: Transactionally creating an order document while deducting available inventory from the column family.
@@ -28,7 +28,7 @@ Validates the Spring Boot starter auto-configuration and multi-model data access
 Realistic e-commerce entities (Ultrabooks, books, pricing, quantities, order status).
 
 ## Mocking Analysis
-**NO MOCKS**. Uses real Spring MockMvc against an active embedded JunifyDB database instance.
+**NO MOCKS**. Uses real Spring MockMvc against an active embedded EmbedJNoSQL database instance.
 
 ## Missing Scenarios
 - Rollback on out-of-stock inventory.

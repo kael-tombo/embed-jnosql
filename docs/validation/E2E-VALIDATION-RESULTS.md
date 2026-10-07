@@ -10,8 +10,8 @@
 
 | Test Category | Test Class / Suite | Tests Executed | Passed | Failed | Execution Time | Result |
 |---|---|---|---|---|---|---|
-| **Core Storage & Engine** | `src/test/java/org/junify/db/*` | 489 | 489 | 0 | ~14.2 s | **PASS** |
-| **Spring Boot Integration**| `JunifyDBAutoConfigurationTest` | 12 | 12 | 0 | ~1.8 s | **PASS** |
+| **Core Storage & Engine** | `src/test/java/org/embeddedjnosql/db/*` | 489 | 489 | 0 | ~14.2 s | **PASS** |
+| **Spring Boot Integration**| `EmbedJNoSQLAutoConfigurationTest` | 12 | 12 | 0 | ~1.8 s | **PASS** |
 | **Spring Boot Demo App** | `EcommerceApplicationTest` | 3 | 3 | 0 | ~3.4 s | **PASS** |
 | **Quarkus Demo App** | `ProductResourceTest` | 4 | 4 | 0 | ~5.1 s | **PASS** |
 | **Micronaut Demo App** | `EcommerceControllerTest` | 4 | 4 | 0 | ~4.2 s | **PASS** |

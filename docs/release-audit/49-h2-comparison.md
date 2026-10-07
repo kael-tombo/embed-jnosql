@@ -4,7 +4,7 @@
 Positioning vs H2 per the mandated references (h2database.com, Baeldung).
 
 ## Verified Comparison (grounded in H2's documented features)
-| Dimension | JunifyDB | H2 |
+| Dimension | EmbedJNoSQL | H2 |
 |---|---|---|
 | Primary model | Multi-model NoSQL (Document/KV/List/Set/Hash/Column) + built-in SQL dialect over collections | Relational SQL |
 | SQL | Implementation-defined dialect: SELECT/INSERT/UPDATE/DELETE, JOIN, GROUP BY, LIKE, BETWEEN, IN, plus `CREATE TABLE`/`DROP TABLE` with `PRIMARY KEY`/`UNIQUE`/`NOT NULL`/`FOREIGN KEY`/`CHECK` enforced; no `ALTER`, no views, sequences | Full SQL grammar incl. DDL, transactions via SQL, window functions |

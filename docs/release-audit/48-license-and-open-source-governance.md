@@ -7,7 +7,7 @@ LICENSE, CONTRIBUTING, SECURITY, notice hygiene, license metadata coherence.
 - `LICENSE`: Apache-2.0 (full text present).
 - `CONTRIBUTING.md`, `SECURITY.md` present at root.
 - POM license metadata matches LICENSE. No THIRD-PARTY notices file; POM-level dependency licenses are standard (Apache-2/BSD/Eclipse) and compatible.
-- Developer email uses a personal domain (`armand@junifydb.io`) — fine, but ensure it is monitored.
+- Developer email uses a personal domain (`armand@embedjnosql.io`) — fine, but ensure it is monitored.
 
 ## Validation Performed
 Files read/verified present; POM cross-checked.

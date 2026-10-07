@@ -1,6 +1,6 @@
 # Storage Engine Evaluation Matrix
 
-JunifyDB provides four pluggable storage engines tailored to diverse performance, durability, and memory footprint requirements.
+EmbedJNoSQL provides four pluggable storage engines tailored to diverse performance, durability, and memory footprint requirements.
 
 ---
 

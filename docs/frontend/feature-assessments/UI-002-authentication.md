@@ -64,7 +64,7 @@ Open endpoint to establish session.
 `AuthLoginHandler` & `SecureSessionManager`
 
 ## JNOSQL-EMBED Library API
-`JunifyDBServer.isAuthValid()`
+`EmbedJNoSQLServer.isAuthValid()`
 
 ## Storage Engine
 In-memory session registry (`ConcurrentHashMap`).
@@ -111,10 +111,10 @@ Card centers on viewport with responsive width (max 400px).
 Login processing takes < 10ms.
 
 ## Existing Implementation Assessment
-Verified in `login.html` and `JunifyDBServer.AuthLoginHandler`.
+Verified in `login.html` and `EmbedJNoSQLServer.AuthLoginHandler`.
 
 ## Existing Test Assessment
-Verified via `JunifyDBServerTest.authLoginAndLogout()`.
+Verified via `EmbedJNoSQLServerTest.authLoginAndLogout()`.
 
 ## Missing Tests
 None.
@@ -138,10 +138,10 @@ None.
 Added `AuthLoginHandler` and `SecureSessionManager` integration.
 
 ## Regression Tests Added
-`JunifyDBServerTest.authLoginAndLogout()`
+`EmbedJNoSQLServerTest.authLoginAndLogout()`
 
 ## Exact Test Commands
-`mvn test -Dtest=JunifyDBServerTest`
+`mvn test -Dtest=EmbedJNoSQLServerTest`
 
 ## Test Output
 Tests run: 9, Failures: 0, Errors: 0.

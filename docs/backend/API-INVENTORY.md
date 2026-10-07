@@ -2,7 +2,7 @@
 
 **Audit Date**: September 9, 2026  
 **Auditor**: API Architecture Lead  
-**Scope**: Complete inventory of all REST endpoints exposed by `JunifyDBServer`.
+**Scope**: Complete inventory of all REST endpoints exposed by `EmbedJNoSQLServer`.
 
 ---
 
@@ -45,4 +45,4 @@
 
 ## 2. API Status
 
-All 30 endpoints are registered in `JunifyDBServer.registerHandlers()` and backed by domain logic.
+All 30 endpoints are registered in `EmbedJNoSQLServer.registerHandlers()` and backed by domain logic.

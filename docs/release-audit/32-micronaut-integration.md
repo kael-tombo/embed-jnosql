@@ -4,7 +4,7 @@
 `micronaut-integration/` — support status per rule 6.
 
 ## Current Implementation
-- Own POM: `JunifyDBFactory` (`@Factory` bean producers), `JunifyDBEntityManager`/`JunifyDBMicronautRepository` mapping layer, Serde-friendly entities.
+- Own POM: `EmbedJNoSQLFactory` (`@Factory` bean producers), `EmbedJNoSQLEntityManager`/`EmbedJNoSQLMicronautRepository` mapping layer, Serde-friendly entities.
 - `demo/micronaut-demo`: `OrderController`/`ProductController` with transactional flows; controller tests exist.
 
 ## Validation Performed
