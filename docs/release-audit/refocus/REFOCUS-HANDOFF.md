@@ -196,6 +196,19 @@ fixed, and now pinned by tests:
    REQUIRES_NEW never suspended the outer transaction. Fix: `doGetTransaction` reads the bound MVCC
    transaction (the `DataSourceTransactionManager` pattern). Pinned by the REQUIRES_NEW unit test
    and the demo's `requiresNewCommitsIndependentlyOfOuterRollback`.
+3b. **`doResume` dereferenced a nullable transaction object and `doSuspend` lost the commit handle.**
+   Two susp/resume defects were revealed once the whole propagation matrix was driven by test (see
+   `EmbedTxPropagationTest`): APT passes a NULL transaction object when it resumes during cleanup of
+   a transaction-less status (NOT_SUPPORTED), so dereferencing it aborted APT's resume and left the
+   suspended synchronization scope deactivated ("Transaction synchronization is not active" at outer
+   completion); and nulling `txObject.transaction` in `doSuspend` meant the resumed outer transaction
+   could no longer finalize the right MVCC transaction. Fix: `doResume` restores the resource purely
+   from the suspended handle (nullable-parameter, `DataSourceTransactionManager` pattern), and
+   `doSuspend` only unwinds the thread binding while keeping the commit handle. One more contract
+   refinement: a commit-time MVCC write-write conflict surfaces as `UnexpectedRollbackException`
+   (the documented, retryable outcome) while an engine failure keeps surfacing as
+   `TransactionSystemException`. The propagation matrix (REQUIRED/SUPPORTS/MANDATORY/
+   NOT_SUPPORTED/NESTED-rejection) is now pinned by `EmbedTxPropagationTest`.
 
 A fourth finding was a test-design defect, not a product bug: the starter's parity app originally
 lived in the same package as the auto-configuration, so `@SpringBootApplication`'s component scan

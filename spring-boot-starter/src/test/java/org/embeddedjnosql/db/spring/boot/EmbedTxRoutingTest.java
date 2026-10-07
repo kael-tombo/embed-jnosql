@@ -9,8 +9,10 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -97,6 +99,32 @@ class EmbedTxRoutingTest {
                     "outer rollback must discard");
             assertEquals("1", proxied.documentCollection("routing_tx").findById("survivor").get("v"),
                     "REQUIRES_NEW commit must survive the outer rollback");
+        } finally {
+            db.close();
+        }
+    }
+
+    @Test
+    void templateResolvesCollectionsPerCallAndRoutesInsideTransaction() {
+        EmbedJNoSQL db = EmbedJNoSQL.create(EmbedJNoSQL.embed()
+                .storageEngine(StorageEngineType.IN_MEMORY)
+                .autoFlush(false)
+                .buildConfig());
+        try {
+            EmbedJNoSQL proxied = (EmbedJNoSQL) new EmbedJNoSQLTxRoutingPostProcessor(true)
+                    .postProcessAfterInitialization(db, "db");
+            EmbedJNoSQLTemplate template = new EmbedJNoSQLTemplate(proxied);
+            EmbedJNoSQLTransactionManager tm = new EmbedJNoSQLTransactionManager(proxied);
+            TransactionTemplate tt = new TransactionTemplate(tm);
+
+            // outside any transaction: plain collections
+            assertInstanceOf(DocumentCollection.class, template.documents("routing_tx"));
+            assertFalse(template.documents("routing_tx") instanceof TransactionAwareDocumentCollection,
+                    "without a transaction the template must hand out plain collections");
+
+            tt.executeWithoutResult(s ->
+                    assertInstanceOf(TransactionAwareDocumentCollection.class, template.documents("routing_tx"),
+                            "the template resolves per call, so template-backed services route inside a tx"));
         } finally {
             db.close();
         }

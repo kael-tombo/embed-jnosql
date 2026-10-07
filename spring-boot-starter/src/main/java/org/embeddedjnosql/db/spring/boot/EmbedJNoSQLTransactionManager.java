@@ -2,6 +2,7 @@ package org.embeddedjnosql.db.spring.boot;
 
 import org.embeddedjnosql.db.EmbedJNoSQL;
 import org.embeddedjnosql.db.transaction.mvcc.Transaction;
+import org.springframework.lang.Nullable;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.UnexpectedRollbackException;
@@ -118,19 +119,20 @@ public class EmbedJNoSQLTransactionManager extends AbstractPlatformTransactionMa
 
     @Override
     protected Object doSuspend(Object transactionObject) {
-        EmbedTransactionObject txObject = (EmbedTransactionObject) transactionObject;
-        Transaction suspended = SpringTransactionHolder.unbind(bindKey);
-        txObject.transaction = null;
-        return suspended;
+        // Only the THREAD binding is suspended (the DataSourceTransactionManager pattern):
+        // txObject.transaction stays pointing at the MVCC transaction so the resumed outer
+        // transaction's commit/rollback still finalize the right transaction.
+        return SpringTransactionHolder.unbind(bindKey);
     }
 
     @Override
-    protected void doResume(Object transactionObject, Object suspendedResources) {
-        EmbedTransactionObject txObject = (EmbedTransactionObject) transactionObject;
-        txObject.transaction = (Transaction) suspendedResources;
-        if (suspendedResources != null) {
-            SpringTransactionHolder.bind(bindKey, (Transaction) suspendedResources);
-        }
+    protected void doResume(@Nullable Object transactionObject, Object suspendedResources) {
+        // transactionObject is NULL when the resuming status has no transaction of its own
+        // (e.g. the NOT_SUPPORTED empty status during cleanup) — restore the resource by the
+        // suspended handle alone, exactly like DataSourceTransactionManager does. Aborting
+        // here would also abort APT's resume(), leaving the suspended synchronization scope
+        // deactivated and the outer completion failing with "synchronization is not active".
+        SpringTransactionHolder.bind(bindKey, (Transaction) suspendedResources);
     }
 
     @Override
@@ -143,12 +145,19 @@ public class EmbedJNoSQLTransactionManager extends AbstractPlatformTransactionMa
         try {
             tx.commit();
         } catch (RuntimeException e) {
+            if (tx.isRolledBack() && !(e instanceof org.embeddedjnosql.db.core.exception.StorageException)) {
+                // MVCC write-write conflict: the transaction rolled itself back at commit —
+                // an expected optimistic-concurrency outcome, so surface it as
+                // UnexpectedRollbackException (the caller may retry) rather than pretending
+                // the commit succeeded or mislabeling it a system failure.
+                throw new UnexpectedRollbackException(
+                        "embed-jnosql transaction " + tx.id() + " rolled back at commit (write-write conflict)", e);
+            }
             throw new org.springframework.transaction.TransactionSystemException(
                     "Could not commit embed-jnosql transaction " + tx.id(), e);
         }
         if (tx.isRolledBack()) {
-            // MVCC write-write conflict (or apply failure): the transaction rolled itself
-            // back — surface it instead of pretending the commit succeeded.
+            // Defensive: rolled back without an exception escaping commit().
             throw new UnexpectedRollbackException(
                     "embed-jnosql transaction " + tx.id() + " rolled back at commit (write-write conflict)");
         }
