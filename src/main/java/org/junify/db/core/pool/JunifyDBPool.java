@@ -1,5 +1,6 @@
 package org.junify.db.core.pool;
 
+import org.junify.db.Experimental;
 import org.junify.db.JunifyDB;
 import org.junify.db.config.JunifyDBConfig;
 
@@ -10,6 +11,15 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
+/**
+ * EXPERIMENTAL: pools {@link JunifyDB} instances behind a borrow/return lifecycle.
+ *
+ * <p>Labeled by product decision (release review round 3): this class has no production caller,
+ * no functional test coverage, and no documentation beyond this notice. It ships in the jar, but
+ * the API may change or be removed in a future release without notice. Do not build anything
+ * critical on it yet.</p>
+ */
+@Experimental("no production caller; no functional coverage; API may change or be removed without notice")
 public class JunifyDBPool {
 
     private final Supplier<JunifyDB> factory;

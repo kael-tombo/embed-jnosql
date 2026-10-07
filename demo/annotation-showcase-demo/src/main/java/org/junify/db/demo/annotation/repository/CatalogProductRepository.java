@@ -1,14 +1,15 @@
 package org.junify.db.demo.annotation.repository;
 
-import org.junify.db.adapter.jnosql.DocumentTemplate;
 import org.junify.db.adapter.jnosql.JunifyRepository;
 import org.junify.db.demo.annotation.model.CatalogProduct;
+import org.junify.db.nosql.document.Query;
 
 import java.util.List;
 
 /**
- * Standard repository implementation for CatalogProduct demonstrating Eclipse JNoSQL / Spring Data-like
- * repository patterns over JunifyDB.
+ * Standard repository implementation for CatalogProduct demonstrating Eclipse JNoSQL /
+ * Spring Data-like repository patterns over JunifyDB. Every finder is a native document
+ * predicate — there is no text query language behind it.
  */
 public class CatalogProductRepository extends JunifyRepository<CatalogProduct, String> {
 
@@ -21,11 +22,13 @@ public class CatalogProductRepository extends JunifyRepository<CatalogProduct, S
     }
 
     public List<CatalogProduct> findInStock(int minStock) {
-        return query("SELECT * FROM catalog_products WHERE stock_qty >= ? ORDER BY unit_price ASC", minStock);
+        return findByQuery(Query.gte("stock_qty", minStock)
+                .sortBy("unit_price", Query.SortOrder.ASC));
     }
 
     public List<CatalogProduct> findByPriceBetween(double minPrice, double maxPrice) {
-        return query("SELECT * FROM catalog_products WHERE unit_price BETWEEN ? AND ? ORDER BY unit_price ASC", minPrice, maxPrice);
+        return findByQuery(Query.between("unit_price", minPrice, maxPrice)
+                .sortBy("unit_price", Query.SortOrder.ASC));
     }
 
     public List<CatalogProduct> findByFluentCategory(String category, double maxPrice) {

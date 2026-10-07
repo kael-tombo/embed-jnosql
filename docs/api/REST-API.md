@@ -66,18 +66,20 @@ POST /api/collections/products/query
 → [ {"id":"e5b088a6-...","total":1} ]
 ```
 
-## SQL
+## Removed routes (SQL product)
 
-### `POST /api/sql` ✅
-Execute a statement in the built-in SQL dialect. Body: `{"query": "..."}`.
-```
-POST /api/sql
-{"query":"SELECT 1"}
-→ {"columns":["1"],"rows":[{"1":1}],"executionTimeMs":2,"rowCount":1,"status":"success"}
-```
-See audit doc 08 for the supported dialect surface. DDL is limited to `CREATE TABLE` and
-`DROP TABLE`; there is no `ALTER`, no `CREATE INDEX`, no constraints, views, sequences,
-stored procedures, or JDBC driver.
+The SQL product was removed, and its routes with it. They are no longer implemented and now answer
+`404`:
+
+| Route | Status | Note |
+|---|---|---|
+| `POST /api/sql` | **REMOVED** | Query model is `POST /api/collections/{name}/query` (native predicates). |
+| `GET /api/sql/schema` | **REMOVED** | There is no relational schema. `GET /api/collections` lists collections. |
+| `POST /api/sql/execute` | **REMOVED** | An old SQL payload is never re-interpreted as a NoSQL operation. |
+
+A caller that still posts SQL receives an unsupported-route response, not a silent conversion. See
+[SQL-REMOVAL-MANIFEST.md](../release-audit/refocus/SQL-REMOVAL-MANIFEST.md) for the inventory and the
+NoSQL replacement for each removed surface.
 
 ## Key-Value
 

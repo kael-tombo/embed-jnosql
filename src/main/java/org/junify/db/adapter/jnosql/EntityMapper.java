@@ -368,6 +368,12 @@ public class EntityMapper {
         if (targetType == java.util.Date.class) {
             if (value instanceof java.util.Date d) return (T) d;
             if (value instanceof Number n) return (T) new java.util.Date(n.longValue());
+            // toDocument serializes Date via Instant.toString() (ISO-8601); mirror that on read
+            // so the write/read paths are symmetric instead of leaking the raw String unchecked
+            if (value instanceof String s) {
+                try { return (T) java.util.Date.from(java.time.Instant.parse(s)); }
+                catch (Exception ignored) { /* fall through */ }
+            }
         }
         if (targetType == java.util.UUID.class) {
             if (value instanceof java.util.UUID u) return (T) u;

@@ -77,15 +77,16 @@ public interface StorageEngine {
      *
      * <p><b>R-62 (2026-09-23):</b> a collection whose existence lived only in
      * {@code JunifyDB}'s in-memory catalog vanished on restart. {@code CREATE TABLE t (id INT)}
-     * answered {@code {"status":"success"}}, wrote no file, and after a restart
-     * {@code SELECT * FROM t} reported <i>"Table does not exist"</i> — DDL reporting success
-     * for state that was never durable. Rows were never lost (an {@code INSERT} materialises
-     * the collection and its snapshot), so the defect was confined to the existence of an
-     * empty collection, but a database must not tell an operator that an object exists when
-     * it will not.
+     * answered {@code {"status":"success"}}, wrote no file, and after a restart every read of the
+     * collection behaved as if it had never existed — creation reporting success for state that
+     * was never durable. Documents were never lost (a document insert materialises the
+     * collection and its snapshot), so the defect was confined to the existence of an empty
+     * collection, but a database must not tell an operator that an object exists when it will
+     * not.
      *
-     * <p>Callers invoke this when a collection is <b>created</b> (SQL DDL, the console's
-     * create route, repository/annotation materialisation) — never when one is merely read.
+     * <p>Callers invoke this when a collection is <b>created</b> (the console's create route,
+     * repository/annotation materialisation, explicit document writes) — never when one is
+     * merely read.
      *
      * @return {@code true} when the engine now reports and persists the collection's
      *         existence with no records; {@code false} when the engine has no notion of an

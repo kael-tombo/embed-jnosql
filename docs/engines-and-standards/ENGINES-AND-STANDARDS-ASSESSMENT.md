@@ -1,5 +1,17 @@
 # JunifyDB Engines, Standards & Developer Productivity Master Assessment
 
+> **⚠ SUPERSEDED — pre-refactor document (SQL / dual-engine).**
+> JunifyDB is now NoSQL-only. The relational engine, SQL parser/planning, JDBC driver, JPA
+> `EntityManager`, `/api/sql` routes, and the SQL Studio console screen were removed from the
+> product. Statements in this file that describe SQL, JDBC, SQL schemas, or an engine selector no
+> longer describe shipped behavior.
+>
+> - Current product definition: [PRODUCT-CONSTITUTION.md](../release-audit/refocus/PRODUCT-CONSTITUTION.md)
+> - Removal inventory and evidence: [SQL-REMOVAL-MANIFEST.md](../release-audit/refocus/SQL-REMOVAL-MANIFEST.md)
+>
+> Retained as historical record only — not part of the current release contract.
+
+
 **Version**: 2.0.0  
 **Scope**: Dual-Engine (ANSI SQL + NoSQL), Standard Specifications (JPA 3.1, Eclipse JNoSQL), Tri-Standard Annotations, Demos Ecosystem  
 **Goal**: Maximize Java Developer Productivity by eliminating database infrastructure friction  

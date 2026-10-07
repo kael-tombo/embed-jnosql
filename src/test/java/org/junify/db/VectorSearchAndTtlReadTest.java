@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *       input is 400.</li>
  *   <li><b>R-51</b> — a document whose TTL had passed was still returned by
  *       point reads and scans, with only an {@code expired:true} metadata
- *       field hinting at its state — so the console, SQL engine, and adapters
+ *       field hinting at its state — so the console, the query layer, and adapters
  *       all read data that should be logically deleted. Reads now treat
  *       expiry the way the KV engine already does: an expired document reads
  *       as absent, and {@code cleanupExpired()} remains the physical sweeper.
@@ -111,16 +111,16 @@ class VectorSearchAndTtlReadTest {
     }
 
     @Test
-    @DisplayName("R-51: SQL SELECT does not see expired documents")
-    void sqlDoesNotSeeExpired() {
-        db.sql("INSERT INTO ttl_sql (id, v) VALUES ('a', 1), ('b', 2)");
+    @DisplayName("R-51: a predicate count does not see expired documents")
+    void countDoesNotSeeExpired() {
         var col = db.documentCollection("ttl_sql");
+        col.insert(new Document().add("v", 1).id("a"));
+        col.insert(new Document().add("v", 2).id("b"));
         var b = col.findById("b");
         b.expiresAt(System.currentTimeMillis() - 500);
         col.update(b);
 
-        var rs = db.sql("SELECT COUNT(*) AS n FROM ttl_sql");
-        assertEquals(1L, ((Number) rs.getRows().get(0).asMap().get("n")).longValue(),
+        assertEquals(1, col.count(org.junify.db.nosql.document.Query.all()),
                 "the expired row must not be counted");
     }
 

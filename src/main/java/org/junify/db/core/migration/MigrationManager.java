@@ -1,5 +1,6 @@
 package org.junify.db.core.migration;
 
+import org.junify.db.Experimental;
 import org.junify.db.JunifyDB;
 import org.junify.db.nosql.document.Document;
 import org.junify.db.nosql.document.DocumentCollection;
@@ -8,6 +9,17 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
+/**
+ * EXPERIMENTAL: collection-scoped schema migration runner (add/remove/rename/transform field
+ * steps plus custom callbacks), with applied versions tracked in a {@code _schema_versions}
+ * collection.
+ *
+ * <p>Labeled by product decision (release review round 3): this class has no production caller,
+ * no functional test coverage, and no documentation beyond this notice. It ships in the jar, but
+ * the API may change or be removed in a future release without notice. Review each step's effect
+ * on real data before relying on it.</p>
+ */
+@Experimental("no production caller; no functional coverage; API may change or be removed without notice")
 public class MigrationManager {
 
     private final JunifyDB db;

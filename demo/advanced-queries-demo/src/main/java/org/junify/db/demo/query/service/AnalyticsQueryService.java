@@ -1,112 +1,143 @@
 package org.junify.db.demo.query.service;
 
 import org.junify.db.JunifyDB;
+import org.junify.db.adapter.jnosql.EntityMapper;
 import org.junify.db.demo.query.model.CatalogProduct;
 import org.junify.db.demo.query.model.Customer;
 import org.junify.db.demo.query.model.Order;
 import org.junify.db.demo.query.model.OrderItem;
 import org.junify.db.nosql.document.Document;
+import org.junify.db.nosql.document.DocumentAggregation;
 import org.junify.db.nosql.document.DocumentCollection;
-import org.junify.db.sql.SqlResultSet;
+import org.junify.db.nosql.document.Query;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Service demonstrating advanced multi-engine query capabilities in JunifyDB:
- * - Multi-table ANSI SQL JOINs
- * - Group by, Having, and Aggregations (COUNT, SUM, AVG)
- * - SQL BETWEEN and wildcard LIKE pattern matching
- * - Advanced NoSQL compound document queries
- * - Fluent Entity queries
- * - Hybrid Vector + Metadata similarity search
+ * Service demonstrating the NoSQL query surface of JunifyDB:
+ * <ul>
+ *   <li>Document collection queries with a compound predicate (eq / gte / lte), sorted and paged</li>
+ *   <li>Range and substring filters (the BETWEEN / LIKE style bounds, expressed as document
+ *       predicates)</li>
+ *   <li>Aggregation helpers (count, min, max, sum, avg) over documents</li>
+ *   <li>Application-side enrichment of related documents — there is no relational JOIN engine;
+ *       a document reference is an id the application resolves itself</li>
+ *   <li>Fluent entity queries ({@code db.from(Entity.class)})</li>
+ * </ul>
  */
 public class AnalyticsQueryService {
 
     private final JunifyDB db;
+    private final DocumentCollection customers;
+    private final DocumentCollection orders;
+    private final DocumentCollection catalog;
 
     public AnalyticsQueryService(JunifyDB db) {
         this.db = db;
         db.registerEntity(Customer.class, Order.class, OrderItem.class, CatalogProduct.class);
+        this.customers = db.documentCollection(EntityMapper.getCollectionName(Customer.class));
+        this.orders = db.documentCollection(EntityMapper.getCollectionName(Order.class));
+        this.catalog = db.documentCollection(EntityMapper.getCollectionName(CatalogProduct.class));
     }
 
     public void seedData() {
-        // 1. Create SQL Relational Tables
-        db.sql("CREATE TABLE customers (id VARCHAR PRIMARY KEY, name VARCHAR, email VARCHAR, tier VARCHAR, lifetimeSpend DOUBLE)");
-        db.sql("CREATE TABLE orders (id VARCHAR PRIMARY KEY, customerId VARCHAR, totalAmount DOUBLE, status VARCHAR, orderDate VARCHAR)");
-        db.sql("CREATE TABLE order_items (id VARCHAR PRIMARY KEY, orderId VARCHAR, productName VARCHAR, quantity INT, unitPrice DOUBLE)");
-        db.sql("CREATE TABLE catalog_products (id VARCHAR PRIMARY KEY, name VARCHAR, category VARCHAR, price DOUBLE, rating DOUBLE, inStock INT)");
+        // Customers and orders are stored through the entity mapping so the fluent entity
+        // query (db.from(Customer.class)) reads exactly what was written.
+        customers.insert(EntityMapper.toDocument(
+                new Customer("cust-1", "Alice Vance", "alice@example.com", "GOLD", 3450.00)));
+        customers.insert(EntityMapper.toDocument(
+                new Customer("cust-2", "Bob Smith", "bob@example.com", "SILVER", 1200.50)));
+        customers.insert(EntityMapper.toDocument(
+                new Customer("cust-3", "Charlie Brown", "charlie@example.com", "PLATINUM", 8900.00)));
+        customers.insert(EntityMapper.toDocument(
+                new Customer("cust-4", "Diana Prince", "diana@example.com", "BRONZE", 450.00)));
 
-        // 2. Seed Customers
-        db.sql("INSERT INTO customers (id, name, email, tier, lifetimeSpend) VALUES ('cust-1', 'Alice Vance', 'alice@example.com', 'GOLD', 3450.00)");
-        db.sql("INSERT INTO customers (id, name, email, tier, lifetimeSpend) VALUES ('cust-2', 'Bob Smith', 'bob@example.com', 'SILVER', 1200.50)");
-        db.sql("INSERT INTO customers (id, name, email, tier, lifetimeSpend) VALUES ('cust-3', 'Charlie Brown', 'charlie@example.com', 'PLATINUM', 8900.00)");
-        db.sql("INSERT INTO customers (id, name, email, tier, lifetimeSpend) VALUES ('cust-4', 'Diana Prince', 'diana@example.com', 'BRONZE', 450.00)");
+        orders.insert(EntityMapper.toDocument(
+                new Order("ord-101", "cust-1", 450.00, "COMPLETED", "2026-03-01")));
+        orders.insert(EntityMapper.toDocument(
+                new Order("ord-102", "cust-1", 1200.00, "COMPLETED", "2026-03-05")));
+        orders.insert(EntityMapper.toDocument(
+                new Order("ord-103", "cust-2", 300.00, "PENDING", "2026-03-08")));
+        orders.insert(EntityMapper.toDocument(
+                new Order("ord-104", "cust-3", 2500.00, "COMPLETED", "2026-03-10")));
 
-        // 3. Seed Orders
-        db.sql("INSERT INTO orders (id, customerId, totalAmount, status, orderDate) VALUES ('ord-101', 'cust-1', 450.00, 'COMPLETED', '2026-03-01')");
-        db.sql("INSERT INTO orders (id, customerId, totalAmount, status, orderDate) VALUES ('ord-102', 'cust-1', 1200.00, 'COMPLETED', '2026-03-05')");
-        db.sql("INSERT INTO orders (id, customerId, totalAmount, status, orderDate) VALUES ('ord-103', 'cust-2', 300.00, 'PENDING', '2026-03-08')");
-        db.sql("INSERT INTO orders (id, customerId, totalAmount, status, orderDate) VALUES ('ord-104', 'cust-3', 2500.00, 'COMPLETED', '2026-03-10')");
+        catalog.insert(EntityMapper.toDocument(
+                new CatalogProduct("prod-1", "Developer Laptop Pro", "Hardware", 2499.99, 4.9, 15)));
+        catalog.insert(EntityMapper.toDocument(
+                new CatalogProduct("prod-2", "Gaming Laptop X", "Hardware", 1899.50, 4.7, 8)));
+        catalog.insert(EntityMapper.toDocument(
+                new CatalogProduct("prod-3", "UltraWide Monitor", "Peripherals", 1199.00, 4.8, 25)));
+        catalog.insert(EntityMapper.toDocument(
+                new CatalogProduct("prod-4", "Mechanical Keyboard", "Peripherals", 149.99, 4.6, 50)));
+        catalog.insert(EntityMapper.toDocument(
+                new CatalogProduct("prod-5", "Ergonomic Mouse", "Peripherals", 89.99, 4.5, 75)));
+        catalog.insert(EntityMapper.toDocument(
+                new CatalogProduct("prod-6", "IDE Enterprise License", "Software", 499.00, 4.9, 999)));
 
-        // 4. Seed Order Items
-        db.sql("INSERT INTO order_items (id, orderId, productName, quantity, unitPrice) VALUES ('item-1', 'ord-101', 'Mechanical Keyboard', 2, 125.00)");
-        db.sql("INSERT INTO order_items (id, orderId, productName, quantity, unitPrice) VALUES ('item-2', 'ord-101', 'Ergonomic Mouse', 2, 100.00)");
-        db.sql("INSERT INTO order_items (id, orderId, productName, quantity, unitPrice) VALUES ('item-3', 'ord-102', 'UltraWide Monitor', 1, 1200.00)");
-        db.sql("INSERT INTO order_items (id, orderId, productName, quantity, unitPrice) VALUES ('item-4', 'ord-103', 'USB-C Dock', 1, 300.00)");
-        db.sql("INSERT INTO order_items (id, orderId, productName, quantity, unitPrice) VALUES ('item-5', 'ord-104', 'Developer Laptop Pro', 1, 2500.00)");
-
-        // 5. Seed Catalog Products
-        db.sql("INSERT INTO catalog_products (id, name, category, price, rating, inStock) VALUES ('prod-1', 'Developer Laptop Pro', 'Hardware', 2499.99, 4.9, 15)");
-        db.sql("INSERT INTO catalog_products (id, name, category, price, rating, inStock) VALUES ('prod-2', 'Gaming Laptop X', 'Hardware', 1899.50, 4.7, 8)");
-        db.sql("INSERT INTO catalog_products (id, name, category, price, rating, inStock) VALUES ('prod-3', 'UltraWide Monitor', 'Peripherals', 1199.00, 4.8, 25)");
-        db.sql("INSERT INTO catalog_products (id, name, category, price, rating, inStock) VALUES ('prod-4', 'Mechanical Keyboard', 'Peripherals', 149.99, 4.6, 50)");
-        db.sql("INSERT INTO catalog_products (id, name, category, price, rating, inStock) VALUES ('prod-5', 'Ergonomic Mouse', 'Peripherals', 89.99, 4.5, 75)");
-        db.sql("INSERT INTO catalog_products (id, name, category, price, rating, inStock) VALUES ('prod-6', 'IDE Enterprise License', 'Software', 499.00, 4.9, 999)");
-
-        // 6. Seed Document Collection for NoSQL tests
+        // A raw document collection for the document-criteria demonstration.
         DocumentCollection col = db.documentCollection("products_nosql");
-        col.insert(Document.of(Map.of("name", "Developer Laptop Pro", "category", "Hardware", "price", 2499.99, "rating", 4.9, "tags", List.of("laptop", "developer", "m3"))).id("doc-1"));
-        col.insert(Document.of(Map.of("name", "Gaming Laptop X", "category", "Hardware", "price", 1899.50, "rating", 4.7, "tags", List.of("laptop", "gaming", "rtx"))).id("doc-2"));
-        col.insert(Document.of(Map.of("name", "UltraWide Monitor", "category", "Peripherals", "price", 1199.00, "rating", 4.8, "tags", List.of("display", "4k"))).id("doc-3"));
-        col.insert(Document.of(Map.of("name", "Mechanical Keyboard", "category", "Peripherals", "price", 149.99, "rating", 4.6, "tags", List.of("accessory", "rgb"))).id("doc-4"));
+        col.insert(Document.of(Map.of("name", "Developer Laptop Pro", "category", "Hardware",
+                "price", 2499.99, "rating", 4.9, "tags", List.of("laptop", "developer", "m3"))).id("doc-1"));
+        col.insert(Document.of(Map.of("name", "Gaming Laptop X", "category", "Hardware",
+                "price", 1899.50, "rating", 4.7, "tags", List.of("laptop", "gaming", "rtx"))).id("doc-2"));
+        col.insert(Document.of(Map.of("name", "UltraWide Monitor", "category", "Peripherals",
+                "price", 1199.00, "rating", 4.8, "tags", List.of("display", "4k"))).id("doc-3"));
+        col.insert(Document.of(Map.of("name", "Mechanical Keyboard", "category", "Peripherals",
+                "price", 149.99, "rating", 4.6, "tags", List.of("accessory", "rgb"))).id("doc-4"));
     }
 
     /**
-     * Demonstrates Multi-Table ANSI SQL JOINs.
+     * Completed orders, newest value first, each enriched with its customer's name and tier.
+     *
+     * <p>The relational engine is gone, so this is not a JOIN: the orders are matched by a
+     * document predicate, sorted by the engine, and the related customer is resolved by the
+     * application from the {@code customerId} reference. No referential guarantee is implied.</p>
      */
-    public SqlResultSet executeCustomerOrdersJoin() {
-        String query = """
-            SELECT o.id, c.name, c.tier, o.totalAmount
-            FROM orders o
-            JOIN customers c ON o.customerId = c.id
-            WHERE o.status = 'COMPLETED'
-            ORDER BY o.totalAmount DESC
-            """;
-        return db.sql(query);
+    public List<Map<String, Object>> findCompletedOrdersEnriched() {
+        Query completed = Query.eq("status", "COMPLETED")
+                .sortBy("totalAmount", Query.SortOrder.DESC);
+        List<Map<String, Object>> enriched = new ArrayList<>();
+        for (Document order : orders.find(completed)) {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("orderId", order.getId());
+            row.put("totalAmount", order.getRaw("totalAmount"));
+            String customerId = String.valueOf(order.getRaw("customerId"));
+            Document customer = customers.findById(customerId);
+            row.put("customerName", customer != null ? customer.getRaw("name") : null);
+            row.put("tier", customer != null ? customer.getRaw("tier") : null);
+            enriched.add(row);
+        }
+        return enriched;
     }
 
     /**
-     * Demonstrates SQL Aggregations.
+     * Aggregate pricing statistics over the catalog, computed with the document aggregation
+     * helpers rather than a relational GROUP BY.
      */
-    public SqlResultSet executeCategoryAggregations() {
-        String query = "SELECT COUNT(*), AVG(price), MIN(price), MAX(price), SUM(price) FROM catalog_products";
-        return db.sql(query);
+    public Map<String, Object> catalogPriceStats() {
+        List<Document> docs = catalog.findAll();
+        Map<String, Object> stats = new LinkedHashMap<>();
+        stats.put("count", DocumentAggregation.count(docs));
+        stats.put("min", DocumentAggregation.min(docs, "price").map(d -> d.getRaw("price")).orElse(null));
+        stats.put("max", DocumentAggregation.max(docs, "price").map(d -> d.getRaw("price")).orElse(null));
+        stats.put("sum", DocumentAggregation.sum(docs, "price"));
+        stats.put("avg", DocumentAggregation.avg(docs, "price"));
+        stats.put("byCategory", DocumentAggregation.groupBy(docs, "category"));
+        return stats;
     }
 
     /**
-     * Demonstrates SQL BETWEEN and Wildcard LIKE operators.
+     * Catalog products whose price falls in an inclusive range and whose name contains a
+     * substring, cheapest first — the document-predicate form of {@code BETWEEN} + {@code LIKE}.
      */
-    public SqlResultSet executeBetweenAndLikeQuery(double minPrice, double maxPrice, String namePattern) {
-        String query = """
-            SELECT id, name, category, price, rating
-            FROM catalog_products
-            WHERE price BETWEEN ? AND ?
-              AND name LIKE ?
-            ORDER BY price ASC
-            """;
-        return db.sql(query, minPrice, maxPrice, namePattern);
+    public List<Document> findCatalogInPriceRangeContaining(double minPrice, double maxPrice, String nameSubstring) {
+        Query q = Query.between("price", minPrice, maxPrice)
+                .and(Query.contains("name", nameSubstring))
+                .sortBy("price", Query.SortOrder.ASC);
+        return catalog.find(q);
     }
 
     /**
@@ -124,9 +155,9 @@ public class AnalyticsQueryService {
      */
     public List<Document> executeNoSqlCatalogQuery(String category, double minRating, double maxPrice) {
         DocumentCollection col = db.documentCollection("products_nosql");
-        org.junify.db.nosql.document.Query q = org.junify.db.nosql.document.Query.eq("category", category)
-                .and(org.junify.db.nosql.document.Query.gte("rating", minRating))
-                .and(org.junify.db.nosql.document.Query.lte("price", maxPrice));
+        Query q = Query.eq("category", category)
+                .and(Query.gte("rating", minRating))
+                .and(Query.lte("price", maxPrice));
         return col.find(q);
     }
 }

@@ -493,30 +493,28 @@ class FullFeatureTest {
     }
 
     // ===========================================================================================
-    // 11. SCHEMA / TABLES — HTTP
+    // 11. SCHEMA — HTTP (document schemas; relational tables were removed with SQL)
     // ===========================================================================================
 
     @Test @Order(110)
-    void http_schemaCollections() throws Exception {
+    void http_schemaList() throws Exception {
         db.documentCollection("schema_test").insert(Document.of("x", 1));
-        Resp r = safeGet("/api/schema/collections");
-        // 200 = ok, 404 = not found, 503 = H2-only endpoint closes connection without body
-        assertTrue(r.code == 200 || r.code == 404 || r.code == 503,
-                "Schema collections: " + r.code + " " + r.body);
+        Resp r = GET("/api/schema");
+        assertEquals(200, r.code, "GET /api/schema must list the registered document schemas: " + r.body);
+        assertTrue(r.body != null && r.body.contains("schemas"),
+                "the schema listing must carry a schemas array: " + r.body);
     }
 
     @Test @Order(111)
-    void http_createAndDropTable() throws Exception {
+    void http_relationalTableRoutesAreGone() throws Exception {
+        // The relational engine was deleted in the NoSQL-only refocus, so the old DDL routes
+        // must 404 rather than silently pretend to work.
         Resp create = safePost("/api/tables/ft_http_table",
-                "{\"columns\":[{\"name\":\"id\",\"type\":\"INT\"},{\"name\":\"label\",\"type\":\"VARCHAR(100)\"}]}");
-        // 200/201 = created, 400 = bad request, 404 = not found, 503 = H2-only / connection-closed
-        assertTrue(create.code == 200 || create.code == 201 || create.code == 400
-                || create.code == 404 || create.code == 503,
-                "Create table: " + create.code + " " + create.body);
+                "{\"columns\":[{\"name\":\"id\",\"type\":\"INT\"}]}");
+        assertEquals(404, create.code, "POST /api/tables/... must be gone: " + create.body);
 
         Resp drop = safeDelete("/api/tables/ft_http_table");
-        assertTrue(drop.code == 200 || drop.code == 204 || drop.code == 404 || drop.code == 503,
-                "Drop table: " + drop.code + " " + drop.body);
+        assertEquals(404, drop.code, "DELETE /api/tables/... must be gone: " + drop.body);
     }
 
     // ===========================================================================================
@@ -812,15 +810,14 @@ class FullFeatureTest {
     }
 
     // ===========================================================================================
-    // 25. CONSTRAINTS ENDPOINT — HTTP
+    // 25. CONSTRAINTS ENDPOINT — removed with the relational engine
     // ===========================================================================================
 
     @Test @Order(250)
-    void http_constraints_list() throws Exception {
+    void http_constraintsRouteIsGone() throws Exception {
         Resp r = safeGet("/api/constraints/http_sql_t");
-        // 200 = ok, 400/404 = not available, 503 = H2-only endpoint / connection-closed
-        assertTrue(r.code == 200 || r.code == 400 || r.code == 404 || r.code == 503,
-                "Constraints: " + r.code + " " + r.body);
+        assertEquals(404, r.code,
+                "/api/constraints was a relational-engine route and must be gone: " + r.body);
     }
 
     // ===========================================================================================

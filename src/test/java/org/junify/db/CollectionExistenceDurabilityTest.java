@@ -1,9 +1,9 @@
 package org.junify.db;
 
-import org.junify.db.config.JunifyDBConfig;
+import org.junify.db.adapter.jnosql.Entity;
+import org.junify.db.adapter.jnosql.Id;
 import org.junify.db.config.JunifyDBConfig.StorageEngineType;
 import org.junify.db.nosql.document.Document;
-import org.junify.db.sql.SqlUnknownTableException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -15,23 +15,16 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Regression coverage for R-62: a collection that was created but holds no records must
- * still exist after a restart.
+ * A collection that was created but holds no records must still exist after a restart.
  *
- * <p>Measured before the fix on a live {@code --sync FILE} server:
- * {@code CREATE TABLE r61_empty_t (id INT)} answered {@code {"status":"success"}}, no
- * {@code r61_empty_t.json} was written, and after a restart {@code SELECT * FROM
- * r61_empty_t} reported <i>"Table does not exist"</i>. Rows were never lost — an
- * {@code INSERT} materialises and persists the collection — so the defect was the
- * durability of an empty collection's <i>existence</i>, which is what these tests pin.</p>
- *
- * <p>Every engine is covered, because they carry collection identity differently:
- * {@code FILE} writes one snapshot per collection, while {@code LSM_TREE} and {@code B_TREE}
- * address records by {@code collection:key} and need the existence registry. {@code IN_MEMORY}
- * is asserted to list a created collection for its process lifetime and to make no
- * durability promise — that is its documented contract, not a defect.</p>
+ * <p>Rows were never lost — an {@code insert} materialises and persists the collection — so
+ * what these tests pin is the durability of an empty collection's <i>existence</i>, across
+ * every engine. {@code FILE} writes one snapshot per collection, while {@code LSM_TREE} and
+ * {@code B_TREE} address records by {@code collection:key} and need the existence registry.
+ * {@code IN_MEMORY} is asserted to list a created collection for its process lifetime and to
+ * make no durability promise — that is its documented contract, not a defect.</p>
  */
-@DisplayName("A created collection's existence survives a restart (R-62)")
+@DisplayName("A created collection's existence survives a restart")
 class CollectionExistenceDurabilityTest {
 
     private static final List<StorageEngineType> PERSISTENT_ENGINES = List.of(
@@ -44,30 +37,11 @@ class CollectionExistenceDurabilityTest {
                 .build();
     }
 
-    @Test
-    @DisplayName("an empty table created by SQL DDL is still there after a restart")
-    void emptyTableCreatedByDdlSurvivesRestart(@TempDir Path tempDir) {
-        for (StorageEngineType type : PERSISTENT_ENGINES) {
-            Path dir = tempDir.resolve(type.name());
-
-            try (JunifyDB db = open(dir, type)) {
-                var result = db.sql("CREATE TABLE empty_orders (id INT, sku VARCHAR)");
-                assertEquals("CREATE_TABLE", result.getStatementType(),
-                        type + ": CREATE TABLE must report the statement it ran");
-                assertTrue(db.getCollectionNames().contains("empty_orders"),
-                        type + ": the created table must be in the catalog immediately");
-            }
-
-            try (JunifyDB reopened = open(dir, type)) {
-                assertTrue(reopened.getCollectionNames().contains("empty_orders"),
-                        type + ": an empty table must survive a restart, but the catalog was "
-                                + reopened.getCollectionNames());
-
-                var select = reopened.sql("SELECT * FROM empty_orders");
-                assertEquals(0, select.size(),
-                        type + ": the table exists and simply holds no rows");
-            }
-        }
+    /** A read target that never has data written to it. */
+    @Entity("r62_never_created")
+    static class NeverCreated {
+        @Id
+        private String id;
     }
 
     @Test
@@ -95,7 +69,7 @@ class CollectionExistenceDurabilityTest {
         Path dir = tempDir.resolve("snapshot");
 
         try (JunifyDB db = open(dir, StorageEngineType.FILE)) {
-            db.sql("CREATE TABLE empty_snapshot (id INT)");
+            db.documentCollection("empty_snapshot");
         }
 
         Path snapshot = dir.resolve("empty_snapshot.json");
@@ -107,35 +81,35 @@ class CollectionExistenceDurabilityTest {
     }
 
     @Test
-    @DisplayName("rows written to a collection created by INSERT still persist (no regression)")
-    void rowsInAnAutoCreatedCollectionStillPersist(@TempDir Path tempDir) {
+    @DisplayName("rows written to a collection still persist after a restart")
+    void rowsInACollectionStillPersist(@TempDir Path tempDir) {
         for (StorageEngineType type : PERSISTENT_ENGINES) {
             Path dir = tempDir.resolve("rows-" + type.name());
 
             try (JunifyDB db = open(dir, type)) {
-                db.sql("INSERT INTO auto_created (id, sku) VALUES ('k1', 'ABC')");
-                assertEquals(1, db.sql("SELECT * FROM auto_created").size(),
+                db.documentCollection("auto_created")
+                        .insert(Document.of("sku", "ABC").id("k1"));
+                assertEquals(1, db.documentCollection("auto_created").count(),
                         type + ": the inserted row must be readable in the same session");
             }
 
             try (JunifyDB reopened = open(dir, type)) {
-                var rows = reopened.sql("SELECT * FROM auto_created");
+                var rows = reopened.documentCollection("auto_created").findAll();
                 assertEquals(1, rows.size(), type + ": the inserted row must survive a restart");
-                assertEquals("ABC", rows.first().get("sku"), type + ": field values must round-trip");
+                assertEquals("ABC", rows.get(0).get("sku"), type + ": field values must round-trip");
             }
         }
     }
 
     @Test
-    @DisplayName("reading a missing table still does not create it (R-48 holds after R-62)")
-    void readingAMissingTableDoesNotCreateIt(@TempDir Path tempDir) {
+    @DisplayName("a query against a missing collection matches nothing and does not create it")
+    void queryingAMissingCollectionDoesNotCreateIt(@TempDir Path tempDir) {
         for (StorageEngineType type : PERSISTENT_ENGINES) {
             Path dir = tempDir.resolve("read-" + type.name());
 
             try (JunifyDB db = open(dir, type)) {
-                assertThrows(SqlUnknownTableException.class,
-                        () -> db.sql("SELECT * FROM r62_never_created"),
-                        type + ": SELECT on an unknown table is an error, not an empty result");
+                assertTrue(db.from(NeverCreated.class).list().isEmpty(),
+                        type + ": a query against an unknown collection is an empty result");
                 assertFalse(db.getCollectionNames().contains("r62_never_created"),
                         type + ": a read must not add anything to the catalog, found "
                                 + db.getCollectionNames());
@@ -143,7 +117,7 @@ class CollectionExistenceDurabilityTest {
 
             try (JunifyDB reopened = open(dir, type)) {
                 assertFalse(reopened.getCollectionNames().contains("r62_never_created"),
-                        type + ": the failed read must not become durable state either");
+                        type + ": the read must not become durable state either");
             }
         }
     }
@@ -154,7 +128,7 @@ class CollectionExistenceDurabilityTest {
         Path dir = tempDir.resolve("memory");
 
         try (JunifyDB db = open(dir, StorageEngineType.IN_MEMORY)) {
-            db.sql("CREATE TABLE memory_only (id INT)");
+            db.documentCollection("memory_only");
             assertTrue(db.getCollectionNames().contains("memory_only"),
                     "an in-memory catalog must still list a collection created in this process");
         }
@@ -174,7 +148,7 @@ class CollectionExistenceDurabilityTest {
         Path dir = tempDir.resolve("usable");
 
         try (JunifyDB db = open(dir, StorageEngineType.FILE)) {
-            db.sql("CREATE TABLE usable_table (id INT, sku VARCHAR)");
+            db.documentCollection("usable_table");
         }
 
         try (JunifyDB reopened = open(dir, StorageEngineType.FILE)) {
@@ -182,8 +156,8 @@ class CollectionExistenceDurabilityTest {
             collection.insert(Document.of("sku", "AFTER-RESTART"));
             assertEquals(1, collection.count());
 
-            assertEquals(1, reopened.sql("SELECT * FROM usable_table").size(),
-                    "the table created before the restart must accept writes afterwards, not "
+            assertEquals(1, collection.findAll().size(),
+                    "the collection created before the restart must accept writes afterwards, not "
                             + "be re-created as a different object");
         }
     }

@@ -50,10 +50,16 @@ public class ProductService {
         return collection().count();
     }
 
-    public List<Product> findProductsWithSql(String category, double minPrice, double maxPrice) {
-        return template.database().sql(
-                "SELECT * FROM " + COLLECTION + " WHERE category = ? AND price BETWEEN ? AND ? ORDER BY price ASC",
-                category, minPrice, maxPrice
-        ).stream().map(row -> Product.fromDocument(row.asDocument())).collect(Collectors.toList());
+    /**
+     * Documents filtered by category and an inclusive price range, cheapest first.
+     * Expressed as a native document predicate — the fluent/NoSQL query path the
+     * product ships.
+     */
+    public List<Product> findByCategoryAndPriceRange(String category, double minPrice, double maxPrice) {
+        Query q = Query.eq("category", category)
+                .and(Query.gte("price", minPrice))
+                .and(Query.lte("price", maxPrice))
+                .sortBy("price", Query.SortOrder.ASC);
+        return collection().find(q).stream().map(Product::fromDocument).collect(Collectors.toList());
     }
 }

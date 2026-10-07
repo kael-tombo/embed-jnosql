@@ -1,5 +1,17 @@
 # JNOSQL-EMBED: Project Vision Assessment
 
+> **⚠ SUPERSEDED — pre-refactor document (SQL / dual-engine).**
+> JunifyDB is now NoSQL-only. The relational engine, SQL parser/planning, JDBC driver, JPA
+> `EntityManager`, `/api/sql` routes, and the SQL Studio console screen were removed from the
+> product. Statements in this file that describe SQL, JDBC, SQL schemas, or an engine selector no
+> longer describe shipped behavior.
+>
+> - Current product definition: [PRODUCT-CONSTITUTION.md](../release-audit/refocus/PRODUCT-CONSTITUTION.md)
+> - Removal inventory and evidence: [SQL-REMOVAL-MANIFEST.md](../release-audit/refocus/SQL-REMOVAL-MANIFEST.md)
+>
+> Retained as historical record only — not part of the current release contract.
+
+
 ## Executive Overview
 
 JNOSQL-EMBED (JunifyDB) was conceived as **the H2 of NoSQL**—a zero-infrastructure, in-process, multi-model database engine engineered natively for the JVM. While the relational ecosystem has long benefited from embedded engines like H2, SQLite, and Apache Derby for integration testing, edge execution, and rapid local development, the non-relational world has historically forced developers to rely on heavy Docker containers, cloud emulators, or disparate mocks.

@@ -688,7 +688,8 @@ public class JunifyDBServer {
         registerEndpoint(httpServer, prefix, "/api/bulk", new BulkHandler());
         registerEndpoint(httpServer, prefix, "/api/cdc", new CDCHandler());
         registerEndpoint(httpServer, prefix, "/api/audit/logs", new AuditLogHandler());
-        registerEndpoint(httpServer, prefix, "/api/sql", new SqlHandler());
+        registerEndpoint(httpServer, prefix, "/api/kv-meta", new KvMetaHandler());
+        registerEndpoint(httpServer, prefix, "/api/storage/status", new StorageStatusHandler());
         if (corsEnabled) {
             registerEndpoint(httpServer, prefix, "/api/cors", new CorsPreflightHandler());
         }
@@ -968,7 +969,7 @@ public class JunifyDBServer {
             var health = Map.of(
                 "status", "ok",
                 "open", db.isOpen(),
-                "version", "1.0.0",
+                "version", resolveVersion(),
                 "engine", engineType.name(),
                 "uptime", System.currentTimeMillis() - startTime,
                 "timestamp", System.currentTimeMillis(),
@@ -992,6 +993,19 @@ public class JunifyDBServer {
         }
     }
 
+    /**
+     * Product version read from the jar manifest (Implementation-Version), falling back
+     * to the Maven project version for test/IDE runs where the manifest is absent. The
+     * Console header displays this, so it must never be a hardcoded lie.
+     */
+    static String resolveVersion() {
+        var pkg = JunifyDBServer.class.getPackage();
+        if (pkg != null && pkg.getImplementationVersion() != null) {
+            return pkg.getImplementationVersion();
+        }
+        return "1.0.0";
+    }
+
     /** Ordered orientation context for the Console (engine, storage, database, identity). */
     private Map<String, Object> buildContext(HttpExchange exchange,
             org.junify.db.config.JunifyDBConfig.StorageEngineType engineType,
@@ -999,7 +1013,6 @@ public class JunifyDBServer {
             org.junify.db.config.JunifyDBConfig config) {
         var context = new LinkedHashMap<String, Object>();
         context.put("engine", engineType.name());
-        context.put("relationalEngine", "JUNIFYDB-RDBMS");
         context.put("nosqlEngine", "JUNIFYDB-NOSQL");
         context.put("storageMode", inMemory ? "in-memory" : (config.autoFlush() ? "sync" : "async"));
         context.put("durability", inMemory
@@ -1191,6 +1204,25 @@ public class JunifyDBServer {
                             var body = readBody(exchange);
                             var data = JsonSerde.fromJson(body, Map.class);
 
+                            // Optional UI windowing: "sortField"/"sortDir" ("asc"|"desc"),
+                            // "limit" and "offset" ride in the body but are NOT filter
+                            // fields — they are stripped before parsing and applied via
+                            // Query.sortBy/limit/offset, which DocumentCollection.find
+                            // honors server-side (sort → offset → limit order).
+                            String sortField = null;
+                            String sortDir = null;
+                            Integer limit = null;
+                            Integer offset = null;
+                            java.util.Map<String, Object> filterData = new java.util.LinkedHashMap<>(data);
+                            Object sf = filterData.remove("sortField");
+                            if (sf != null) sortField = sf.toString();
+                            Object sd = filterData.remove("sortDir");
+                            if (sd != null) sortDir = sd.toString();
+                            Object lim = filterData.remove("limit");
+                            if (lim instanceof Number n) limit = n.intValue();
+                            Object off = filterData.remove("offset");
+                            if (off instanceof Number n) offset = n.intValue();
+
                             // Support the legacy top-level $gt/$lt/$eq payloads used by the UI
                             // and the shared QueryParser format for richer queries.
                             org.junify.db.nosql.document.Query query = org.junify.db.nosql.document.Query.all();
@@ -1212,7 +1244,19 @@ public class JunifyDBServer {
                                     query = org.junify.db.nosql.document.Query.eq(entry.getKey(), entry.getValue());
                                 }
                             } else {
-                                query = org.junify.db.nosql.document.QueryParser.parse(data);
+                                query = org.junify.db.nosql.document.QueryParser.parse(filterData);
+                            }
+
+                            if (sortField != null && !sortField.isBlank()) {
+                                query.sortBy(sortField, "desc".equalsIgnoreCase(sortDir)
+                                        ? org.junify.db.nosql.document.Query.SortOrder.DESC
+                                        : org.junify.db.nosql.document.Query.SortOrder.ASC);
+                            }
+                            if (limit != null && limit > 0) {
+                                query.limit(limit);
+                            }
+                            if (offset != null && offset > 0) {
+                                query.offset(offset);
                             }
 
                             var results = collection.find(query);
@@ -1231,6 +1275,12 @@ public class JunifyDBServer {
                             // bug invisible as "query failed".
                             System.err.println("[CollectionsHandler] Bad query: " + e.getMessage());
                             sendJson(exchange, 400, Map.of("error", "Invalid query", "message", e.getMessage()));
+                        } catch (org.junify.db.core.exception.SerializationException e) {
+                            // A body that is not valid JSON is malformed client input, not a
+                            // server fault: answer 400 so the Console can classify and surface
+                            // it instead of reporting an unclassifiable 500.
+                            sendJson(exchange, 400, Map.of("error", "Invalid JSON body",
+                                    "message", e.getMessage() != null ? e.getMessage() : e.toString()));
                         } catch (Exception e) {
                             System.err.println("[CollectionsHandler] Query error: " + e.getMessage());
                             e.printStackTrace();
@@ -2220,7 +2270,7 @@ public class JunifyDBServer {
                         sendJson(exchange, 200, Map.of(
                             "status", "restored",
                             "file", backupFile.toString(),
-                            "note", "Restored into the live engine; panels that cache data (Collections, SQL Studio) may need a reload"
+                            "note", "Restored into the live engine; panels that cache data (Collections, Key-Value) may need a reload"
                         ));
                     } catch (Exception e) {
                         sendJson(exchange, 500, Map.of("error", "Restore failed: " + e.getMessage()));
@@ -3116,165 +3166,236 @@ public class JunifyDBServer {
         }
     }
 
-    private class SqlHandler implements HttpHandler {
+    /**
+     * KV metadata: bucket enumeration, key enumeration, and TTL read/write.
+     * The engine always supported keys(), stats() and put(key, value, Duration); the
+     * HTTP surface never exposed them, so the Console could not browse a bucket — an
+     * operator had to already know the exact key name (defect CD-03/CD-04).
+     *
+     * Routes:
+     *   GET  /api/kv-meta/buckets                          → every KV bucket the engine holds
+     *   GET  /api/kv-meta/{bucket}                         → keys + expiry of one bucket (key param filters by prefix)
+     *   GET  /api/kv-meta/{bucket}/stats                   → counts incl. expired
+     *   PUT  /api/kv-meta/{bucket}/{key}   {value, ttlSeconds?} → upsert, optional TTL
+     *   DELETE /api/kv-meta/{bucket}/{key}                → remove key
+     */
+    private class KvMetaHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            addCorsHeaders(exchange);
-            addSecurityHeaders(exchange);
-            if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
-                exchange.sendResponseHeaders(204, -1);
-                return;
-            }
             if (!isAuthValid(exchange)) { sendAuthError(exchange); return; }
             if (!isCsrfValid(exchange)) { sendCsrfError(exchange); return; }
+            var parts = exchange.getRequestURI().getPath().split("/");
+            var method = exchange.getRequestMethod();
 
-            if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) {
-                try {
-                    String body = readBody(exchange);
-                    Map<?, ?> payload = JsonSerde.fromJson(body, Map.class);
-                    String sql = (String) payload.get("query");
-                    if (sql == null || sql.isBlank()) {
-                        sendJson(exchange, 400, Map.of("error", "Query must not be empty"));
+            // /api/kv-meta/buckets
+            if (parts.length == 4 && "buckets".equals(parts[3])) {
+                if (!"GET".equals(method)) { sendJson(exchange, 405, Map.of("error", "Method not allowed")); return; }
+                var names = new java.util.TreeSet<String>();
+                for (String col : db.storageEngine().collections()) {
+                    // Reserved internal collections are engine plumbing, not user buckets.
+                    if (col.startsWith("meta_store") || col.startsWith("__junify")) continue;
+                    names.add(col);
+                }
+                sendJson(exchange, 200, Map.of("buckets", names.stream().sorted().toList()));
+                return;
+            }
+            if (parts.length < 4) {
+                sendJson(exchange, 400, Map.of("error", "Usage: GET /api/kv-meta/buckets, GET /api/kv-meta/{bucket}, PUT/DELETE /api/kv-meta/{bucket}/{key}"));
+                return;
+            }
+
+            var bucket = db.keyValueBucket(parts[3]);
+
+            // /api/kv-meta/{bucket}/stats
+            if (parts.length == 5 && "stats".equals(parts[4])) {
+                if (!"GET".equals(method)) { sendJson(exchange, 405, Map.of("error", "Method not allowed")); return; }
+                sendJson(exchange, 200, bucket.stats());
+                return;
+            }
+
+            // /api/kv-meta/{bucket} — key listing with expiry metadata
+            if (parts.length == 4) {
+                if (!"GET".equals(method)) { sendJson(exchange, 405, Map.of("error", "Method not allowed")); return; }
+                var params = parseQueryParams(exchange.getRequestURI().getQuery());
+                String prefix = params.getOrDefault("prefix", "");
+                var now = java.time.Instant.now();
+                var rows = new java.util.ArrayList<Map<String, Object>>();
+                var expiries = bucket.expirations();
+                for (String key : bucket.keys()) {
+                    if (!prefix.isEmpty() && !key.startsWith(prefix)) continue;
+                    var expiry = expiries.get(key);
+                    boolean expired = expiry != null && expiry.isBefore(now);
+                    var row = new LinkedHashMap<String, Object>();
+                    row.put("key", key);
+                    row.put("hasTtl", expiry != null);
+                    row.put("expiresAt", expiry != null ? expiry.toEpochMilli() : null);
+                    row.put("expired", expired);
+                    rows.add(row);
+                }
+                rows.sort((a, b) -> String.valueOf(a.get("key")).compareTo(String.valueOf(b.get("key"))));
+                sendJson(exchange, 200, Map.of(
+                        "bucket", parts[3],
+                        "prefix", prefix,
+                        "keys", rows,
+                        "count", rows.size()));
+                return;
+            }
+
+            // /api/kv-meta/{bucket}/{key} — read / upsert with optional TTL / delete
+            if (parts.length == 5) {
+                var key = parts[4];
+                if ("GET".equals(method)) {
+                    var value = bucket.get(key);
+                    if (value == null) {
+                        sendJson(exchange, 404, Map.of("error", "Key not found: " + key));
                         return;
                     }
-
-                    List<?> rawParams = (List<?>) payload.get("params");
-                    Object[] params = rawParams != null ? rawParams.toArray() : new Object[0];
-
-                    long start = System.currentTimeMillis();
-                    var rs = db.sql(sql, params);
-                    long duration = System.currentTimeMillis() - start;
-
-                    // R-28: mutations issued through the SQL console path must be
-                    // audited exactly like REST CRUD. Parsing is intentionally
-                    // lexical-only (no engine round-trip), so it cannot widen the
-                    // engine's attack surface; audit is evidentiary, not a filter.
-                    auditSqlStatements(sql, getClientIp(exchange));
-
-                    List<Map<String, Object>> rows = new ArrayList<>();
-                    for (var r : rs.getRows()) {
-                        rows.add(r.asMap());
+                    var expiry = bucket.expiryOf(key);
+                    var row = new LinkedHashMap<String, Object>();
+                    row.put("key", key);
+                    row.put("value", value);
+                    row.put("hasTtl", expiry != null);
+                    row.put("expiresAt", expiry != null ? expiry.toEpochMilli() : null);
+                    sendJson(exchange, 200, row);
+                    return;
+                }
+                if ("PUT".equals(method) || "POST".equals(method)) {
+                    var body = readBody(exchange);
+                    Map<String, Object> data;
+                    try {
+                        data = JsonSerde.fromJson(body, Map.class);
+                    } catch (Exception e) {
+                        sendJson(exchange, 400, Map.of("error", "Invalid JSON body: " + e.getMessage()));
+                        return;
                     }
-
-                    sendJson(exchange, 200, Map.of(
-                            "columns", rs.getColumnNames(),
-                            "rows", rows,
-                            "rowCount", rs.size(),
-                            "executionTimeMs", duration,
-                            "status", "success"
-                    ));
-                } catch (org.junify.db.sql.SqlUnknownTableException e) {
-                    // R-48/R-49: a statement that referenced a table which does
-                    // not exist is a client error about state, not a syntax
-                    // problem — 404 distinguishes it from 400 parse errors and
-                    // from the old fake rowCount:0 success.
-                    sendJson(exchange, 404, Map.of(
-                            "error", "Table does not exist",
-                            "message", e.getMessage() != null ? e.getMessage() : e.toString()
-                    ));
-                } catch (Exception e) {
-                    sendJson(exchange, 400, Map.of(
-                            "error", "SQL Execution Error",
-                            "message", e.getMessage() != null ? e.getMessage() : e.toString()
-                    ));
-                }
-            } else {
-                sendJson(exchange, 405, Map.of("error", "Method not allowed. Use POST with JSON payload."));
-            }
-        }
-
-        /**
-         * R-28: audits every mutation statement in a console SQL batch so the
-         * SQL Studio path leaves the same evidentiary trail as REST CRUD
-         * (logAuditEvent keeps the in-memory ring and the JSONL disk log in
-         * step). Lexical split on semicolons outside quotes; reads are not
-         * audited. Best-effort: a parsing failure never fails the SQL call.
-         */
-        private void auditSqlStatements(String sql, String clientIp) {
-            try {
-                for (String raw : splitSqlStatements(sql)) {
-                    String stmt = raw.strip();
-                    if (stmt.isEmpty()) continue;
-                    String upper = stmt.toUpperCase();
-                    String op;
-                    if (upper.startsWith("INSERT")) op = "INSERT";
-                    else if (upper.startsWith("UPDATE")) op = "UPDATE";
-                    else if (upper.startsWith("DELETE")) op = "DELETE";
-                    else if (upper.startsWith("CREATE")) op = "CREATE";
-                    else if (upper.startsWith("DROP")) op = "DROP";
-                    else continue; // reads and unsupported statements are not audited
-                    String resource = extractSqlTarget(stmt);
-                    logAuditEvent(op, resource, null, "SUCCESS", clientIp, "SQL console execution");
-                }
-            } catch (Exception e) {
-                logger.warn("[AUDIT] SQL statement audit skipped (fail-open): {}", e.toString());
-            }
-        }
-    }
-
-    /** Package-visible for testing: lexical split of a SQL batch on semicolons
-     *  that are not inside single quotes, double quotes, or comments. */
-    static java.util.List<String> splitSqlStatements(String sql) {
-        var statements = new java.util.ArrayList<String>();
-        if (sql == null || sql.isBlank()) return statements;
-        StringBuilder current = new StringBuilder();
-        boolean inSingle = false, inDouble = false, inLineComment = false, inBlockComment = false;
-        for (int i = 0; i < sql.length(); i++) {
-            char c = sql.charAt(i);
-            if (inLineComment) {
-                current.append(c);
-                if (c == '\n') inLineComment = false;
-                continue;
-            }
-            if (inBlockComment) {
-                current.append(c);
-                if (c == '*' && i + 1 < sql.length() && sql.charAt(i + 1) == '/') {
-                    current.append(sql.charAt(++i));
-                    inBlockComment = false;
-                }
-                continue;
-            }
-            if (inSingle) {
-                current.append(c);
-                if (c == '\'') {
-                    if (i + 1 < sql.length() && sql.charAt(i + 1) == '\'') {
-                        current.append(sql.charAt(++i)); // escaped quote
+                    if (data == null || !data.containsKey("value")) {
+                        sendJson(exchange, 400, Map.of("error", "Body must be {\"value\":…, \"ttlSeconds\": number?}"));
+                        return;
+                    }
+                    var value = String.valueOf(data.get("value"));
+                    if (data.containsKey("ttlSeconds") && data.get("ttlSeconds") != null) {
+                        long ttl;
+                        try {
+                            ttl = ((Number) data.get("ttlSeconds")).longValue();
+                        } catch (ClassCastException e) {
+                            sendJson(exchange, 400, Map.of("error", "ttlSeconds must be a number"));
+                            return;
+                        }
+                        if (ttl <= 0) {
+                            sendJson(exchange, 400, Map.of("error", "ttlSeconds must be positive"));
+                            return;
+                        }
+                        bucket.put(key, value, java.time.Duration.ofSeconds(ttl));
+                        logCrudEvent("PUT", parts[3] + "/" + key, key, getClientIp(exchange));
+                        sendJson(exchange, 201, Map.of("key", key, "value", value, "ttlSeconds", ttl,
+                                "expiresAt", bucket.expiryOf(key) != null ? bucket.expiryOf(key).toEpochMilli() : null));
                     } else {
-                        inSingle = false;
+                        bucket.put(key, value);
+                        logCrudEvent("PUT", parts[3] + "/" + key, key, getClientIp(exchange));
+                        sendJson(exchange, 201, Map.of("key", key, "value", value));
                     }
+                    return;
                 }
-                continue;
+                if ("DELETE".equals(method)) {
+                    boolean deleted = bucket.delete(key);
+                    if (!deleted) {
+                        sendJson(exchange, 404, Map.of("error", "Key not found: " + key));
+                        return;
+                    }
+                    logCrudEvent("DELETE", parts[3] + "/" + key, key, getClientIp(exchange));
+                    sendJson(exchange, 204, null);
+                    return;
+                }
+                sendJson(exchange, 405, Map.of("error", "Method not allowed. Use PUT or DELETE."));
+                return;
             }
-            if (inDouble) {
-                current.append(c);
-                if (c == '"') inDouble = false;
-                continue;
-            }
-            if (c == '\'' ) { inSingle = true; current.append(c); continue; }
-            if (c == '"') { inDouble = true; current.append(c); continue; }
-            if (c == '-' && i + 1 < sql.length() && sql.charAt(i + 1) == '-') {
-                inLineComment = true; current.append(c); continue;
-            }
-            if (c == '/' && i + 1 < sql.length() && sql.charAt(i + 1) == '*') {
-                inBlockComment = true; current.append(c); continue;
-            }
-            if (c == ';') {
-                statements.add(current.toString());
-                current.setLength(0);
-                continue;
-            }
-            current.append(c);
+
+            sendJson(exchange, 400, Map.of("error", "Unsupported kv-meta path"));
         }
-        if (!current.toString().isBlank()) statements.add(current.toString());
-        return statements;
     }
 
-    /** Package-visible for testing: best-effort extraction of the collection or
-     *  table a SQL statement targets (INSERT/UPDATE/DELETE FROM/CREATE/DROP). */
-    static String extractSqlTarget(String stmt) {
-        var m = java.util.regex.Pattern
-                .compile("(?i)\\b(?:INSERT\\s+INTO|UPDATE|DELETE\\s+FROM|CREATE\\s+TABLE|DROP\\s+TABLE)\\s+([\\w\".]+)")
-                .matcher(stmt);
-        return m.find() ? m.group(1) : "sql";
+    /**
+     * Storage & WAL status: what the Overview panel needs to show recovery health
+     * without guessing (defect CD-06). Everything is read from the live engine and
+     * the data directory — never fabricated front-end-side.
+     */
+    private class StorageStatusHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if (!isAuthValid(exchange)) { sendAuthError(exchange); return; }
+            if (!"GET".equals(exchange.getRequestMethod())) {
+                sendJson(exchange, 405, Map.of("error", "Method not allowed. Use GET."));
+                return;
+            }
+            var config = db.config();
+            var engineType = config.storageEngine();
+            var inMemory = engineType == org.junify.db.config.JunifyDBConfig.StorageEngineType.IN_MEMORY;
+            var dataDir = config.dataDir();
+
+            var m = new LinkedHashMap<String, Object>();
+            m.put("engine", engineType.name());
+            m.put("walSupported", !inMemory);
+            m.put("storageMode", inMemory ? "in-memory" : (config.autoFlush() ? "sync" : "async"));
+            m.put("durability", inMemory
+                    ? "no durability - data is lost when the process exits"
+                    : (config.autoFlush()
+                        ? "periodic flush every " + config.flushIntervalMs() + " ms"
+                        : "explicit flush / flush on close only - a hard kill can lose writes"));
+
+            // WAL observation from the data directory (works for FILE, LSM_TREE, B_TREE).
+            var walDir = dataDir.resolve(".wal");
+            var wal = new LinkedHashMap<String, Object>();
+            wal.put("directory", walDir.toAbsolutePath().toString());
+            wal.put("present", java.nio.file.Files.exists(walDir));
+            if (java.nio.file.Files.exists(walDir)) {
+                try (var stream = java.nio.file.Files.list(walDir)) {
+                    var files = stream.filter(java.nio.file.Files::isRegularFile).toList();
+                    wal.put("fileCount", files.size());
+                    wal.put("totalBytes", files.stream().mapToLong(f -> {
+                        try { return java.nio.file.Files.size(f); } catch (IOException e) { return 0L; }
+                    }).sum());
+                    var newest = files.stream()
+                            .max(java.util.Comparator.comparingLong(f -> f.toFile().lastModified()));
+                    newest.ifPresent(f -> wal.put("lastWriteAt", f.toFile().lastModified()));
+                } catch (IOException e) {
+                    wal.put("error", e.getMessage());
+                }
+            }
+            m.put("wal", wal);
+
+            // Data directory footprint (files actually written by this engine).
+            var disk = new LinkedHashMap<String, Object>();
+            disk.put("dataDir", dataDir.toAbsolutePath().toString());
+            disk.put("exists", java.nio.file.Files.exists(dataDir));
+            if (java.nio.file.Files.exists(dataDir)) {
+                long total = 0; int count = 0;
+                try (var stream = java.nio.file.Files.walk(dataDir)) {
+                    for (var f : (Iterable<java.nio.file.Path>) stream.filter(java.nio.file.Files::isRegularFile)::iterator) {
+                        total += java.nio.file.Files.size(f);
+                        count++;
+                    }
+                } catch (IOException e) {
+                    disk.put("error", e.getMessage());
+                }
+                disk.put("totalBytes", total);
+                disk.put("fileCount", count);
+            }
+            m.put("disk", disk);
+
+            // Backups at a glance (recency matters for safe destructive work). The
+            // backup directory lives inside the data dir (backupDir() is on the
+            // BackupHandler inner class), so read it from the filesystem here.
+            var backupDir = dataDir.resolve("backups");
+            long backupCount = 0;
+            if (java.nio.file.Files.exists(backupDir)) {
+                try (var stream = java.nio.file.Files.list(backupDir)) {
+                    backupCount = stream.filter(p -> p.toString().endsWith(".json.gz")).count();
+                } catch (IOException e) {
+                    m.put("backupError", e.getMessage());
+                }
+            }
+            m.put("backupCount", backupCount);
+            sendJson(exchange, 200, m);
+        }
     }
 }

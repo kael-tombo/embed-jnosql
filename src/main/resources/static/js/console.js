@@ -161,6 +161,10 @@ async function api(path, opts = {}) {
 }
 
 /* ---------------- toasts ---------------- */
+/**
+ * Minimal text-input dialog (a styled stand-in for prompt(), which the CSP forbids
+ * and whose look cannot be controlled). Resolves with the text, or null on cancel.
+ */
 function toast(msg, kind = 'info', ms = 3200) {
   const box = document.createElement('div');
   box.className = `toast ${kind}`;
@@ -177,6 +181,23 @@ function setBadge(el, state, extra = '') {
   el.textContent = extra ? `${ui.label} · ${extra}` : ui.label;
   el.className = ui.cls;
   el.dataset.state = state;
+  // CD-12: screen readers get an out-of-band announcement for every status
+  // change (loading → success/error), not just the visual badge.
+  announce(`${el.dataset.scope ? el.dataset.scope + ': ' : ''}${el.textContent}`);
+}
+
+/** Single polite live region (CD-12) — created lazily so it works on any page. */
+function announce(msg) {
+  let live = document.getElementById('liveRegion');
+  if (!live) {
+    live = document.createElement('div');
+    live.id = 'liveRegion';
+    live.className = 'sr-only';
+    live.setAttribute('aria-live', 'polite');
+    live.setAttribute('role', 'status');
+    document.body.appendChild(live);
+  }
+  live.textContent = msg;
 }
 
 /**
@@ -299,7 +320,7 @@ function fmtUptime(ms) {
 function tbl(headers, rows) {
   if (!rows.length) return `<div class="empty"><svg class="empty-logo" aria-hidden="true"><use href="#brand-mark"/></svg><br>No data.</div>`;
   return `<table class="tbl"><thead><tr>${headers.map((h) => `<th>${esc(h)}</th>`).join('')}</tr></thead>
-    <tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+    <tbody>${rows.map((r) => `<tr>${r.map((c) => String(c).trim().toLowerCase().startsWith('<td') ? c : `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
 }
 
 /* ============================================================
@@ -307,7 +328,6 @@ function tbl(headers, rows) {
    ============================================================ */
 const ICONS = {
   overview: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>',
-  sql: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>',
   collections: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 12l9 4 9-4"/><path d="M3 17l9 4 9-4"/></svg>',
   kv: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="12" r="4"/><path d="M12 12h9"/><path d="M18 12v3"/></svg>',
   columns: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/><path d="M15 4v16"/></svg>',
@@ -323,7 +343,6 @@ const ICONS = {
 
 const PANELS = [
   { id: 'overview',    label: 'Overview',     sub: 'Database at a glance',                    key: '1' },
-  { id: 'sql',         label: 'SQL Studio',   sub: 'Relational SQL Engine — built-in dialect', key: '2' },
   { id: 'collections', label: 'Collections',  sub: 'Documents — inspect, edit, TTL, schema',   key: '3' },
   { id: 'kv',          label: 'Key-Value',    sub: 'KV, lists, sets, hashes',                  key: '4' },
   { id: 'columns',     label: 'Column Family',sub: 'Wide-column rows and ranges',              key: '5' },
@@ -337,21 +356,21 @@ const PANELS = [
   { id: 'server',      label: 'Server',       sub: 'Health and JVM telemetry' },
 ];
 
-/* Sidebar groups make the engine split explicit: relational vs
-   non-relational capabilities, then shared engine-wide surfaces. */
+/* Sidebar groups describe the one NoSQL product: data models first, then
+   maintenance surfaces, then diagnostics. There is no engine split to show. */
 const GROUPS = [
-  { name: 'General',                 items: ['overview'] },
-  { name: 'Relational SQL Engine',   items: ['sql'] },
-  { name: 'Non-Relational NoSQL Engine', items: ['collections', 'kv', 'columns', 'vectors'] },
-  { name: 'Data Model',              items: ['schema', 'tx', 'indexes'] },
-  { name: 'Both Engines',            items: ['backup', 'cdc', 'audit', 'server'] },
+  { name: 'General',     items: ['overview'] },
+  { name: 'Data',        items: ['collections', 'kv', 'columns', 'vectors'] },
+  { name: 'Operations',  items: ['schema', 'tx', 'indexes', 'backup', 'cdc', 'audit'] },
+  { name: 'Diagnostics', items: ['server'] },
 ];
 
 let activePanel = 'overview';
 
 function buildNav() {
   const nav = $('#nav');
-  nav.innerHTML = '';
+  // Keep the search box; rebuild only the items.
+  $$('.nav-group, .nav-item').forEach((el) => el.remove());
   for (const g of GROUPS) {
     const gh = document.createElement('div');
     gh.className = 'nav-group';
@@ -362,6 +381,7 @@ function buildNav() {
       const b = document.createElement('button');
       b.className = 'nav-item';
       b.dataset.panel = p.id;
+      b.dataset.label = p.label.toLowerCase();
       b.innerHTML = `${ICONS[p.id]}<span class="nav-label">${esc(p.label)}</span>${p.key ? `<span class="nav-key">${p.key}</span>` : ''}`;
       b.title = p.sub; // tooltip in rail / collapsed mode where the label is hidden
       b.setAttribute('aria-label', p.label);
@@ -371,16 +391,49 @@ function buildNav() {
   }
 }
 
+/** Sidebar filter: hides non-matching items and empty groups. */
+function filterNav(query) {
+  const q = query.trim().toLowerCase();
+  $$('.nav-item').forEach((b) => {
+    b.style.display = !q || b.dataset.label.includes(q) ? '' : 'none';
+  });
+  $$('.nav-group').forEach((gh) => {
+    let el = gh.nextElementSibling;
+    let any = false;
+    while (el && !el.classList.contains('nav-group')) {
+      if (el.classList.contains('nav-item') && el.style.display !== 'none') { any = true; break; }
+      el = el.nextElementSibling;
+    }
+    gh.style.display = any || !q ? '' : 'none';
+  });
+}
+
+const CRUMB_ROOT = 'Console';
+function renderCrumbs(p) {
+  const host = $('#crumbs');
+  if (!host) return;
+  const g = GROUPS.find((grp) => grp.items.includes(p.id));
+  host.innerHTML = g
+    ? `<span class="crumb-root">${esc(CRUMB_ROOT)}</span><span class="crumb-sep" aria-hidden="true">/</span><span aria-current="page">${esc(g.name)}</span><span class="crumb-sep" aria-hidden="true">/</span><span aria-current="page" class="crumb-here">${esc(p.label)}</span>`
+    : `<span class="crumb-root">${esc(CRUMB_ROOT)}</span><span class="crumb-sep" aria-hidden="true">/</span><span aria-current="page">${esc(p.label)}</span>`;
+}
+
 function goto(id) {
   activePanel = id;
   const p = PANELS.find((x) => x.id === id);
   $$('.panel').forEach((s) => s.classList.remove('active'));
   $(`#panel-${id}`).classList.add('active');
-  $$('.nav-item').forEach((b) => b.classList.toggle('active', b.dataset.panel === id));
+  $$('.nav-item').forEach((b) => {
+    const active = b.dataset.panel === id;
+    b.classList.toggle('active', active);
+    if (active) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+  });
   $('#panelTitle').textContent = p.label;
   $('#panelSub').textContent = p.sub;
+  renderCrumbs(p);
   history.replaceState(null, '', '#' + id);
   refreshPanel(id);
+  onFirstOpen(id);
   $('#main').scrollTop = 0;
 }
 
@@ -426,7 +479,7 @@ async function refreshOverview() {
       ${setKpi('Heap used', fmtBytes(mem.used))}
       ${setKpi('Heap max', fmtBytes(mem.max))}
     </div>
-    <div class="empty" style="padding:10px 0 0">Relational SQL and Non-Relational NoSQL queries both run against this engine.</div>`;
+    <div class="empty" style="padding:10px 0 0">Documents, key-value, wide-column, and vector data all live in this one embedded NoSQL engine.</div>`;
 
   const list = cols.collections ?? [];
   $('#ovCollections').innerHTML = list.length
@@ -441,222 +494,29 @@ async function refreshOverview() {
 }
 
 /* ============================================================
-   SQL Studio
-   ============================================================ */
-const SQL_EXAMPLES = [
-  'SELECT * FROM products',
-  "INSERT INTO products (id, name, price) VALUES ('p2', 'Mouse', 25.0)",
-  'SELECT category, COUNT(*) AS n, AVG(price) AS avg FROM products GROUP BY category',
-  'SELECT * FROM products WHERE price > 10 ORDER BY price DESC',
-];
-
-/** The statement currently in flight, so it can be cancelled by the user. */
-let sqlController = null;
-/** Last result set, kept so it can be exported without re-running the query. */
-let lastSqlResult = null;
-
-/**
- * Classifies a statement as destructive and explains why, or returns null.
- * This guards the two ways a console query silently destroys data: a DROP, and a
- * DELETE/UPDATE with no WHERE clause (which reads as a filter to a tired human).
- */
-function destructiveReason(sql) {
-  const stripped = sql.replace(/--[^\n]*/g, ' ').replace(/\/\*[\s\S]*?\*\//g, ' ').trim();
-  const upper = stripped.toUpperCase();
-  // Keyword detection runs on the uppercased copy; the target is read from the
-  // original so the dialog echoes the user's own spelling, not a shouting version.
-  if (/^\s*(DROP)\b/.test(upper)) {
-    const m = stripped.match(/^\s*DROP\s+(TABLE|INDEX)\s+(IF\s+EXISTS\s+)?([\w."]+)/i);
-    return { kind: 'DROP', target: m ? m[3] : 'object named in the statement',
-             impact: 'Drops the object and its contents. Rows are gone permanently.' };
-  }
-  const write = upper.match(/^\s*(DELETE|UPDATE)\b/);
-  if (write) {
-    const hasWhere = /\bWHERE\b/.test(upper);
-    const target = (stripped.match(/^\s*(?:DELETE\s+FROM|UPDATE)\s+([\w."]+)/i) || [])[1]
-      || 'table in the statement';
-    if (!hasWhere) {
-      return { kind: write[1], target,
-               impact: `Applies to EVERY row in ${target} — the statement has no WHERE clause.` };
-    }
-    return { kind: write[1], target,
-             impact: `Modifies every row in ${target} that matches the WHERE clause. Run it as a SELECT first if you want to preview the rows.` };
-  }
-  return null;
-}
-
-/** Live warning badge: the user sees the danger before pressing Run. */
-function refreshDestructiveBadge() {
-  const badge = $('#sqlDestructive');
-  const reason = destructiveReason($('#sqlInput').value);
-  if (!reason) { badge.hidden = true; badge.textContent = ''; return; }
-  badge.hidden = false;
-  badge.className = 'badge err';
-  badge.textContent = `⚠ destructive ${reason.kind}`;
-  badge.title = reason.impact;
-}
-
-async function runSql(onlySelection = false) {
-  const input = $('#sqlInput');
-  const status = $('#sqlStatus');
-  const selected = onlySelection ? input.value.slice(input.selectionStart, input.selectionEnd).trim() : '';
-  const sql = (selected || input.value).trim();
-
-  if (!sql) {
-    setBadge(status, STATES.VALIDATION, 'empty statement');
-    $('#sqlOut').innerHTML = '<div class="state-banner warn" role="alert"><div>'
-      + '<div class="state-title">✖ Nothing to run — validation error</div>'
-      + '<div><strong>What failed:</strong> the editor is empty.</div>'
-      + '<div><strong>Did data change?</strong> No data was changed — no statement was sent.</div>'
-      + '<div><strong>How to fix it:</strong> type a statement, or pick one from the history buttons below.</div>'
-      + '</div></div>';
-    return;
-  }
-
-  const reason = destructiveReason(sql);
-  if (reason) {
-    const ok = await confirmAction({
-      title: `Confirm destructive ${reason.kind}`,
-      target: `${reason.target} (Relational SQL Engine)`,
-      impact: reason.impact,
-      confirmLabel: `Run ${reason.kind}`,
-      hint: 'Tip: run the equivalent SELECT first to see exactly which rows you are about to change.',
-    });
-    if (!ok) {
-      setBadge(status, STATES.IDLE, 'cancelled by user');
-      return;
-    }
-  }
-
-  sqlController = new AbortController();
-  $('#sqlCancel').hidden = false;
-  setBadge(status, STATES.LOADING);
-  $('#sqlMeta').textContent = '';
-  try {
-    const t0 = performance.now();
-    const res = await api('/sql', { method: 'POST', body: { query: sql }, signal: sqlController.signal });
-    const ms = Math.max(1, Math.round(performance.now() - t0));
-    lastSqlResult = res;
-    const rows = res.rowCount ?? (res.rows || []).length;
-    const hasColumns = !!(res.columns && res.columns.length);
-    // A statement that returns no result set is not "empty" — only a 0-row result set is.
-    const state = hasColumns ? successOrEmpty(rows) : STATES.SUCCESS;
-    setBadge(status, state, `${ms} ms`);
-    $('#sqlMeta').textContent = `${rows} row${rows === 1 ? '' : 's'} · server ${res.executionTimeMs} ms`;
-    setActiveContext(hasColumns ? `SQL result · ${rows} row${rows === 1 ? '' : 's'}` : 'SQL statement (no result set)');
-    $('#sqlExportCsv').hidden = !hasColumns || rows === 0;
-    $('#sqlExportJson').hidden = rows === 0 && !hasColumns;
-    renderSqlResult(res);
-    saveHistory(sql);
-    renderHistory();
-  } catch (e) {
-    lastSqlResult = null;
-    $('#sqlExportCsv').hidden = true;
-    $('#sqlExportJson').hidden = true;
-    if (e.state === STATES.IDLE) {
-      setBadge(status, STATES.IDLE, 'cancelled');
-      $('#sqlMeta').textContent = '';
-      $('#sqlOut').innerHTML = '<div class="state-banner info"><div>'
-        + '<div class="state-title">Query cancelled</div>'
-        + '<div><strong>Did data change?</strong> The client stopped waiting; a statement already '
-        + 'executing server-side may still complete. Reload the affected data to confirm.</div>'
-        + '</div></div>';
-      return;
-    }
-    setBadge(status, e.state || STATES.BACKEND);
-    $('#sqlOut').innerHTML = errorBanner(e, {
-      title: 'SQL statement failed',
-      learnMore: 'the built-in dialect supports SELECT · INSERT · UPDATE · DELETE · JOIN · GROUP BY · '
-        + 'CREATE/DROP TABLE with PRIMARY KEY · UNIQUE · NOT NULL · FOREIGN KEY · CHECK. Views, sequences, '
-        + 'stored procedures, triggers, functions, and CREATE INDEX are not supported.',
-    });
-    if (e.data && e.data.message && e.data.message !== e.message) {
-      $('#sqlOut').insertAdjacentHTML('beforeend',
-        `<div class="state-banner info" style="margin-top:8px"><div><div class="state-title">Engine detail</div>${esc(e.data.message)}</div></div>`);
-    }
-  } finally {
-    sqlController = null;
-    $('#sqlCancel').hidden = true;
-  }
-}
-
-function renderSqlResult(res) {
-  if (!res.columns || !res.columns.length) {
-    $('#sqlOut').innerHTML = '<div class="state-banner ok"><div>'
-      + '<div class="state-title">✔ Statement executed</div>'
-      + '<div>No result set was returned (this is a write or a DDL statement). '
-      + 'Check the Audit Trail panel for the recorded change.</div></div></div>';
-    return;
-  }
-  if (!res.rows || res.rows.length === 0) {
-    $('#sqlOut').innerHTML = '<div class="state-banner warn"><div>'
-      + '<div class="state-title">Result set is empty</div>'
-      + `<div>The statement ran successfully but matched no rows, so there is nothing to show or export. `
-      + `Columns requested: <code>${esc(res.columns.join(', '))}</code>.</div></div></div>`;
-    return;
-  }
-  $('#sqlOut').innerHTML = `<div class="tbl-wrap">${tbl(res.columns,
-    res.rows.map((r) => res.columns.map((c) => esc(r[c] ?? 'NULL'))))}</div>`;
-}
-
-/* --- result export (from the last result set, no re-run) --- */
-function csvCell(v) {
-  if (v == null) return '';
-  const s = typeof v === 'object' ? JSON.stringify(v) : String(v);
-  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
-function downloadText(filename, text, mime) {
-  const blob = new Blob([text], { type: mime });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-function exportSql(format) {
-  if (!lastSqlResult) { toast('Run a query first — there is no result to export', 'err'); return; }
-  const cols = lastSqlResult.columns || [];
-  const rows = lastSqlResult.rows || [];
-  if (!rows.length && !cols.length) { toast('Statement produced no result set to export', 'err'); return; }
-  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-  if (format === 'csv') {
-    if (!cols.length) { toast('Nothing to export as CSV — the statement returned no columns', 'err'); return; }
-    const text = [cols.map(csvCell).join(','),
-      ...rows.map((r) => cols.map((c) => csvCell(r[c])).join(','))].join('\n');
-    downloadText(`junifydb-result-${stamp}.csv`, text, 'text/csv');
-  } else {
-    downloadText(`junifydb-result-${stamp}.json`, JSON.stringify(rows, null, 2), 'application/json');
-  }
-  toast(`Exported ${rows.length} row${rows.length === 1 ? '' : 's'} as ${format.toUpperCase()}`, 'ok');
-}
-
-/* --- query history (localStorage) --- */
-const HKEY = 'junifydb.sql.history';
-function saveHistory(sql) {
-  try {
-    const h = JSON.parse(localStorage.getItem(HKEY) || '[]').filter((s) => s !== sql);
-    h.unshift(sql);
-    localStorage.setItem(HKEY, JSON.stringify(h.slice(0, 30)));
-  } catch { /* storage unavailable */ }
-}
-function renderHistory() {
-  let h = [];
-  try { h = JSON.parse(localStorage.getItem(HKEY) || '[]'); } catch { /* ignore */ }
-  // Never leave the example strip blank: history first, then the built-in examples,
-  // so a first-time user always has something clickable to run.
-  const items = h.length ? h.slice(0, 6) : SQL_EXAMPLES;
-  const label = h.length ? '' : '<span class="hint" style="align-self:center">Try one:</span>';
-  $('#sqlExamples').innerHTML = label + items.map((s) =>
-    `<button class="btn sm" data-sql="${esc(s)}" title="${esc(s)}">${esc(s.length > 46 ? s.slice(0, 46) + '…' : s)}</button>`).join('');
-}
-
-/* ============================================================
    Collections
    ============================================================ */
 let colDocs = [];
+
+/** Collection chips from the live engine, so the user never has to guess a name. */
+async function loadColPicker() {
+  const host = $('#colPicker');
+  if (!host) return;
+  try {
+    const r = await api('/collections');
+    const list = r.collections ?? [];
+    host.innerHTML = list.length
+      ? list.map((c) => `<button class="chip" aria-pressed="false" data-col="${esc(c.name)}" title="Load ${esc(c.name)} (${c.count} docs)">${esc(c.name)} <span class="muted">${c.count}</span></button>`).join('')
+      : '<span class="hint">No collections yet — insert the first document below.</span>';
+    $$('#colPicker .chip').forEach((b) => b.onclick = () => {
+      $$('#colPicker .chip.active').forEach((x) => { x.classList.remove('active'); x.setAttribute('aria-pressed', 'false'); });
+      b.classList.add('active');
+      b.setAttribute('aria-pressed', 'true');
+      $('#colSel').value = b.dataset.col;
+      loadCollection().catch((e) => toast(e.message, 'err'));
+    });
+  } catch { host.innerHTML = '<span class="hint">Collection list unavailable.</span>'; }
+}
 
 async function loadCollection() {
   const name = $('#colSel').value.trim();
@@ -668,7 +528,7 @@ async function loadCollection() {
   setActiveContext(`collection ${name} · ${colDocs.length} doc${colDocs.length === 1 ? '' : 's'}`);
   $('#colTable').innerHTML = tbl(['id', ...fields, 'expires'], colDocs.map((d) =>
     [`<td><a href="#" class="mono" data-doc="${esc(d.id)}">${esc(d.id)}</a></td>`,
-      ...fields.map((f) => `<td>${esc(d.fields?.[f] ?? '')}</td>`),
+      ...fields.map((f) => { const v = d.fields?.[f]; return `<td>${esc(v == null ? '' : typeof v === 'object' ? JSON.stringify(v) : String(v))}</td>`; }),
       `<td>${d.expiresAt ? new Date(d.expiresAt).toLocaleString() : ''}</td>`]));
   $$('#colTable [data-doc]').forEach((a) => a.onclick = (e) => {
     e.preventDefault();
@@ -683,6 +543,10 @@ async function refreshCollections() {
   if (!name) {
     $('#colCount').textContent = '';
     $('#colTable').innerHTML = '<div class="empty"><svg class="empty-logo" aria-hidden="true"><use href="#brand-mark"/></svg><br>No collection loaded.<br>Type a name above (e.g. <b>users</b>) and press <b>Load</b>.</div>';
+    // The picker is the panel's source of truth for "what exists": refresh it
+    // here too, or a collection created moments ago stays invisible until the
+    // user notices the dedicated ⟳ button.
+    loadColPicker();
     return;
   }
   await loadCollection();
@@ -694,31 +558,75 @@ function collectFields(docs) {
   return [...set].filter((f) => f !== '_entity').slice(0, 8);
 }
 
+let currentDoc = null;
+let docViewMode = 'json';
+
 function showDoc(d) {
-  $('#docDetail').innerHTML = d
-    ? `<pre class="code json" id="docJson"></pre>
-       <div style="display:flex;gap:8px;margin-top:10px">
-         <button class="btn sm" id="docEdit">Load into editor</button>
-         <button class="btn sm danger" id="docDel">Delete</button>
-       </div>`
-    : '<div class="empty">Document not found</div>';
-  if (d) {
-    renderJson($('#docJson'), d);
-    $('#docEdit').onclick = () => {
-      $('#insCol').value = $('#colSel').value;
-      $('#insJson').value = JSON.stringify({ id: d.id, ...d.fields }, null, 2);
-      $('#insCol').focus();
-    };
-    $('#docDel').onclick = async () => {
-      try {
-        await api(`/collections/${encodeURIComponent($('#colSel').value)}/${encodeURIComponent(d.id)}`,
-          { method: 'DELETE' });
-        toast(`Deleted ${d.id}`, 'ok');
-        loadCollection();
-        $('#docDetail').innerHTML = '<span class="empty" style="padding:12px">Deleted.</span>';
-      } catch (e) { toast(e.message, 'err'); }
-    };
+  currentDoc = d;
+  if (!d) {
+    $('#docDetail').innerHTML = '<div class="empty">Document not found</div>';
+    return;
   }
+  const body = docViewMode === 'tree' ? jsonTreeHtml({ id: d.id, ...d.fields }) : `<pre class="code json" id="docJson"></pre>`;
+  $('#docDetail').innerHTML = `${body}
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <button class="btn sm" id="docEdit">Load into editor</button>
+      <button class="btn sm" id="docCopy">Copy JSON</button>
+      <button class="btn sm danger" id="docDel">Delete</button>
+    </div>`;
+  if (docViewMode === 'json') renderJson($('#docJson'), d);
+  $('#docEdit').onclick = () => {
+    $('#insCol').value = $('#colSel').value;
+    $('#insJson').value = JSON.stringify({ id: d.id, ...d.fields }, null, 2);
+    $('#insCol').focus();
+  };
+  $('#docCopy').onclick = () => navigator.clipboard?.writeText(JSON.stringify(d, null, 2))
+    .then(() => toast('Document JSON copied', 'ok'));
+  $('#docDel').onclick = async () => {
+    const ok = await confirmAction({
+      title: 'Delete document',
+      target: `document "${d.id}" in collection "${$('#colSel').value}" (Non-Relational NoSQL Engine)`,
+      impact: 'Removes this document permanently. The collection and its other documents remain.',
+      irrecoverable: true,
+      confirmLabel: 'Delete document',
+    });
+    if (!ok) { toast('Deletion cancelled — nothing was changed', 'info'); return; }
+    try {
+      await api(`/collections/${encodeURIComponent($('#colSel').value)}/${encodeURIComponent(d.id)}`,
+        { method: 'DELETE' });
+      toast(`Deleted ${d.id}`, 'ok');
+      loadCollection();
+      $('#docDetail').innerHTML = '<span class="empty" style="padding:12px">Deleted.</span>';
+    } catch (e) { toast(e.message, 'err'); }
+  };
+}
+
+/** Renders nested values as an expandable tree (details/summary), not [object Object]. */
+function jsonTreeHtml(value) {
+  const node = (v, key) => {
+    const k = key != null ? `<span class="jt-key">"${esc(key)}"</span>: ` : '';
+    if (v === null) return `<li>${k}<span class="jt-null">null</span></li>`;
+    if (Array.isArray(v)) {
+      return `<li><details open><summary>${k}[${v.length}]</summary><ul>${v.map((x) => node(x)).join('')}</ul></details></li>`;
+    }
+    if (typeof v === 'object') {
+      const entries = Object.entries(v);
+      return `<li><details open><summary>${k}{${entries.length}}</summary><ul>${entries.map(([kk, vv]) => node(vv, kk)).join('')}</ul></details></li>`;
+    }
+    if (typeof v === 'number') return `<li>${k}<span class="jt-num">${esc(String(v))}</span></li>`;
+    if (typeof v === 'boolean') return `<li>${k}<span class="jt-bool">${v}</span></li>`;
+    return `<li>${k}<span class="jt-str">"${esc(String(v))}"</span></li>`;
+  };
+  return `<ul class="json-tree">${node(value)}</ul>`;
+}
+
+function setDocView(mode) {
+  docViewMode = mode;
+  $('#docViewJson').classList.toggle('active', mode === 'json');
+  $('#docViewJson').setAttribute('aria-pressed', String(mode === 'json'));
+  $('#docViewTree').classList.toggle('active', mode === 'tree');
+  $('#docViewTree').setAttribute('aria-pressed', String(mode === 'tree'));
+  if (currentDoc) showDoc(currentDoc);
 }
 
 async function insertDoc() {
@@ -734,6 +642,9 @@ async function insertDoc() {
     status.textContent = `saved ${saved.id ?? ''}`; status.className = 'badge ok';
     toast(`Document saved to ${col}`, 'ok');
     if ($('#colSel').value.trim() === col) loadCollection();
+    // A first insert materializes a brand-new collection: surface its chip now,
+    // not after the next panel re-entry.
+    loadColPicker();
   } catch (e) {
     status.textContent = e.message; status.className = 'badge err';
     toast(e.message, 'err');
@@ -746,6 +657,7 @@ async function cleanupExpired() {
   const r = await api(`/collections/${encodeURIComponent(col)}/cleanup`, { method: 'POST' });
   toast(`Removed ${r.deleted} expired docs`, 'ok');
   loadCollection();
+  loadColPicker();
 }
 
 async function dropDocs() {
@@ -796,6 +708,125 @@ async function dropDocs() {
       + (left != null ? ` — ${left} remaining` : ''), 'ok');
   }
   await loadCollection().catch(() => {});
+  loadColPicker();
+}
+
+/* ============================================================
+   NoSQL query builder (structure → QueryParser JSON → /query)
+   ============================================================ */
+const QB_OPERATORS = ['$eq', '$ne', '$gt', '$gte', '$lt', '$lte', '$in', '$nin', '$regex', '$exists'];
+
+function qbAddRow(field = '', op = '$eq', value = '') {
+  const row = document.createElement('div');
+  row.className = 'qb-row';
+  row.innerHTML = `
+    <div><label class="fld">Field</label><input type="text" class="qb-field" placeholder="price" value="${esc(field)}"></div>
+    <div><label class="fld">Operator</label>
+      <select class="qb-op">${QB_OPERATORS.map((o) => `<option${o === op ? ' selected' : ''}>${o}</option>`).join('')}</select></div>
+    <div><label class="fld">Value (JSON — "text", 42, true, ["a","b"])</label><input type="text" class="qb-value" placeholder='e.g. 10 or "admin"'></div>
+    <button class="btn sm danger qb-del" aria-label="Remove condition">×</button>`;
+  row.querySelector('.qb-del').onclick = () => { row.remove(); qbPreviewUpdate(); };
+  row.querySelector('.qb-value').addEventListener('input', qbPreviewUpdate);
+  row.querySelector('.qb-field').addEventListener('input', qbPreviewUpdate);
+  row.querySelector('.qb-op').addEventListener('change', qbPreviewUpdate);
+  $('#qbRows').appendChild(row);
+}
+
+function qbParseValue(raw) {
+  const s = raw.trim();
+  if (s === '') return '';
+  try { return JSON.parse(s); } catch { return s; /* bare words stay strings */ }
+}
+
+function qbBuildFilter() {
+  const conds = [];
+  $$('#qbRows .qb-row').forEach((row) => {
+    const field = row.querySelector('.qb-field').value.trim();
+    const op = row.querySelector('.qb-op').value;
+    const value = qbParseValue(row.querySelector('.qb-value').value);
+    if (!field) return;
+    conds.push({ field, op, value });
+  });
+  if (!conds.length) return {};
+  const filter = {};
+  for (const c of conds) {
+    if (c.op === '$exists') filter[c.field] = { $exists: c.value === '' ? true : !!c.value };
+    else filter[c.field] = { [c.op]: c.value };
+  }
+  return filter;
+}
+
+function qbBuildPayload() {
+  // sort/limit/offset travel as reserved body keys; the /query endpoint strips
+  // them before parsing and applies them server-side via Query.sortBy/limit/offset.
+  const payload = { ...qbBuildFilter() };
+  const sortField = $('#qbSortField').value.trim();
+  if (sortField) {
+    payload.sortField = sortField;
+    payload.sortDir = $('#qbSortDir').value === 'desc' ? 'desc' : 'asc';
+  }
+  const limit = Number($('#qbLimit').value);
+  const offset = Number($('#qbOffset').value);
+  if (limit > 0) payload.limit = limit;
+  if (offset > 0) payload.offset = offset;
+  return payload;
+}
+
+function qbPreviewUpdate() {
+  renderJson($('#qbPreview'), qbBuildPayload());
+  $('#qbPreview').title = 'the whole payload is sent to the engine; sortField/sortDir/limit/offset are applied server-side';
+}
+
+/* --- server-side pagination: limit/offset live in the payload; the pager
+   steps the offset by one page and uses a limit+1 probe for has-more. --- */
+function qbRenderPager(state) {
+  const pager = $('#qbPager');
+  if (!pager) return;
+  const { shown, limit, offset, hasMore, total } = state;
+  pager.hidden = !(limit > 0 && (offset > 0 || hasMore || total > limit));
+  $('#qbPrev').disabled = offset <= 0;
+  $('#qbNext').disabled = !hasMore;
+  const from = total === 0 ? 0 : offset + 1;
+  const to = offset + shown;
+  $('#qbPageInfo').textContent = `rows ${from}–${to} of ${total}${hasMore ? '+' : ''} matched`
+    + (hasMore ? ' — Next shows the following page' : '');
+}
+
+async function qbRun() {
+  const col = $('#colSel').value.trim();
+  const status = $('#qbStatus');
+  if (!col) { toast('Load a collection first — the filter runs against it', 'err'); return; }
+  const payload = qbBuildPayload();
+  qbPreviewUpdate();
+  status.textContent = 'running…';
+  status.className = 'badge';
+  try {
+    const limit = payload.limit > 0 ? payload.limit : 0;
+    const offset = payload.offset > 0 ? payload.offset : 0;
+    // limit+1 probe: one extra row reveals hasMore without a count endpoint.
+    const probe = limit > 0 ? { ...payload, limit: limit + 1 } : payload;
+    const results = await api(`/collections/${encodeURIComponent(col)}/query`, { method: 'POST', body: probe });
+    let rows = Array.isArray(results) ? results : [];
+    const hasMore = limit > 0 && rows.length > limit;
+    if (hasMore) rows = rows.slice(0, limit);
+    // Rows actually seen up to this page; a trailing "+" marks an unknown total.
+    const total = offset + rows.length;
+    qbRenderPager({ shown: rows.length, limit, offset, hasMore, total });
+    status.textContent = hasMore
+      ? `${rows.length}+ match${rows.length === 1 ? '' : 'es'} (paged)`
+      : `${rows.length} match${rows.length === 1 ? '' : 'es'}`;
+    status.className = rows.length ? 'badge ok' : 'badge warn';
+    setActiveContext(`query on ${col} · rows ${offset + 1}–${offset + rows.length}`);
+    const fields = collectFields(rows.map((r) => ({ fields: r })));
+    $('#qbOut').innerHTML = rows.length
+      ? `<div class="tbl-wrap">${tbl(['id', ...fields], rows.map((r) =>
+          [`<td><code>${esc(r.id ?? '')}</code></td>`, ...fields.map((f) => `<td>${esc(typeof r[f] === 'object' ? JSON.stringify(r[f]) : r[f] ?? '')}</td>`)]))}</div>`
+      : `<div class="empty">No document matches this filter. Loosen an operator (try $gt instead of $gte) or clear a condition.</div>`;
+  } catch (e) {
+    status.textContent = 'failed';
+    status.className = 'badge err';
+    $('#qbOut').innerHTML = errorBanner(e, { title: 'Filter rejected' });
+  }
 }
 
 /* ============================================================
@@ -803,24 +834,28 @@ async function dropDocs() {
    ============================================================ */
 const KV_TABS = {
   kv: {
-    title: 'Simple KV',
+    title: 'Simple KV — bucket browser',
     form: `
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
-        <div><label class="fld">Bucket</label><input type="text" id="kvBucket" value="sessions" style="width:150px"></div>
-        <div><label class="fld">Key</label><input type="text" id="kvKey" style="width:150px"></div>
-        <div><label class="fld">Value</label><input type="text" id="kvVal" style="width:220px"></div>
-        <button class="btn primary sm" id="kvPut">Put</button>
-        <button class="btn sm" id="kvGet">Get</button>
-        <button class="btn sm danger" id="kvDel">Delete</button>
-      </div><div style="margin-top:12px" id="kvOut"></div>`,
+        <div><label class="fld" for="kvBucket">Bucket</label><input type="text" id="kvBucket" value="sessions" style="width:150px"></div>
+        <button class="btn sm" id="kvBrowse">Browse keys</button>
+        <span class="badge" id="kvBrowseCount"></span>
+        <div class="spacer"></div>
+        <button class="btn sm" id="kvNewKey">+ New key</button>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+        <div><label class="fld" for="kvPrefix">Key prefix filter</label><input type="text" id="kvPrefix" placeholder="e.g. user-" style="width:180px"></div>
+        <button class="btn sm" id="kvPrefixGo">Apply</button>
+      </div>
+      <div style="margin-top:12px" id="kvBrowser" aria-live="polite"><div class="empty">Enter a bucket name and press <b>Browse keys</b> to list what the engine actually holds — keys, values, and TTL.</div></div>`,
   },
   list: {
     title: 'Lists',
     form: `
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
-        <div><label class="fld">Bucket</label><input type="text" id="lsBucket" value="queue" style="width:130px"></div>
-        <div><label class="fld">Key</label><input type="text" id="lsKey" value="jobs" style="width:130px"></div>
-        <div><label class="fld">Values (comma-sep)</label><input type="text" id="lsVals" style="width:220px"></div>
+        <div><label class="fld" for="lsBucket">Bucket</label><input type="text" id="lsBucket" value="queue" style="width:130px"></div>
+        <div><label class="fld" for="lsKey">Key</label><input type="text" id="lsKey" value="jobs" style="width:130px"></div>
+        <div><label class="fld" for="lsVals">Values (comma-sep)</label><input type="text" id="lsVals" style="width:220px"></div>
         <button class="btn primary sm" id="lsPush">Push</button>
         <button class="btn sm" id="lsPop">Pop</button>
         <button class="btn sm" id="lsRange">Read all</button>
@@ -830,9 +865,9 @@ const KV_TABS = {
     title: 'Sets',
     form: `
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
-        <div><label class="fld">Bucket</label><input type="text" id="stBucket" value="tags" style="width:130px"></div>
-        <div><label class="fld">Key</label><input type="text" id="stKey" style="width:130px"></div>
-        <div><label class="fld">Members (comma-sep)</label><input type="text" id="stVals" style="width:220px"></div>
+        <div><label class="fld" for="stBucket">Bucket</label><input type="text" id="stBucket" value="tags" style="width:130px"></div>
+        <div><label class="fld" for="stKey">Key</label><input type="text" id="stKey" style="width:130px"></div>
+        <div><label class="fld" for="stVals">Members (comma-sep)</label><input type="text" id="stVals" style="width:220px"></div>
         <button class="btn primary sm" id="stAdd">Add</button>
         <button class="btn sm danger" id="stRem">Remove</button>
         <button class="btn sm" id="stMembers">Members</button>
@@ -842,10 +877,10 @@ const KV_TABS = {
     title: 'Hashes',
     form: `
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
-        <div><label class="fld">Bucket</label><input type="text" id="hsBucket" value="user" style="width:130px"></div>
-        <div><label class="fld">Key</label><input type="text" id="hsKey" style="width:130px"></div>
-        <div><label class="fld">Field</label><input type="text" id="hsField" style="width:130px"></div>
-        <div><label class="fld">Value</label><input type="text" id="hsVal" style="width:180px"></div>
+        <div><label class="fld" for="hsBucket">Bucket</label><input type="text" id="hsBucket" value="user" style="width:130px"></div>
+        <div><label class="fld" for="hsKey">Key</label><input type="text" id="hsKey" style="width:130px"></div>
+        <div><label class="fld" for="hsField">Field</label><input type="text" id="hsField" style="width:130px"></div>
+        <div><label class="fld" for="hsVal">Value</label><input type="text" id="hsVal" style="width:180px"></div>
         <button class="btn primary sm" id="hsSet">HSet</button>
         <button class="btn sm" id="hsGet">HGet</button>
         <button class="btn sm" id="hsAll">HGetAll</button>
@@ -855,17 +890,111 @@ const KV_TABS = {
 
 let kvTab = 'kv';
 
+/** Renders the bucket browser: every key the engine holds, with value + TTL. */
+async function kvBrowse() {
+  const bucketName = $('#kvBucket').value.trim();
+  const host = $('#kvBrowser');
+  if (!bucketName) { toast('Enter a bucket name to browse', 'err'); return; }
+  host.innerHTML = '<div class="loading-row"><span class="spinner"></span>Loading keys…</div>';
+  const prefix = $('#kvPrefix')?.value.trim() ?? '';
+  try {
+    const qs = prefix ? `?prefix=${encodeURIComponent(prefix)}` : '';
+    const r = await api(`/kv-meta/${encodeURIComponent(bucketName)}${qs}`);
+    const keys = r.keys ?? [];
+    $('#kvBrowseCount').textContent = `${r.count} key${r.count === 1 ? '' : 's'}${prefix ? ` · prefix "${prefix}"` : ''}`;
+    setActiveContext(`KV bucket ${bucketName} · ${r.count} key${r.count === 1 ? '' : 's'}`);
+    if (!keys.length) {
+      host.innerHTML = '<div class="empty"><svg class="empty-logo" aria-hidden="true"><use href="#brand-mark"/></svg><br>'
+        + (prefix ? `No key in "${esc(bucketName)}" starts with "${esc(prefix)}".` : `Bucket "${esc(bucketName)}" is empty.`)
+        + '<br>Create one with <b>+ New key</b>.</div>';
+      return;
+    }
+    // Fetch values in bulk (bounded) so the table shows real content, not just names.
+    const shown = keys.slice(0, 200);
+    const rows = await Promise.all(shown.map(async (k) => {
+      let value = '—';
+      try { const v = await api(`/kv-meta/${encodeURIComponent(bucketName)}/${encodeURIComponent(k.key)}`); value = v.value; }
+      catch { value = '(unreadable)'; }
+      const ttl = k.hasTtl && k.expiresAt
+        ? new Date(k.expiresAt).toLocaleString()
+        : '';
+      return [`<td><code>${esc(k.key)}</code></td>`,
+        `<td>${esc(value == null ? '' : String(value).slice(0, 80))}</td>`,
+        `<td>${ttl || '<span class="muted">no TTL</span>'}</td>`,
+        `<td>${k.expired ? '<span class="badge err">expired</span>' : '<span class="badge ok">active</span>'}</td>`,
+        `<td><button class="btn sm danger" data-kvdel="${esc(k.key)}" aria-label="Delete key ${esc(k.key)}">Delete</button></td>`];
+    }));
+    host.innerHTML = `<div class="tbl-wrap">${tbl(['Key', 'Value', 'Expires', 'State', ''], rows)}</div>`
+      + (keys.length > shown.length ? `<div class="hint" style="margin-top:6px">Showing the first ${shown.length} of ${keys.length} keys — narrow the prefix filter to see more.</div>` : '');
+    $$('#kvBrowser [data-kvdel]').forEach((b) => b.onclick = async () => {
+      const ok = await confirmAction({
+        title: 'Delete key',
+        target: `key "${b.dataset.kvdel}" in bucket "${bucketName}" (Non-Relational NoSQL Engine)`,
+        impact: 'Removes this key and its value. TTL metadata for the key is dropped with it.',
+        irrecoverable: true,
+        confirmLabel: 'Delete key',
+      });
+      if (!ok) { toast('Deletion cancelled — nothing was changed', 'info'); return; }
+      try {
+        await api(`/kv-meta/${encodeURIComponent(bucketName)}/${encodeURIComponent(b.dataset.kvdel)}`, { method: 'DELETE' });
+        toast(`Deleted ${b.dataset.kvdel}`, 'ok');
+        kvBrowse();
+      } catch (e) { toast(e.message, 'err'); }
+    });
+  } catch (e) {
+    host.innerHTML = errorBanner(e, { title: `Could not browse bucket "${bucketName}"` });
+  }
+}
+
+/** New-key form (inline, replaces the browser until saved). */
+function kvNewKeyForm() {
+  const host = $('#kvBrowser');
+  host.innerHTML = `<div class="card-pad" style="border:1px dashed var(--line-1);border-radius:8px">
+    <label class="fld" for="kvNewName">Key name</label>
+    <input type="text" id="kvNewName" placeholder="e.g. user-1042">
+    <label class="fld" style="margin-top:10px" for="kvNewValue">Value</label>
+    <input type="text" id="kvNewValue" placeholder="value">
+    <label class="fld" style="margin-top:10px" for="kvNewTtl">TTL (seconds — leave blank for no expiration)</label>
+    <input type="number" id="kvNewTtl" min="1" placeholder="3600" style="width:160px">
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn primary sm" id="kvNewSave">Save key</button>
+      <button class="btn sm" id="kvNewCancel">Cancel</button>
+      <span class="badge" id="kvNewStatus"></span>
+    </div></div>`;
+  $('#kvNewCancel').onclick = () => kvBrowse();
+  $('#kvNewSave').onclick = async () => {
+    const name = $('#kvNewName').value.trim();
+    const bucketName = $('#kvBucket').value.trim();
+    const status = $('#kvNewStatus');
+    if (!name) { status.textContent = 'key name required'; status.className = 'badge err'; return; }
+    const body = { value: $('#kvNewValue').value };
+    const ttlRaw = $('#kvNewTtl').value.trim();
+    if (ttlRaw) body.ttlSeconds = Number(ttlRaw);
+    try {
+      await api(`/kv-meta/${encodeURIComponent(bucketName)}/${encodeURIComponent(name)}`, { method: 'PUT', body });
+      status.textContent = `saved ${name}`; status.className = 'badge ok';
+      toast(`Key ${name} written to ${bucketName}`, 'ok');
+      setTimeout(() => kvBrowse(), 400);
+    } catch (e) {
+      status.textContent = e.message; status.className = 'badge err';
+    }
+  };
+}
+
 function bindKvTab() {
   const spec = KV_TABS[kvTab];
   $('#kvHead').textContent = spec.title;
   $('#kvBody').innerHTML = spec.form;
   const out = () => $('#kvOut');
   const show = (v) => renderJson(out(), v);
+  $$('#kvTabs .tab').forEach((t) => t.setAttribute('aria-selected', String(t.dataset.kvtab === kvTab)));
 
   if (kvTab === 'kv') {
-    $('#kvPut').onclick = async () => { show(await api(`/kv/${v('#kvBucket')}/${v('#kvKey')}`, { method: 'PUT', body: { value: v('#kvVal') } })); flash(); };
-    $('#kvGet').onclick = async () => { try { show(await api(`/kv/${v('#kvBucket')}/${v('#kvKey')}`)); flash(); } catch (e) { show({ error: e.message }); } };
-    $('#kvDel').onclick = async () => { await api(`/kv/${v('#kvBucket')}/${v('#kvKey')}`, { method: 'DELETE' }); show({ deleted: true }); flash(); };
+    $('#kvBrowse').onclick = () => kvBrowse().catch((e) => toast(e.message, 'err'));
+    $('#kvPrefixGo').onclick = () => kvBrowse().catch((e) => toast(e.message, 'err'));
+    $('#kvPrefix').addEventListener('keydown', (e) => e.key === 'Enter' && kvBrowse().catch((e) => toast(e.message, 'err')));
+    $('#kvBucket').addEventListener('keydown', (e) => e.key === 'Enter' && kvBrowse().catch((e) => toast(e.message, 'err')));
+    $('#kvNewKey').onclick = () => kvNewKeyForm();
   } else if (kvTab === 'list') {
     const vals = () => v('#lsVals').split(',').map((s) => s.trim()).filter(Boolean);
     $('#lsPush').onclick = async () => { show(await api(`/kv/lists/${v('#lsBucket')}/${v('#lsKey')}/rpush`, { method: 'POST', body: { values: vals() } })); flash(); };
@@ -1191,11 +1320,12 @@ async function pollStatus() {
   $('#chipHealthText').textContent = h.status === 'ok' ? 'Healthy' : 'Degraded';
   $('#chipEngine').textContent = h.engine ?? '—';
   $('#chipUptime').textContent = 'up ' + fmtUptime(h.uptime ?? 0);
+  const versionChip = $('#chipVersion');
+  if (versionChip) versionChip.textContent = 'v' + (h.version ?? '?');
 
   const c = h.context || {};
   sbItem('sbEngine', 'engine', c.engine ?? h.engine ?? '—', 'ok',
-    c.relationalEngine && c.nosqlEngine
-      ? `${c.relationalEngine} + ${c.nosqlEngine}` : '');
+    'NoSQL embedded engine');
   sbItem('sbStorage', 'storage', `${c.storageMode ?? '—'} · ${c.durability ?? 'durability unknown'}`,
     c.storageMode === 'in-memory' ? 'warn' : '', c.durability || '');
   sbItem('sbDatabase', 'database', c.database ?? '—', '',
@@ -1226,6 +1356,37 @@ const REFRESH = {
   server: srvRefresh,
 };
 
+/** Panels that need a data refresh when first opened get it from here. */
+function onFirstOpen(id) {
+  if (id === 'collections') loadColPicker();
+  if (id === 'backup' || id === 'overview') loadStorageStatus().catch(() => {});
+}
+
+/* --- storage/WAL status (Overview detail card) --- */
+let lastStorageStatus = null;
+async function loadStorageStatus() {
+  const host = $('#ovStorage');
+  if (!host) return;
+  try {
+    lastStorageStatus = await api('/storage/status');
+    const s = lastStorageStatus;
+    const wal = s.wal ?? {};
+    const disk = s.disk ?? {};
+    host.innerHTML = `
+      <div class="grid kpi">
+        ${setKpi('Engine', esc(s.engine ?? '—'))}
+        ${setKpi('Storage', esc(s.storageMode ?? '—'))}
+        ${setKpi('WAL', wal.present ? `${wal.fileCount ?? 0} file${(wal.fileCount ?? 0) === 1 ? '' : 's'}` : (s.walSupported ? 'no WAL dir yet' : 'not applicable'), wal.present ? '' : 'warn')}
+        ${setKpi('Data on disk', disk.exists ? fmtBytes(disk.totalBytes) : '—')}
+        ${setKpi('Files', disk.exists ? (disk.fileCount ?? 0) : '—')}
+        ${setKpi('Backups', String(s.backupCount ?? 0), (s.backupCount ?? 0) === 0 ? 'warn' : '')}
+      </div>
+      <div class="muted" style="margin-top:8px;font-size:12px">${esc(s.durability ?? '')}</div>`;
+  } catch (e) {
+    host.innerHTML = errorBanner(e, { title: 'Storage status unavailable' });
+  }
+}
+
 function refreshPanel(id) { REFRESH[id]?.().catch((e) => toast(e.message, 'err')); }
 
 /* ============================================================
@@ -1238,6 +1399,13 @@ function bind() {
   // topbar
   $('#btnTheme').onclick = () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
   $('#btnRefreshAll').onclick = () => { refreshPanel(activePanel); pollStatus(); };
+  $('#btnHelp').onclick = () => openHelp();
+  $('#helpClose').onclick = () => { $('#helpBackdrop').hidden = true; $('#btnHelp').focus(); };
+  $('#helpBackdrop').onclick = (e) => { if (e.target === $('#helpBackdrop')) { $('#helpBackdrop').hidden = true; $('#btnHelp').focus(); } };
+  $('#navSearch').addEventListener('input', (e) => filterNav(e.target.value));
+  $('#navSearch').addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { e.target.value = ''; filterNav(''); e.target.blur(); }
+  });
   $('#btnLogout').onclick = async () => {
     try { await api('/auth/logout', { method: 'POST' }); } catch { /* best-effort */ }
     try { localStorage.removeItem('apiKey'); sessionStorage.clear(); } catch { /* ignore */ }
@@ -1245,46 +1413,41 @@ function bind() {
     window.location.href = '/login.html?next=' + next;
   };
 
-  // SQL
-  $('#sqlRun').onclick = () => runSql();
-  $('#sqlRunSel').onclick = () => runSql(true);
-  $('#sqlCancel').onclick = () => { if (sqlController) sqlController.abort(); };
-  $('#sqlExportCsv').onclick = () => exportSql('csv');
-  $('#sqlExportJson').onclick = () => exportSql('json');
-  $('#sqlClear').onclick = () => {
-    $('#sqlInput').value = '';
-    lastSqlResult = null;
-    $('#sqlExportCsv').hidden = true;
-    $('#sqlExportJson').hidden = true;
-    $('#sqlDestructive').hidden = true;
-    setBadge($('#sqlStatus'), STATES.IDLE);
-    $('#sqlOut').innerHTML = '<div class="empty"><svg class="empty-logo" aria-hidden="true"><use href="#brand-mark"/></svg><br>Editor cleared — write SQL above and press <kbd>Ctrl</kbd>+<kbd>Enter</kbd>.</div>';
-    $('#sqlMeta').textContent = '';
-    $('#sqlInput').focus();
-  };
-  $('#sqlCopy').onclick = () => navigator.clipboard?.writeText($('#sqlInput').value).then(() => toast('SQL copied', 'ok'));
-  // Warn as soon as a dangerous statement is typed, not only when Run is pressed.
-  $('#sqlInput').addEventListener('input', refreshDestructiveBadge);
-  $('#sqlInput').addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-      e.preventDefault();
-      runSql(e.shiftKey);
-    }
-  });
-  $('#sqlExamples').addEventListener('click', (e) => {
-    const b = e.target.closest('[data-sql]');
-    if (b) { $('#sqlInput').value = b.dataset.sql; refreshDestructiveBadge(); runSql(); }
-  });
-  setBadge($('#sqlStatus'), STATES.IDLE);
-
   // collections
   $('#colLoad').onclick = () => loadCollection().catch((e) => toast(e.message, 'err'));
   $('#colRefresh').onclick = () => loadCollection().catch((e) => toast(e.message, 'err'));
+  $('#colPickerRefresh').onclick = () => loadColPicker();
   $('#colNew').onclick = () => { $('#insCol').focus(); goto('collections'); };
   $('#colCleanup').onclick = () => cleanupExpired().catch((e) => toast(e.message, 'err'));
   $('#colDrop').onclick = () => dropDocs().catch((e) => toast(e.message, 'err'));
   $('#insSubmit').onclick = () => insertDoc();
   $('#colSel').addEventListener('keydown', (e) => e.key === 'Enter' && loadCollection());
+  $('#docViewJson').onclick = () => setDocView('json');
+  $('#docViewTree').onclick = () => setDocView('tree');
+
+  // query builder
+  $('#qbAddRow').onclick = () => { qbAddRow(); qbPreviewUpdate(); };
+  $('#qbClear').onclick = () => { $('#qbRows').innerHTML = ''; qbAddRow(); qbPreviewUpdate(); $('#qbOut').innerHTML = ''; const p = $('#qbPager'); if (p) p.hidden = true; setBadge($('#qbStatus'), STATES.IDLE); };
+  $('#qbRun').onclick = () => qbRun().catch((e) => toast(e.message, 'err'));
+  $('#qbSortField').addEventListener('input', qbPreviewUpdate);
+  $('#qbSortDir').addEventListener('change', qbPreviewUpdate);
+  $('#qbLimit').addEventListener('input', qbPreviewUpdate);
+  $('#qbPrev').onclick = () => {
+    const off = Number($('#qbOffset').value) || 0;
+    const lim = Number($('#qbLimit').value) || 100;
+    $('#qbOffset').value = Math.max(0, off - lim);
+    $('#qbOffset').dispatchEvent(new Event('input', { bubbles: true }));
+    qbRun().catch((e) => toast(e.message, 'err'));
+  };
+  $('#qbNext').onclick = () => {
+    const lim = Number($('#qbLimit').value) || 100;
+    $('#qbOffset').value = (Number($('#qbOffset').value) || 0) + lim;
+    $('#qbOffset').dispatchEvent(new Event('input', { bubbles: true }));
+    qbRun().catch((e) => toast(e.message, 'err'));
+  };
+  $('#qbOffset').addEventListener('input', qbPreviewUpdate);
+  qbAddRow();
+  qbPreviewUpdate();
 
   // kv tabs
   $$('#kvTabs .tab').forEach((t) => t.onclick = () => {
@@ -1330,6 +1493,9 @@ function bind() {
   $('#audRefresh').onclick = () => audRefresh().catch((e) => toast(e.message, 'err'));
   $('#srvRefresh').onclick = () => srvRefresh().catch((e) => toast(e.message, 'err'));
 
+  // storage & WAL card on Overview
+  $('#ovStorageRefresh').onclick = () => loadStorageStatus().catch((e) => toast(e.message, 'err'));
+
   // keyboard shortcuts: 1-9/0 to switch panels (when not typing)
   document.addEventListener('keydown', (e) => {
     const tag = document.activeElement?.tagName;
@@ -1339,12 +1505,25 @@ function bind() {
   });
 }
 
+function openHelp() {
+  $('#helpVersion').textContent = `JunifyDB Console · server version ${$('#chipVersion')?.textContent || 'unknown'}`;
+  $('#helpBackdrop').hidden = false;
+  $('#helpClose').focus();
+  document.addEventListener('keydown', helpEscape);
+}
+function helpEscape(e) {
+  if (e.key === 'Escape') {
+    $('#helpBackdrop').hidden = true;
+    document.removeEventListener('keydown', helpEscape);
+    $('#btnHelp').focus();
+  }
+}
+
 function boot() {
   buildNav();
   initTheme();
   bind();
   bindKvTab();
-  renderHistory();
   // Deep-link support: honor #panel on load and keep browser
   // back/forward navigation in sync with the active panel.
   const hash = location.hash.slice(1);

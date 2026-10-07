@@ -200,7 +200,9 @@ class ReleaseAuditRegressionTest {
                 .storageEngine(JunifyDBConfig.StorageEngineType.FILE)
                 .dataDir(dir)
                 .buildConfig())) {
-            db.sql("INSERT INTO products (id, name, price) VALUES ('p1', 'Keyboard', 75.0)");
+            db.documentCollection("products").insert(
+                    org.junify.db.nosql.document.Document.of("name", "Keyboard")
+                            .add("price", 75.0).id("p1"));
             db.flush();
         }
 
@@ -211,7 +213,7 @@ class ReleaseAuditRegressionTest {
                 .buildConfig())) {
             assertTrue(db2.getCollectionNames().contains("products"),
                     "collections persisted by a previous run must be listed after restart");
-            assertEquals(1, db2.sql("SELECT * FROM products").size());
+            assertEquals(1, db2.documentCollection("products").count());
             assertEquals(1, db2.documentCollection("products").findAll().size());
         }
     }

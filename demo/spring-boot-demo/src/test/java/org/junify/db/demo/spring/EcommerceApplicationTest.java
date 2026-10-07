@@ -120,12 +120,12 @@ class EcommerceApplicationTest {
     }
 
     @Test
-    void testSqlAnalyticsProductQuery() {
-        productService.save(new Product("sql-p1", "SKU-SQL1", "Pro Keyboard", "Peripherals", 120.0, List.of("electronics"), Map.of()));
-        productService.save(new Product("sql-p2", "SKU-SQL2", "Basic Mouse", "Peripherals", 25.0, List.of("electronics"), Map.of()));
-        productService.save(new Product("sql-p3", "SKU-SQL3", "Wireless Mouse", "Peripherals", 65.0, List.of("electronics"), Map.of()));
+    void testCategoryAndPriceRangeQuery() {
+        productService.save(new Product("rng-p1", "SKU-RNG1", "Pro Keyboard", "Peripherals", 120.0, List.of("electronics"), Map.of()));
+        productService.save(new Product("rng-p2", "SKU-RNG2", "Basic Mouse", "Peripherals", 25.0, List.of("electronics"), Map.of()));
+        productService.save(new Product("rng-p3", "SKU-RNG3", "Wireless Mouse", "Peripherals", 65.0, List.of("electronics"), Map.of()));
 
-        List<Product> matches = productService.findProductsWithSql("Peripherals", 50.0, 150.0);
+        List<Product> matches = productService.findByCategoryAndPriceRange("Peripherals", 50.0, 150.0);
         assertEquals(2, matches.size());
         assertEquals("Wireless Mouse", matches.get(0).name());
         assertEquals("Pro Keyboard", matches.get(1).name());

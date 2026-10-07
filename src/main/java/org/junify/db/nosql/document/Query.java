@@ -2,6 +2,7 @@ package org.junify.db.nosql.document;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 
@@ -46,6 +47,18 @@ public class Query {
 
     public static Query all() {
         return new Query(doc -> true);
+    }
+
+    /**
+     * Builds a query from an arbitrary document predicate.
+     *
+     * <p>This is the escape hatch for the fluent entity layer ({@code db.from(Entity.class)}):
+     * a {@code field OP value} filter that is not covered by a typed factory (for example an
+     * ordering comparison on a non-numeric field) is still expressed as a plain
+     * {@link Document} predicate here, never as a query string handed to a different engine.</p>
+     */
+    public static Query matching(Predicate<Document> docPredicate) {
+        return new Query(Objects.requireNonNull(docPredicate, "docPredicate"));
     }
 
     public static Query eq(String field, Object value) {

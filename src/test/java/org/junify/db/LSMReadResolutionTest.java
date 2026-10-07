@@ -138,25 +138,24 @@ class LSMReadResolutionTest {
     }
 
     @Test
-    @DisplayName("SQL and the document API see one row after a restart on LSM_TREE")
-    void sqlAndDocumentReadsAgreeAfterRestart(@TempDir Path dir) {
+    @DisplayName("the document API sees one row after a restart on LSM_TREE")
+    void documentReadsAgreeAfterRestart(@TempDir Path dir) {
         try (JunifyDB db = JunifyDB.embed()
                 .storageEngine(JunifyDBConfig.StorageEngineType.LSM_TREE)
                 .persistTo(dir.toString())
                 .build()) {
-            db.sql("INSERT INTO invoices (id, sku) VALUES ('inv-1', 'SKU-1')");
+            db.documentCollection("invoices")
+                    .insert(org.junify.db.nosql.document.Document.of("sku", "SKU-1").id("inv-1"));
         }
 
         try (JunifyDB reopened = JunifyDB.embed()
                 .storageEngine(JunifyDBConfig.StorageEngineType.LSM_TREE)
                 .persistTo(dir.toString())
                 .build()) {
-            assertEquals(1, reopened.sql("SELECT * FROM invoices").size(),
-                    "SELECT must return the row once");
             assertEquals(1, reopened.documentCollection("invoices").count(),
-                    "count() and SELECT must agree — they disagreed before the fix");
+                    "count() must return the row once");
             assertEquals(1, reopened.documentCollection("invoices").findAll().size(),
-                    "findAll() must agree with count()");
+                    "findAll() must agree with count() — they disagreed before the fix");
         }
     }
 

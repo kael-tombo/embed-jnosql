@@ -5,17 +5,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junify.db.JunifyDB;
-import org.junify.db.adapter.jnosql.EclipseDocumentTemplate;
 import org.junify.db.demo.annotation.model.CatalogProduct;
 import org.junify.db.demo.annotation.model.CustomerAccount;
 import org.junify.db.demo.annotation.model.InvoiceRecord;
 import org.junify.db.demo.annotation.model.InvoiceStatus;
 import org.junify.db.demo.annotation.repository.CatalogProductRepository;
 import org.junify.db.demo.annotation.service.OrderInvoiceService;
-import org.junify.db.sql.SqlResultSet;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -57,7 +56,7 @@ public class AnnotationShowcaseTest {
     }
 
     @Test
-    void testJpaAndHibernateEntityOperations() {
+    void testAnnotationDrivenDocumentPersistence() {
         OrderInvoiceService service = new OrderInvoiceService(db);
 
         CustomerAccount cust = service.registerCustomer("CUST-1", "John Doe", "john@test.com", "GOLD", 200.0);
@@ -68,10 +67,10 @@ public class AnnotationShowcaseTest {
         assertEquals("John Doe", foundCust.getFullName());
 
         InvoiceRecord inv = service.createInvoice("CUST-1", 100.0, InvoiceStatus.PAID);
-        assertNotNull(inv.getInvoiceId(), "Hibernate @UuidGenerator should populate ID");
-        assertNotNull(inv.getCreatedAt(), "Hibernate @CreationTimestamp should populate createdAt");
-        assertNotNull(inv.getUpdatedAt(), "Hibernate @UpdateTimestamp should populate updatedAt");
-        assertEquals(120.0, inv.getTotalWithTax(), 0.001, "Hibernate @Formula should compute amount * 1.20");
+        assertNotNull(inv.getInvoiceId(), "the @UuidGenerator annotation should populate the id");
+        assertNotNull(inv.getCreatedAt(), "the @CreationTimestamp annotation should populate createdAt");
+        assertNotNull(inv.getUpdatedAt(), "the @UpdateTimestamp annotation should populate updatedAt");
+        assertEquals(120.0, inv.getTotalWithTax(), 0.001, "@Formula should compute amount * 1.20");
 
         List<InvoiceRecord> customerInvoices = service.findInvoicesByCustomer("CUST-1");
         assertEquals(1, customerInvoices.size());
@@ -79,7 +78,7 @@ public class AnnotationShowcaseTest {
     }
 
     @Test
-    void testDualEngineSqlAnalyticsAndJoins() {
+    void testDocumentAggregationAndEnrichment() {
         OrderInvoiceService service = new OrderInvoiceService(db);
 
         service.registerCustomer("C1", "Client One", "c1@test.com", "SILVER", 50.0);
@@ -87,18 +86,21 @@ public class AnnotationShowcaseTest {
         service.createInvoice("C1", 200.0, InvoiceStatus.PAID);
         service.createInvoice("C1", 50.0, InvoiceStatus.PENDING);
 
-        SqlResultSet summary = service.getInvoiceSummary();
+        List<Map<String, Object>> summary = service.getInvoiceSummary();
         assertNotNull(summary);
-        assertTrue(summary.size() >= 1);
+        assertTrue(summary.size() >= 1, "at least one status group");
+        // PAID totals 300, PENDING totals 50 → PAID is the first (descending) group.
+        assertEquals(InvoiceStatus.PAID.name(), summary.get(0).get("status"));
+        assertEquals(2L, ((Number) summary.get(0).get("count")).longValue());
 
-        SqlResultSet joins = service.getCustomerInvoiceDetails();
-        assertNotNull(joins);
-        assertEquals(3, joins.size());
-        assertEquals("Client One", joins.getRows().get(0).get("full_name"));
+        List<Map<String, Object>> details = service.getCustomerInvoiceDetails();
+        assertNotNull(details);
+        assertEquals(3, details.size());
+        assertEquals("Client One", details.get(0).get("full_name"));
     }
 
     @Test
-    void testFluentEntityQueryAndBetween() {
+    void testFluentEntityQueryAndRangeFilter() {
         CatalogProductRepository repo = new CatalogProductRepository(db);
 
         repo.save(new CatalogProduct("P10", "SKU10", "LowEnd Mouse", "Peripherals", 20.0, 10));
@@ -106,13 +108,13 @@ public class AnnotationShowcaseTest {
         repo.save(new CatalogProduct("P12", "SKU12", "Pro Gaming Mouse", "Peripherals", 120.0, 5));
         repo.save(new CatalogProduct("P13", "SKU13", "4K OLED Monitor", "Displays", 800.0, 8));
 
-        // Test SQL BETWEEN query
+        // Native range filter
         List<CatalogProduct> midRange = repo.findByPriceBetween(50.0, 150.0);
         assertEquals(2, midRange.size());
         assertEquals("P11", midRange.get(0).getId());
         assertEquals("P12", midRange.get(1).getId());
 
-        // Test db.from() fluent builder query
+        // Fluent entity builder query
         List<CatalogProduct> filtered = repo.findByFluentCategory("Peripherals", 70.0);
         assertEquals(2, filtered.size());
         assertEquals("LowEnd Mouse", filtered.get(0).getTitle());

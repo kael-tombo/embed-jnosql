@@ -1,5 +1,17 @@
 # JunifyDB Deep Assessment: SQL Engine & ANSI SQL Query Capabilities
 
+> **⚠ SUPERSEDED — pre-refactor document (SQL / dual-engine).**
+> JunifyDB is now NoSQL-only. The relational engine, SQL parser/planning, JDBC driver, JPA
+> `EntityManager`, `/api/sql` routes, and the SQL Studio console screen were removed from the
+> product. Statements in this file that describe SQL, JDBC, SQL schemas, or an engine selector no
+> longer describe shipped behavior.
+>
+> - Current product definition: [PRODUCT-CONSTITUTION.md](../release-audit/refocus/PRODUCT-CONSTITUTION.md)
+> - Removal inventory and evidence: [SQL-REMOVAL-MANIFEST.md](../release-audit/refocus/SQL-REMOVAL-MANIFEST.md)
+>
+> Retained as historical record only — not part of the current release contract.
+
+
 **Subsystem**: `org.junify.db.sql`  
 **Components**: `SqlEngine`, `SqlParser`, `SqlLexer`, `SqlStatement`, `Expression`, `SqlResultSet`, `SqlRow`  
 **Status**: Fully Functional Core ANSI SQL Engine  

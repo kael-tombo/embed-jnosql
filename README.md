@@ -1,9 +1,9 @@
 <div align="center">
 
-<img src="docs/assets/junifydb-mark-512.png" alt="JunifyDB — the embedded dual-engine database for Java" width="220" />
+<img src="docs/assets/junifydb-mark-512.png" alt="JunifyDB — the embedded NoSQL database for Java" width="220" />
 
-**The embedded dual-engine database for Java.**  
-NoSQL + a built-in SQL engine — one JAR, zero infrastructure, no Docker, no daemon.
+**The embedded NoSQL database for the JVM — Document and Key-Value.**  
+One JAR, zero infrastructure. No server, no Docker, no daemon, no network.
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/Java-17%2B-orange.svg)](https://openjdk.org/)
@@ -20,126 +20,50 @@ NoSQL + a built-in SQL engine — one JAR, zero infrastructure, no Docker, no da
 
 > **"JunifyDB is to Document and Key-Value stores what H2 is to Relational databases."**
 
-Java developers carry a hidden tax on every project: before writing a single line of business logic, they must provision infrastructure — Docker containers, Redis daemons, MongoDB processes, Cassandra clusters. Even for a unit test. Even for a local prototype.
+Java developers carry a hidden tax on every project: before writing a single line of business
+logic they must provision infrastructure — Docker containers, Redis daemons, MongoDB processes.
+Even for a unit test. Even for a local prototype.
 
-**JunifyDB eliminates that tax entirely.**
-
-Embed a full-featured, production-grade multi-model database directly inside your JVM process. Call one line of code. Write your business logic. Ship.
+**JunifyDB removes that tax.** Embed a NoSQL database directly inside your JVM process. Call one
+line of code. Write your business logic. Ship.
 
 ```java
 // Everything you need. Nothing you don't.
 try (var db = JunifyDB.inMemory()) {
     db.documentCollection("users").insert(Document.of(user.toMap()).id(user.id()));
-    db.sql("SELECT * FROM users WHERE role = 'admin'");
     db.keyValueBucket("sessions").put("tok-1", "active");
+    db.setBucket("permissions").sadd("admin", "write", "delete");
 }
 ```
 
 ---
 
-## Philosophy & Design Principles
+## What this product is (and is not)
 
-JunifyDB is governed by five unwavering engineering principles. These are not marketing statements — they are architectural constraints enforced in every code path.
+JunifyDB is **NoSQL only**: Document and Key-Value are data models of one product, and
+in-memory vs file-backed is a *storage mode*, not an engine choice. There is no relational
+database, no SQL engine, no dual-engine selector, and no JDBC driver.
 
-### ① Embedded-First, Always
+| | **JunifyDB** | H2 | MongoDB / Redis |
+|---|---|---|---|
+| **Primary model** | Document + Key-Value (+ wide-column, experimental vector) | Relational SQL | Single-model daemons |
+| **Deployment** | Embedded, in-process | Embedded | External server |
+| **Pure Java** | ✅ | ✅ | ❌ |
+| **Server required** | ❌ (optional local console) | ❌ | ✅ |
+| **Document queries** | ✅ Native | ⚠️ JSON functions | ✅ |
+| **Redis-style structures** | ✅ Lists, sets, hashes, TTL | ❌ | ✅ (Redis) |
+| **SQL** | ❌ intentionally removed | ✅ | ❌ |
+| **Persistence** | In-memory, file snapshots + WAL, B-Tree, LSM tree | Page store | WiredTiger / RDB |
 
-A database instance starts in a single method call and lives entirely within your JVM process. No ports. No sockets. No child processes. No background OS services. The lifecycle of the database is the lifecycle of your application — nothing more.
-
-```java
-try (var db = JunifyDB.inMemory()) {   // born here
-    // ... your entire application logic
-}                                       // destroyed here — cleanly, completely
-```
-
-### ② Zero Configuration by Default
-
-Calling `JunifyDB.inMemory()` yields a fully operational, production-equivalent database instance with zero configuration files, zero environment variables, and zero JVM flags. Every option has a sensible default; every default is production-safe.
-
-When you need persistence, one line:
-
-```java
-var db = JunifyDB.create(JunifyDB.embed()
-    .storageEngine(StorageEngineType.FILE)
-    .persistTo("data/")
-    .autoFlush(true)
-    .buildConfig());
-```
-
-### ③ Dual-Engine: NoSQL + SQL Over the Same Data
-
-Most databases force you to choose a paradigm. JunifyDB does not. The same data collection is simultaneously accessible via:
-
-- **Fluent NoSQL API** — document queries, criteria builders, key-value ops
-- **Built-in SQL engine** — `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `GROUP BY`, `JOIN`, `BETWEEN`, `LIKE`, plus `CREATE TABLE` / `DROP TABLE` with inline and table-level `PRIMARY KEY`, `UNIQUE`, `NOT NULL`, `REFERENCES` (foreign key) and `CHECK` constraint enforcement, and a working **JDBC driver** (an implementation-defined dialect, not a full ANSI:92 grammar — no `ALTER`, no `CREATE INDEX`, no sequences, no views, no stored procedures)
-
-Both engines share the same in-memory or disk storage substrate. Switch paradigms mid-query. Mix freely.
-
-### ④ Tri-Standard Annotation Support
-
-JunifyDB reads your existing entity annotations transparently at runtime — with **zero** additional classpath dependencies required:
-
-| Standard | Package | What JunifyDB resolves |
-|---|---|---|
-| **Eclipse JNoSQL** | `jakarta.nosql.*` | `@Entity`, `@Column`, `@Id` (NoSQL) |
-| **Jakarta Persistence** | `jakarta.persistence.*` | `@Entity`, `@Table`, `@Column`, `@Id` (JPA) |
-| **Hibernate ORM** | `org.hibernate.annotations.*` | `@NaturalId`, `@Type`, `@Formula` |
-
-The same entity class works against all three annotation systems. Migrate standards without touching your domain model.
-
-### ⑤ Observable by Design
-
-Every database mutation emits a lifecycle event. Every operation is counted. Every anomaly is surfaced.
-
-- **Event Bus**: `BEFORE_INSERT`, `AFTER_INSERT`, `BEFORE_DELETE`, `AFTER_DELETE`, ... — hookable for auditing, cache invalidation, reactive pipelines
-- **Metrics**: Atomic counters and JVM telemetry via `db.metrics().snapshot()`
-- **Change Data Capture**: Built-in CDC stream (`CDCManager`) — connectable to Kafka, messaging brokers, or file sinks
-- **Audit Trail**: Every mutation logged with timestamp, collection, and operation type
-
----
-
-## Where JunifyDB Fits
-
-```
-                           Embedded / In-Process
-                                     ▲
-                                     │
-                 H2 / HSQLDB         │   ★ JunifyDB
-             (Relational Embedded)   │   (Multi-Model NoSQL Embedded)
-                                     │
-────────────────────────────────────-┼──────────────────────────────────► Multi-Model
-                                     │
-              PostgreSQL / MySQL     │   MongoDB / Redis / Cassandra
-             (Relational Standalone) │   (Distributed NoSQL Daemons)
-                                     │
-                                     ▼
-                           Client-Server / External
-```
-
-JunifyDB occupies the **upper-right quadrant**: embedded and multi-model. A niche that was previously empty in the JVM ecosystem.
-
----
-
-## Competitive Position
-
-| | **JunifyDB** | H2 | SQLite (JNI) | Flapdoodle Mongo | RocksDB |
-|---|---|---|---|---|---|
-| **Primary model** | Multi-Model (Doc, KV, Column) | Relational SQL | Relational SQL | Document only | Key-Value only |
-| **Document queries** | ✅ Native | ⚠️ JSON functions | ⚠️ JSON1 ext | ✅ Native | ❌ |
-| **Redis structures** | ✅ Native | ❌ | ❌ | ❌ | ❌ |
-| **SQL (SELECT/INSERT/UPDATE/DELETE)** | ✅ Built-in (dialect) | ✅ Full | ✅ Full | ❌ | ❌ |
-| **100% Pure Java** | ✅ | ✅ | ❌ (C binaries) | ❌ (downloads binary) | ❌ (C++ / JNI) |
-| **Startup time** | single-digit ms (measured in-process) | ~25 ms | ~30 ms | 3,000–8,000 ms | ~50 ms |
-| **Spring Boot starter** | ✅ | ✅ | ⚠️ | ❌ | ❌ |
-| **Quarkus extension** | ✅ | ⚠️ | ❌ | ❌ | ❌ |
-| **Micronaut integration** | ✅ | ⚠️ | ❌ | ❌ | ❌ |
-| **Disk persistence** | WAL · JSON snapshots · LSM (B-Tree is heap-resident) | Page store | B-Tree | WiredTiger | LSM |
+H2 appears here only as the reference point for *embedded simplicity*. JunifyDB's scope is
+NoSQL: it does not implement SQL, and does not aim to.
 
 ---
 
 ## Installation
 
-> **Not on Maven Central (yet).** JunifyDB is distributed from **GitHub Releases**; no artifact
-> is published to a public repository, so the coordinates below do **not** resolve on their own.
+> **Not on Maven Central (yet).** JunifyDB is distributed from **GitHub Releases**; no artifact is
+> published to a public repository, so the coordinates below do **not** resolve on their own.
 > Install locally first — then they work exactly as written.
 
 ```bash
@@ -153,8 +77,8 @@ Alternatively, download the shaded jar from the GitHub Release and put it on you
 
 Maven pulls these in automatically; they are the only mandatory runtime dependencies:
 `jackson-databind`, `jackson-datatype-jsr310`, and `slf4j-api`. Everything else — Spring,
-Quarkus, Micronaut, Jakarta CDI, Hibernate, Micrometer — is optional (`provided` or `optional`
-scope) and absent unless you add it. The shaded jar is **3.12 MB** (core + those three).
+Quarkus, Micronaut, Jakarta CDI, Hibernate annotations, Micrometer — is optional (`provided` or
+`optional` scope) and absent unless you add it.
 
 ```xml
 <dependency>
@@ -163,6 +87,18 @@ scope) and absent unless you add it. The shaded jar is **3.12 MB** (core + those
     <version>1.0.0</version>
 </dependency>
 ```
+
+### Measured artifact sizes (this repository, this build)
+
+| Artifact | Bytes | Human |
+|---|---|---|
+| Shaded core jar (`target/junify-db-core-1.0.0.jar`: core classes + Jackson + slf4j-api + console assets) | 3,080,060 | 2.94 MiB / 3.08 MB |
+| Core classes only (`target/original-junify-db-core-1.0.0.jar`, no bundled dependencies) | 582,121 | 568 KiB |
+
+The **whole distribution** target (< 5 MB for the bundled, ready-to-run core jar) is met with
+headroom; the "core JAR" in the narrow sense is 568 KiB. Framework starters, the Quarkus
+extension, and demo applications add their own dependencies and are **not** included in these
+figures.
 
 ### Framework Starters
 
@@ -193,59 +129,75 @@ scope) and absent unless you add it. The shaded jar is **3.12 MB** (core + those
 
 ## Quick Start
 
-### In-Memory Database (Testing & Microservices)
+### In-Memory Database (tests and microservices)
 
 ```java
 try (var db = JunifyDB.inMemory()) {
 
-    // ── SQL ───────────────────────────────────────────────────
-    db.sql("INSERT INTO products (id, title, price) VALUES ('p1', 'Keyboard', 75.0)");
-    var results = db.sql("SELECT * FROM products WHERE price BETWEEN 50 AND 100");
-    System.out.println("Found: " + results.size());
+    // ── Document Collection ───────────────────────────────────
+    var users = db.documentCollection("users");
+    users.insert(Document.of(Map.of("name", "Alice", "email", "alice@example.com")).id("u1"));
+    Document alice = users.findById("u1");
 
-    // ── Fluent Entity API ─────────────────────────────────────
+    // ── Document Queries (predicates, sorting, paging) ────────
+    List<Document> adults = users.find(
+            Query.gte("age", 18)
+                 .and(Query.eq("status", "ACTIVE"))
+                 .sortBy("name", Query.SortOrder.ASC)
+                 .limit(20));
+
+    // ── Entity Mapping & Fluent Query ─────────────────────────
     List<Product> affordable = db.from(Product.class)
             .where("category = ? AND price <= ?", "Peripherals", 100.0)
             .orderBy("price ASC")
             .limit(10)
             .list();
 
-    // ── Document Collection API ───────────────────────────────
-    var users = db.documentCollection("users");
-    users.insert(Document.of(Map.of("name", "Alice", "email", "alice@example.com")).id("u1"));
-    Document alice = users.findById("u1");
-
-    // ── Key-Value Store ───────────────────────────────────────
+    // ── Key-Value Store ──────────────────────────────────────
     db.keyValueBucket("sessions").put("tok-abc", "user-1");
     db.keyValueBucket("sessions").expire("tok-abc", Duration.ofMinutes(30));
 
-    // ── Redis-Style Data Structures ───────────────────────────
+    // ── Redis-Style Data Structures ──────────────────────────
     db.listBucket("job-queue").rpush("tasks", "send-email", "resize-image");
     db.setBucket("permissions").sadd("admin", "write", "delete", "export");
+    db.hashBucket("profiles").hset("u1", "tier", "GOLD");
 
-    // ── Column Family ─────────────────────────────────────────
+    // ── Wide-Column Family ───────────────────────────────────
     var metrics = db.columnFamily("node_metrics");
     metrics.put("node-01", "cpu_pct", "42.3");
     metrics.put("node-01", "mem_mb", "2048");
 }
 ```
 
+`where(...)` in the fluent builder takes a **document field filter** — one or more
+`field OP ?` terms joined by `AND`, where `OP` is one of `=`, `!=`, `<>`, `>`, `>=`, `<`, `<=`,
+with values bound through `?`. It is not a query language: the terms compile to `Query`
+predicates and run on the document engine.
+
 ### File-Backed Persistent Database
 
 ```java
 try (var db = JunifyDB.create(JunifyDB.embed()
-        .storageEngine(StorageEngineType.B_TREE)
+        .storageEngine(StorageEngineType.FILE)   // or IN_MEMORY, B_TREE, LSM_TREE
         .persistTo("data/myapp")
         .autoFlush(true)
         .buildConfig())) {
 
-    // Survives JVM restarts via Write-Ahead Log (WAL)
-    db.documentCollection("orders").insert(Document.of(order.toMap()).id(order.id()));
+    var orders = db.documentCollection("orders");
+    orders.insert(Document.of(order.toMap()).id(order.id()));   // durable across restarts
 }
-// Next JVM run: data is automatically recovered from disk
 ```
 
-### JPA / JNoSQL Entity Annotation Support
+### Annotation-Driven Mapping
+
+JunifyDB reads your existing entity annotations at runtime with **zero** additional classpath
+requirements:
+
+| Standard | Package | What JunifyDB resolves |
+|---|---|---|
+| **Eclipse JNoSQL** | `jakarta.nosql.*` | `@Entity`, `@Column`, `@Id` |
+| **Jakarta Persistence** | `jakarta.persistence.*` | `@Entity`, `@Table`, `@Column`, `@Id`, `@Transient`, `@Enumerated` |
+| **Hibernate extras** | `org.hibernate.annotations.*` | `@UuidGenerator`, `@CreationTimestamp`, `@UpdateTimestamp`, `@Formula` |
 
 ```java
 @jakarta.persistence.Entity
@@ -261,293 +213,182 @@ public class Product {
     private String name;
 }
 
-// Works transparently — no additional config required
-List<Product> items = db.from(Product.class)
-        .where("price > ?", 50.0)
-        .list();
+// Works transparently — mapped onto documents, no JPA runtime needed
+List<Product> items = db.from(Product.class).where("price > ?", 50.0).list();
 ```
 
-### ACID Transactions
+> **Note:** these are *annotation mappings onto documents*, not a JPA implementation. There is no
+> `EntityManager`, no JPQL, and no relational schema. Hibernate is not required on the classpath.
+
+### Transactions
 
 ```java
-db.transactionManager().inTransaction(() -> {
-    db.documentCollection("accounts").update("acc-1", "balance", 4750.0);
-    db.documentCollection("accounts").update("acc-2", "balance", 5250.0);
-    // Both writes commit atomically — or both roll back on any error
-});
+try (var tx = db.beginTransaction()) {
+    tx.documentCollection("accounts").update("acc-1", "balance", 4750.0);
+    tx.documentCollection("accounts").update("acc-2", "balance", 5250.0);
+    tx.commit();   // both writes commit atomically, or both roll back on error
+}
 ```
+
+Transactions apply to writes issued on the transaction handle. Each console/REST write is its
+own operation and is **not** governed by a transaction begun elsewhere — the console states this
+boundary in its status bar rather than hiding it.
 
 ---
 
-### JDBC
+## Storage Modes
 
-A JDBC driver is bundled. It is discovered automatically (`META-INF/services/java.sql.Driver`),
-so no `Class.forName` is needed:
-
-```java
-try (var conn = DriverManager.getConnection("jdbc:junifydb:memory:")) {
-    try (var st = conn.createStatement()) {
-        st.executeUpdate("CREATE TABLE products (id VARCHAR(20) PRIMARY KEY, name VARCHAR(50) NOT NULL)");
-    }
-    try (var ps = conn.prepareStatement("INSERT INTO products (id, name) VALUES (?, ?)")) {
-        ps.setString(1, "p1");
-        ps.setString(2, "Keyboard");
-        ps.executeUpdate();
-    }
-    try (var rs = conn.createStatement().executeQuery("SELECT * FROM products")) {
-        while (rs.next()) System.out.println(rs.getString("id") + " -> " + rs.getString("name"));
-    }
-}
-// URL forms: jdbc:junifydb:memory:  |  jdbc:junifydb:file:<dir>
-```
-
-Constraint violations arrive as `SQLException` (e.g. *"PRIMARY KEY constraint violated on
-products.id"*), and parameters are bound by the engine, never spliced into SQL text.
-
-**Honest scope.** This is a working driver for the SQL surface that exists, **not** a
-JDBC-compliant one — `Driver.jdbcCompliant()` returns `false`. Supported: `Statement`,
-`PreparedStatement` with `?` binding, forward-only read-only `ResultSet` navigation and typed
-getters, and basic metadata. **Not** supported: explicit transactions (`setAutoCommit(false)` /
-`commit()` / `rollback()`), savepoints, batch execution, updatable result sets, and schema
-reflection (`DatabaseMetaData.getTables`/`getColumns`). Unsupported calls throw
-`SQLFeatureNotSupportedException` rather than silently succeeding.
-
----
-
-## Framework Integration
-
-### Spring Boot
-
-```yaml
-# application.yml — zero required config; all properties are optional overrides
-junifydb:
-  storage-engine: IN_MEMORY   # or FILE, B_TREE, LSM_TREE
-  data-dir: data/
-  auto-flush: true
-  flush-interval-ms: 1000
-```
-
-```java
-@Service
-class OrderService {
-    private final JunifyDB db;
-
-    OrderService(JunifyDB db) { this.db = db; }
-
-    public void place(Order order) {
-        db.documentCollection("orders")
-          .insert(Document.of(order.toMap()).id(order.id()));
-    }
-
-    public List<Order> recent() {
-        return db.from(Order.class)
-                 .where("status = ?", "PLACED")
-                 .orderBy("createdAt DESC")
-                 .limit(50)
-                 .list();
-    }
-}
-```
-
-### Quarkus (CDI)
-
-```java
-@ApplicationScoped
-public class ProductResource {
-    @Inject JunifyDB db;
-
-    @GET @Path("/{id}")
-    public Response findProduct(@PathParam("id") String id) {
-        return db.from(Product.class).where("id = ?", id)
-                 .first()
-                 .map(Response::ok)
-                 .orElse(Response.status(404))
-                 .build();
-    }
-}
-```
-
-### Micronaut
-
-```java
-@Singleton
-public class CatalogRepository {
-    private final JunifyDB db;
-
-    CatalogRepository(JunifyDB db) { this.db = db; }
-
-    public List<CatalogItem> search(String category, double maxPrice) {
-        return db.from(CatalogItem.class)
-                 .where("category = ? AND price <= ?", category, maxPrice)
-                 .list();
-    }
-}
-```
-
----
-
-## Storage Engines
-
-| Engine | Backing Structure | Best For |
+| Mode | Backing structure | Best for |
 |---|---|---|
-| `IN_MEMORY` | `ConcurrentHashMap` | Unit tests, ephemeral state, microservice sessions |
-| `FILE` | Append-only log + WAL | Simple persistence, single-writer local apps |
-| `B_TREE` | B+ Tree page store | Range queries, sorted access, read-heavy workloads |
-| `LSM_TREE` | Log-Structured Merge Tree | Write-heavy workloads, time-series, event ingestion |
+| `IN_MEMORY` | `ConcurrentHashMap` | Unit tests, ephemeral state, microservice sessions. **No durability**: data is lost on exit. |
+| `FILE` | Per-collection JSON snapshot + write-ahead log | Simple local persistence, single-writer apps |
+| `B_TREE` | B+ tree index over the same records | Read-heavy local apps; background flusher |
+| `LSM_TREE` | Memtable + SSTables + log | Write-heavy workloads |
 
-Switch engines in one line — the query and collection API is identical across all four.
-
----
-
-## Performance (Indicative — Re-Run It Yourself)
-
-These are informal throughput figures from the demo/stress suite on one development machine — not certified benchmarks and not comparable across hardware. Run your own measurements with the demo harness before drawing conclusions.
-
-| Scenario | Threads | Operations | Throughput | p99 Latency | Error Rate |
-|---|---|---|---|---|---|
-| Concurrent Writes | 10 | 1,000 | 2,155 ops/sec | 305 ms | 0% |
-| 50-Thread Safety | 50 | 2,500 | 14,881 ops/sec | 1 ms | 0% |
-| Read-After-Write | 8 | 400 | 7,843 ops/sec | 32 ms | 0 violations |
-| Mixed (Doc + KV) | 12 | 1,200 | 54,545 ops/sec | 1 ms | 0% |
-| Saturation (2 sec) | 20 | 12,815 | 6,420 ops/sec | 10 ms | 0% |
-
-> Read-after-write consistency: 0 violations across 400 concurrent write+read pairs.  
-> Batch ingestion: 10,000 documents in chunked atomic batches with rollback on error.
+Switching storage mode does not change the query or collection API.
 
 ---
 
-## Developer Console
+## Document Query Operators
 
-Start the embedded web console for local inspection, SQL queries, and metrics:
+`POST /api/collections/{name}/query` accepts MongoDB-style JSON filters:
+
+```jsonc
+{
+  "category": { "$eq": "Peripherals" },
+  "price":    { "$lt": 100 },
+  "sortField": "price", "sortDir": "asc", "limit": 20, "offset": 0
+}
+```
+
+Supported: `$eq $ne $gt $gte $lt $lte $in $nin $regex $exists $and $or`.
+`$regex` is substring matching (anchor with `^`/`$`). Unknown operators and malformed filters are
+rejected with HTTP 400 — they are never silently ignored or reinterpreted.
+
+---
+
+## Developer Console (optional, local)
+
+The console is a **local management UI**, not a requirement for using the database. Nothing
+starts an HTTP server unless you ask for it.
+
+```java
+try (var db = JunifyDB.create(JunifyDB.embed()
+        .storageEngine(StorageEngineType.FILE)
+        .persistTo("data")
+        .console(ConsoleConfig.builder().enabled(true).port(8080).build())
+        .buildConfig())) {
+    System.out.println("Console at " + db.consoleUrl());
+}
+```
+
+Or from the shaded jar:
 
 ```bash
 java -jar target/junify-db-core-1.0.0.jar --port 8080 --engine FILE --data-dir ./data
 ```
 
-Open `http://localhost:8080` to access:
+Panels: **Overview, Collections (documents), Key-Value & Redis Structures, Wide-Column
+Families, Vector Index (experimental), Schema Validation, Transactions, Secondary Indexes,
+Backup & Restore, Change Data Capture, Audit Trail, Server.**
 
-- 📊 **Overview & Metrics** — JVM memory, thread counts, operation throughput
-- 📄 **Document Collections** — CRUD, full-text preview, schema inspector
-- 🔑 **Key-Value Store** — get/put/delete with TTL management
-- 🔢 **Redis Structures** — Lists, Sets, Hashes with visual inspection
-- 🧩 **Wide-Column Families** — Row/column matrix viewer
-- 🤖 **SQL Studio** — Interactive SQL editor with result table, run-selection, cancellation, CSV/JSON export, and a confirmation guard on destructive statements
-- 📡 **Change Data Capture** — CDC connector status and event viewer
-- 🔐 **Audit Trail** — In-memory operation log (recent events; not persisted, not cryptographically verified)
+The console shows its active context in a persistent status bar (storage mode with its durability
+meaning, data directory, connection state, transaction state, identity) read from `GET
+/api/health`'s `context` block rather than guessed in the browser. Destructive actions name their
+target and impact before running. There is **no SQL editor** — the SQL Studio was removed with
+the SQL product.
 
-The Console always shows its **active context** in a persistent status bar — storage engine,
-active database and data directory, storage mode **with its durability meaning** (an in-memory
-database states that writes are lost on exit), connection state, transaction state, and the
-security identity in use — all read from `GET /api/health`'s `context` block rather than
-guessed in the browser. Every action resolves to an explicit state (idle, loading, success,
-**empty**, validation error, backend error, timeout, permission denied, conflict, rate
-limited, recovery required), so a 0-row result is never shown as a success and a stalled
-request cannot look like progress. Destructive actions (drop, unqualified `DELETE`/`UPDATE`,
-collection-wide delete, restore) require a dialog that names the target and states the impact.
-Every response carries an `X-Correlation-Id`, and every error body repeats it, so a failure
-reported to support can be tied to a specific request.
-
-Honest limits: the SQL editor has **no syntax highlighting, autocomplete, formatting, saved-query
-library, multiple tabs, or `EXPLAIN`**; NoSQL editing is JSON-only (no tree or form view); and no
-screen-reader or automated contrast audit has been run. See
-[`docs/release-audit/74-console-task-success-evidence.md`](docs/release-audit/74-console-task-success-evidence.md).
+Honest limits: document editing is JSON-only (no tree/form view), and no screen-reader or
+automated contrast audit has been run.
 
 ---
 
-## Demonstration Ecosystem
-
-A complete demo suite in [`demo/`](demo/) covering an **E-Commerce & Order Management** domain:
-
-| Demo | Framework | What it demonstrates |
-|---|---|---|
-| [`annotation-showcase-demo`](demo/annotation-showcase-demo) | Pure Java | Tri-standard annotation interop (JNoSQL + JPA + Hibernate) side-by-side |
-| [`spring-boot-demo`](demo/spring-boot-demo) | Spring Boot 3.2 | Auto-configured `JunifyDB` bean, REST endpoints, service layer |
-| [`quarkus-demo`](demo/quarkus-demo) | Quarkus 3.8 | CDI producers, build-time config, native-compatible APIs |
-| [`micronaut-demo`](demo/micronaut-demo) | Micronaut 4.2 | Reflection-free Serde, factory beans, config binding |
-| [`vertx-demo`](demo/vertx-demo) | Vert.x 4.5 | Worker-thread `executeBlocking`, async verticle patterns |
-| [`end-to-end-validation`](demo/end-to-end-validation) | JUnit 5 | Multi-engine durability matrix, cold-restart recovery |
-| [`batch-processing-demo`](demo/batch-processing-demo) | JunifyDB Core | Atomic batch ingestion, fault-injection rollback, 10K-doc chunked loading |
-| [`advanced-queries-demo`](demo/advanced-queries-demo) | JunifyDB Core | SQL JOINs, GROUP BY aggregations, fluent entity API, NoSQL criteria |
-| [`load-and-stress-demo`](demo/load-and-stress-demo) | JunifyDB Core | 50-thread concurrent load, read-after-write consistency, saturation testing |
-
-**All demos pass with zero failures.** See [`demo/VALIDATION-MATRIX.md`](demo/VALIDATION-MATRIX.md) for the complete evidence log with measured latency percentiles.
-
----
-
-## REST API (Embedded Server)
-
-When the embedded server is enabled, a full REST API is available:
+## REST API (when the embedded server is enabled)
 
 ```bash
-# Health check
+# Health (includes the context block)
 curl http://localhost:8080/api/health
 
-# Insert document
+# Insert a document
 curl -X POST http://localhost:8080/api/collections/products \
   -H "Content-Type: application/json" \
   -d '{"name":"Keyboard","price":75.0,"category":"Peripherals"}'
 
-# Query documents
+# List / read
 curl http://localhost:8080/api/collections/products
+curl http://localhost:8080/api/collections/products/p1
 
-# Filter with MongoDB-style JSON operators (POST /api/collections/{name}/query)
+# Filter (see operators above)
 curl -X POST http://localhost:8080/api/collections/products/query \
   -H "Content-Type: application/json" \
   -d '{"category":{"$eq":"Peripherals"},"price":{"$lt":100}}'
 
-# Supported operators: $eq $ne $gt $gte $lt $lte $in $nin $regex $exists $and $or
-#   - $regex is substring matching (write "^prefix" / "suffix$" to anchor)
-#   - $and / $or take arrays of sub-queries and combine with the rest of the filter
-#   - unknown operators and malformed filters are rejected with HTTP 400
-#   - SQL-style reads never create collections: SELECT/UPDATE/DELETE/DROP on a
-#     missing table return 404; only INSERT (and CREATE TABLE) create one
-
-# Execute SQL
-curl -X POST http://localhost:8080/api/sql \
-  -H "Content-Type: application/json" \
-  -d '{"query":"SELECT * FROM products WHERE price BETWEEN 50 AND 100"}'
-
 # Key-value operations
-curl -X PUT http://localhost:8080/api/kv/sessions/tok-abc \
-  -d '"user-1"'
+curl -X PUT http://localhost:8080/api/kv/sessions/tok-abc -d '"user-1"'
+
+# Bucket/key metadata and TTL
+curl http://localhost:8080/api/kv-meta/buckets
+curl http://localhost:8080/api/kv-meta/sessions
+
+# Storage & WAL status
+curl http://localhost:8080/api/storage/status
 ```
+
+Other routes: `/api/columns`, `/api/kv/lists`, `/api/kv/sets`, `/api/kv/hashes`,
+`/api/indexes`, `/api/transactions`, `/api/schema`, `/api/vectors`, `/api/bulk`, `/api/backup`,
+`/api/cdc`, `/api/audit/logs`, `/api/metrics`, `/api/stats`.
+
+The removed `/api/sql` and `/api/sql/schema` routes answer 404.
 
 ---
 
-## Target Use Cases
+## Migration from the SQL-enabled builds
 
-### ✅ Integration Testing Without Docker
-Replace Testcontainers and Docker containers in your CI pipeline. JunifyDB starts in milliseconds in the same JVM process. No daemon, no registry pull, no port binding.
+JunifyDB 1.0.0 removed the relational product. If you used an earlier build:
 
-### ✅ Edge & Desktop JVM Applications
-JavaFX apps, POS systems, barcode scanners, IoT gateways. A single JAR with file-backed persistence, zero native dependencies, and WAL-based recovery of writes that were not yet flushed.
+| Removed | What to use instead |
+|---|---|
+| `db.sql("SELECT ...")`, `db.sql("INSERT ...")`, `db.sqlEngine()` | `db.documentCollection(name).find(Query...)` / `.insert(doc)` / `.update(doc)` / `.deleteById(id)`, or `db.from(Entity.class).where(...)` |
+| `CREATE TABLE`, `DROP TABLE`, column types, `PRIMARY KEY`/`FOREIGN KEY`/`UNIQUE`/`CHECK` | There is no schema DDL. Collections appear on first write; constraints are not enforced. Use `SchemaValidator` (`/api/schema`) for insert-time validation rules. |
+| `JOIN`, `GROUP BY`, `HAVING` | Resolve related documents in your application through stored ids; aggregate with the document helpers (`DocumentAggregation`) or your own code. A document reference is **not** a foreign key and carries no referential guarantee. |
+| `POST /api/sql`, `POST /api/sql/schema` | `POST /api/collections/{name}/query`; `/api/storage/status` |
+| JDBC driver (`jdbc:junifydb:...`) | Not available. Use the document/key-value API, or a JDBC driver for a different database if you need SQL. |
+| `JunifyPersistence.createEntityManager(...)`, `EntityManager`, JPQL | JNoSQL-style repositories (`JunifyRepository`, `CrudRepository`) and the fluent entity query. Annotation mapping is retained. |
+| Console "SQL Studio" | Collections and Key-Value panels. |
 
-### ✅ In-Process Caching & Session Stores
-Sub-microsecond local key-value lookups without Redis network round-trips. Built-in TTL, atomic increments, and Redis-style data structures.
-
-### ✅ Local Sandbox & Rapid Prototyping
-Add the dependency, call `JunifyDB.inMemory()`, ship working code. Zero infrastructure to configure or maintain across the team.
-
-### ✅ Microservice State — No Sidecar Required
-Rate limiters, feature flags, task queues, and event journals — all inside your application boundary, no sidecar, no network.
+**Data compatibility:** SQL tables were stored as document collections, so rows written by the
+old SQL engine are ordinary documents and remain readable through `documentCollection(name)`.
+No data migration is required, and no data files were deleted by this change.
 
 ---
 
 ## Build & Test
 
 ```bash
-# Build and test everything
-mvn test
+# Core: build and run the full suite
+./mvnw test
 
-# Install locally then build the Spring Boot starter
-mvn install -DskipTests
-cd spring-boot-starter && mvn test
+# Install core, then run a framework demo (each demo is a standalone Maven project)
+./mvnw -DskipTests install
+./mvnw -f demo/spring-boot-demo/pom.xml test
 
-# Run the demos (each is a standalone Maven project)
-mvn test -f demo/batch-processing-demo/pom.xml
-mvn test -f demo/load-and-stress-demo/pom.xml
-mvn test -f demo/advanced-queries-demo/pom.xml
+# All demos
+for m in demo/*/pom.xml; do ./mvnw -f "$m" test; done
 ```
+
+Verified status for this change (commands and logs under `docs/release-audit/refocus/`):
+core **819 tests, 0 failures**; the nine demo projects **43 tests, 0 failures**; the
+Spring Boot starter **12 tests, 0 failures**; the CLI **4 tests, 0 failures**.
+
+---
+
+## Target Use Cases
+
+- **Integration testing without Docker** — start in milliseconds in the same JVM.
+- **Edge & desktop JVM applications** — one jar, file-backed persistence, WAL recovery.
+- **In-process caching & session stores** — local key-value with TTL, no Redis round-trip.
+- **Local prototypes** — add the dependency, call `JunifyDB.inMemory()`, ship.
+- **Microservice state** — rate limiters, feature flags, task queues inside the app boundary.
 
 ---
 

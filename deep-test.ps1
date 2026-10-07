@@ -146,19 +146,21 @@ T "COL PUT row2" PUT "/api/columns/$cf/row2" @{col1="x";col2="y"} 201
 T "COL GET all" GET "/api/columns/$cf"
 T "COL DELETE row1" DELETE "/api/columns/$cf/row1" 204
 
-# ---- 10. SQL ENGINE ----
-Write-Host "`n--- 10. SQL ENGINE ---" -ForegroundColor Cyan
-T "SQL CREATE TABLE" POST "/api/sql" @{sql="CREATE TABLE IF NOT EXISTS emp_$R (id INT PRIMARY KEY, name VARCHAR(100), salary DOUBLE, dept VARCHAR(50))"} 200
-T "SQL INSERT 1" POST "/api/sql" @{sql="INSERT INTO emp_$R VALUES (1, 'Alice', 75000.0, 'Engineering')"} 200
-T "SQL INSERT 2" POST "/api/sql" @{sql="INSERT INTO emp_$R VALUES (2, 'Bob', 65000.0, 'Marketing')"} 200
-T "SQL INSERT 3" POST "/api/sql" @{sql="INSERT INTO emp_$R VALUES (3, 'Carol', 80000.0, 'Engineering')"} 200
-T "SQL SELECT all" POST "/api/sql" @{sql="SELECT * FROM emp_$R"} 200
-T "SQL SELECT WHERE" POST "/api/sql" @{sql="SELECT * FROM emp_$R WHERE dept='Engineering'"} 200
-T "SQL UPDATE" POST "/api/sql" @{sql="UPDATE emp_$R SET salary=78000.0 WHERE id=1"} 200
-T "SQL AVG aggregate" POST "/api/sql" @{sql="SELECT AVG(salary) as avg_salary FROM emp_$R"} 200
-T "SQL ORDER BY" POST "/api/sql" @{sql="SELECT * FROM emp_$R ORDER BY salary DESC"} 200
-T "SQL DELETE" POST "/api/sql" @{sql="DELETE FROM emp_$R WHERE id=2"} 200
-T "SQL DROP TABLE" POST "/api/sql" @{sql="DROP TABLE IF EXISTS emp_$R"} 200
+# ---- 10. DOCUMENT QUERY ----
+# The SQL engine and POST /api/sql were removed from the product; the removed route now answers
+# 404 and is asserted below. Document queries are the supported path.
+Write-Host "`n--- 10. DOCUMENT QUERY ---" -ForegroundColor Cyan
+$dq = "dq_$R"
+T "DOC insert 1" POST "/api/collections/$dq" @{id="d1";name="Keyboard";stock=41} 201
+T "DOC insert 2" POST "/api/collections/$dq" @{id="d2";name="Mouse Pad";stock=7} 201
+T "DOC query all" POST "/api/collections/$dq/query" @{filter=@{}} 200
+T "DOC query eq" POST "/api/collections/$dq/query" @{filter=@{name=@{'$eq'="Keyboard"}}} 200
+T "DOC query range" POST "/api/collections/$dq/query" @{filter=@{stock=@{'$gt'=10}}} 200
+T "DOC query regex" POST "/api/collections/$dq/query" @{filter=@{name=@{'$regex'="Key"}}} 200
+T "DOC query and" POST "/api/collections/$dq/query" @{filter=@{'$and'=@(@{name=@{'$eq'="Keyboard"}},@{stock=@{'$gt'=10}})}} 200
+T "DOC update" PUT "/api/collections/$dq/d1" @{id="d1";name="Keyboard";stock=39} 200
+T "DOC delete" DELETE "/api/collections/$dq/d2" 204
+T "SQL endpoint removed" POST "/api/sql" @{query="SELECT 1"} 404
 
 # ---- 11. SCHEMA ----
 Write-Host "`n--- 11. SCHEMA MANAGEMENT ---" -ForegroundColor Cyan

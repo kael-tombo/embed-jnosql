@@ -62,7 +62,7 @@ echo
 echo "== 1. every console-called path must reject an anonymous request =="
 for p in /api/health /api/metrics /api/stats /api/collections /api/schema \
          /api/transactions /api/cdc /api/cdc/events /api/audit/logs /api/backup \
-         /api/collections/products /api/indexes/products /api/sql; do
+         /api/collections/products /api/indexes/products /api/kv/sessions; do
   CODE=$(status GET "$p")
   if [ "$CODE" = "401" ]; then
     pass "GET $p -> 401 (anonymous)"

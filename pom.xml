@@ -10,7 +10,7 @@
     <packaging>jar</packaging>
 
     <name>JunifyDB NoSQL</name>
-    <description>Embedded JNoSQL-style NoSQL database for Java applications. Multi-engine (InMemory/File/BTree/LSM), dual NoSQL+SQL, tri-standard annotation support.</description>
+    <description>Embedded NoSQL database for the JVM. Document and Key-Value models over in-memory or durable file storage (InMemory/File/BTree/LSM), with annotation mapping for Jakarta NoSQL, Jakarta Persistence, and Hibernate annotations onto documents. No server required.</description>
     <url>https://github.com/armand-ratombotiana/JunifyDB</url>
 
     <licenses>

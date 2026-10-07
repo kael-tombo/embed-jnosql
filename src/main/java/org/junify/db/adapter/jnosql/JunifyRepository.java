@@ -78,13 +78,25 @@ public class JunifyRepository<T, ID> {
         }
     }
 
+    /**
+     * Finds every entity whose {@code fieldName} document field equals {@code value}.
+     * Resolved through the native document predicate API — no text query language.
+     */
     public List<T> findBy(String fieldName, Object value) {
-        String colName = EntityMapper.getCollectionName(entityClass);
-        return db.sql("SELECT * FROM " + colName + " WHERE " + fieldName + " = ?", entityClass, value);
+        return findByQuery(org.junify.db.nosql.document.Query.eq(fieldName, value));
     }
 
-    public List<T> query(String sql, Object... params) {
-        return db.sql(sql, entityClass, params);
+    /**
+     * Runs a native document predicate and maps the matching documents to entities.
+     * Subclasses use this to express repository finders without a query language.
+     */
+    protected List<T> findByQuery(org.junify.db.nosql.document.Query query) {
+        String colName = EntityMapper.getCollectionName(entityClass);
+        return db.documentCollection(colName)
+                .find(query)
+                .stream()
+                .map(doc -> EntityMapper.fromDocument(doc, entityClass))
+                .collect(java.util.stream.Collectors.toList());
     }
 
     public EclipseDocumentTemplate getTemplate() {

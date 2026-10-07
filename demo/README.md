@@ -14,10 +14,10 @@ demo/
 ├── micronaut-demo/           # Micronaut 4.2.0 + JunifyDB DI Integration demo
 ├── vertx-demo/               # Eclipse Vert.x 4.5.4 Reactive non-blocking demo
 ├── end-to-end-validation/    # Multi-engine lifecycle and durability verification
-├── advanced-queries-demo/    # SQL dialect, aggregation pipelines, indexed queries
+├── advanced-queries-demo/    # Native document queries, filtering, and JVM-side aggregation
 ├── batch-processing-demo/    # Atomic batch writes, rollback, throughput patterns
 ├── load-and-stress-demo/     # Concurrency harness and indicative performance figures
-└── annotation-showcase-demo/ # Multi-standard annotations (JNoSQL, JPA, Hibernate) & SQL Engine
+└── annotation-showcase-demo/ # Multi-standard annotations (JNoSQL, JPA, Hibernate) over documents
 ```
 
 ---
@@ -74,12 +74,12 @@ demo/
   - Cold engine shutdown and persistence recovery verification on disk.
 
 ### 7. [annotation-showcase-demo](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/annotation-showcase-demo)
-- **Scope**: Multi-standard annotation interoperability & dual NoSQL/SQL querying.
+- **Scope**: Multi-standard annotation interoperability over one document engine.
 - **Key Highlights**:
   - **Eclipse JNoSQL Standard**: Entity mapping with `@Entity`, `@Id`, `@Column` and type-safe `JunifyRepository`.
-  - **JPA Specification Standard**: Entity transactions, `JunifyEntityManager`, and `TypedQuery` with named parameter binding.
-  - **Hibernate Annotations**: Automated primary key generation (`@UuidGenerator`), audit timestamps (`@CreationTimestamp`, `@UpdateTimestamp`), computed columns (`@Formula`), and enum mappings (`@Enumerated`).
-  - **Dual Engine**: Unified ANSI SQL query engine running aggregations (`COUNT`, `SUM`, `AVG`, `MIN`, `MAX`, `GROUP BY`) and relational `JOIN`s directly over NoSQL collections.
+  - **Jakarta Persistence annotations as mapping hints**: `@Entity`, `@Table`, `@Id`, `@Column`, `@Transient` are resolved onto documents. The JPA `EntityManager`/`TypedQuery`/`EntityTransaction` surface is not part of the product.
+  - **Hibernate Annotations**: Automated primary key generation (`@UuidGenerator`), audit timestamps (`@CreationTimestamp`, `@UpdateTimestamp`), computed values (`@Formula`), and enum mappings (`@Enumerated`).
+  - **Aggregation in application code**: grouping and aggregates (`count`, `sum`, `avg`, `min`, `max`) are computed from documents in the JVM — there is no SQL engine, no `GROUP BY`, and no `JOIN`.
 
 ---
 

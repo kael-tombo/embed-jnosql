@@ -257,4 +257,21 @@ public class KeyValueBucket {
         var expiry = expirations.get(key);
         return expiry != null && Instant.now().isAfter(expiry);
     }
+
+    /**
+     * Expiry instant per key for keys that carry a TTL (unmodifiable snapshot).
+     * Lets the admin surface show expiration without exposing the internal map.
+     */
+    public Map<String, Instant> expirations() {
+        return java.util.Collections.unmodifiableMap(new LinkedHashMap<>(expirations));
+    }
+
+    /**
+     * Expiry instant for one key, or {@code null} when the key carries no TTL (or
+     * already expired). Read-only; does not evict — callers decide what to show.
+     */
+    public Instant expiryOf(String key) {
+        var expiry = expirations.get(key);
+        return expiry != null && expiry.isAfter(Instant.now()) ? expiry : null;
+    }
 }

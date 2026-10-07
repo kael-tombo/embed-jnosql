@@ -341,43 +341,43 @@ else
 fi
 
 echo
-echo "== sql reads must not create tables or fake success (R-48, R-49) =="
+echo "== document reads must not create collections or fake success (R-48, R-49) =="
 COLS_BEFORE=$(curl -s -m 5 "$BASE/api/collections" | grep -o '"name"' | wc -l)
 
-BODY=$(curl -s -m 5 -X POST "$BASE/api/sql" -H 'Content-Type: application/json' -d '{"query":"SELECT * FROM gate_missing_t"}')
-CODE=$(curl -s -m 5 -o /dev/null -w '%{http_code}' -X POST "$BASE/api/sql" -H 'Content-Type: application/json' -d '{"query":"SELECT * FROM gate_missing_t"}')
+BODY=$(curl -s -m 5 -X POST "$BASE/api/collections/gate_missing_t/query" -H 'Content-Type: application/json' -d '{"filter":{}}')
+CODE=$(curl -s -m 5 -o /dev/null -w '%{http_code}' -X POST "$BASE/api/collections/gate_missing_t/query" -H 'Content-Type: application/json' -d '{"filter":{}}')
 if [ "$CODE" = "404" ]; then
-  pass "SELECT from unknown table -> 404"
+  pass "query on an unknown collection -> 404"
 else
-  fail "SELECT from unknown table returned $CODE: $(echo "$BODY" | head -c 100) (want 404)"
+  fail "query on an unknown collection returned $CODE: $(echo "$BODY" | head -c 100) (want 404)"
 fi
 
 COLS_AFTER=$(curl -s -m 5 "$BASE/api/collections" | grep -o '"name"' | wc -l)
 if [ "$COLS_AFTER" = "$COLS_BEFORE" ]; then
-  pass "failed SELECT created no collection"
+  pass "failed query created no collection"
 else
-  fail "failed SELECT mutated the catalog ($COLS_BEFORE -> $COLS_AFTER collections)"
+  fail "failed query mutated the catalog ($COLS_BEFORE -> $COLS_AFTER collections)"
 fi
 
 N=$(curl -s -m 5 "$BASE/api/collections" | grep -o 'gate_missing_t' | wc -l)
 if [ "$N" = "0" ]; then
-  pass "no leftover empty collection from SQL reads"
+  pass "no leftover empty collection from reads"
 else
   fail "gate_missing_t exists in the catalog — read-auto-create is back"
 fi
 
-CODE=$(curl -s -m 5 -o /dev/null -w '%{http_code}' -X POST "$BASE/api/sql" -H 'Content-Type: application/json' -d '{"query":"DROP TABLE gate_missing_t"}')
+CODE=$(curl -s -m 5 -o /dev/null -w '%{http_code}' -X DELETE "$BASE/api/collections/gate_missing_t")
 if [ "$CODE" = "404" ]; then
-  pass "DROP TABLE unknown -> 404"
+  pass "DELETE on an unknown collection -> 404"
 else
-  fail "DROP TABLE on unknown table returned $CODE (want 404) — fake success is back"
+  fail "DELETE on an unknown collection returned $CODE (want 404) — it must not create what it was asked to remove"
 fi
 
-CODE=$(curl -s -m 5 -o /dev/null -w '%{http_code}' -X POST "$BASE/api/sql" -H 'Content-Type: application/json' -d '{"query":"SELECT id FROM gateq WHERE id = ''q1''"}')
+CODE=$(curl -s -m 5 -o /dev/null -w '%{http_code}' -X POST "$BASE/api/collections/gateq/query" -H 'Content-Type: application/json' -d '{"id":"q1"}')
 if [ "$CODE" = "200" ]; then
-  pass "SELECT on an existing table still works"
+  pass "query on an existing collection still works"
 else
-  fail "SELECT on existing table returned $CODE (want 200)"
+  fail "query on an existing collection returned $CODE (want 200)"
 fi
 
 echo "== collection resolution must never create (R-55) =="
@@ -609,18 +609,13 @@ echo "== R-62/R-65: what the server writes must survive a restart, once =="
 # The stop below is forced (no graceful shutdown available: Windows cannot signal a console JVM,
 # and taskkill is the only thing that works there), so this is a *crash* survival check — a
 # strictly harder test than a clean restart, and the reason the assertions below are meaningful.
-# Both defects live *across* a restart, so this block stops the server and starts it
-# again on the same data dir. Pre-fix on FILE, an empty `CREATE TABLE` produced no file
-# and the table was gone afterwards; pre-fix on LSM_TREE/B_TREE it had no engine-side
-# identity either, and LSM additionally replayed its whole WAL into a memtable that was
-# already represented on disk, so reads returned every flushed row twice.
-SQL_EMPTY=$(curl -s -m 10 -X POST "$BASE/api/sql" -H 'Content-Type: application/json' \
-  -d '{"query":"CREATE TABLE gate_empty (id INT, sku VARCHAR)"}')
-expect_contains "CREATE TABLE with zero rows" "$SQL_EMPTY" '"status":"success"'
+# The defect lived *across* a restart, so this block stops the server and starts it again on the
+# same data dir. Pre-fix on LSM_TREE/B_TREE, replayed WAL records were re-applied into a memtable
+# that was already represented on disk, so reads returned every flushed document twice.
 CAT_BEFORE=$(curl -s -m 5 "$BASE/api/collections")
-expect_contains "catalog lists the empty table before restart" "$CAT_BEFORE" '"name":"gate_empty"'
-ROWS_BEFORE=$(curl -s -m 10 -X POST "$BASE/api/sql" -H 'Content-Type: application/json' \
-  -d '{"query":"SELECT * FROM products"}' | tr -d ' ' | grep -o '"rowCount":[0-9]*' | head -1)
+expect_contains "the seeded collection is listed before restart" "$CAT_BEFORE" '"name":"gateq"'
+ROWS_BEFORE=$(curl -s -m 10 -X POST "$BASE/api/collections/products/query" -H 'Content-Type: application/json' \
+  -d '{"filter":{}}' | tr -d ' ' | grep -o '"id":' | wc -l | tr -d ' ')
 DOCS_BEFORE=$(curl -s -m 5 "$BASE/api/collections/products" | tr -d ' ' | grep -o '"id":' | wc -l | tr -d ' ')
 
 # R-64: resolving a collection on a read is not a write — probe it before the restart
@@ -645,25 +640,26 @@ if stop_server "graceful"; then
     GRACEFUL_RESTART_OK=1
     CAT_AFTER=$(curl -s -m 5 "$BASE/api/collections")
     case "$CAT_AFTER" in
-      *'"name":"gate_empty"'*) pass "the empty table is still in the catalog after a restart" ;;
-      *) fail "the empty table vanished across the restart: $CAT_AFTER" ;;
+      *'"name":"gateq"'*) pass "the seeded collection is still in the catalog after a restart" ;;
+      *) fail "the seeded collection vanished across the restart: $CAT_AFTER" ;;
     esac
-    EMPTY_SELECT=$(curl -s -m 10 -X POST "$BASE/api/sql" -H 'Content-Type: application/json' \
-      -d '{"query":"SELECT * FROM gate_empty"}')
-    case "$EMPTY_SELECT" in
-      *'"rowCount":0'*) pass "SELECT on the empty table answers 0 rows, not \"does not exist\"" ;;
-      *) fail "SELECT on the recreated table failed: $(echo "$EMPTY_SELECT" | head -c 160)" ;;
-    esac
-    ROWS_AFTER=$(curl -s -m 10 -X POST "$BASE/api/sql" -H 'Content-Type: application/json' \
-      -d '{"query":"SELECT * FROM products"}' | tr -d ' ' | grep -o '"rowCount":[0-9]*' | head -1)
-    if [ -n "$ROWS_BEFORE" ] && [ "$ROWS_BEFORE" = "$ROWS_AFTER" ]; then
-      pass "SELECT returns the same row count after a restart ($ROWS_AFTER)"
+    GHOST_AFTER=$(curl -s -m 10 -o /dev/null -w '%{http_code}' -X POST "$BASE/api/collections/gate_missing_t/query" \
+      -H 'Content-Type: application/json' -d '{"filter":{}}')
+    if [ "$GHOST_AFTER" = "404" ]; then
+      pass "the unknown collection is still unknown after the restart (reads never materialise)"
     else
-      fail "SELECT returned $ROWS_AFTER after the restart but $ROWS_BEFORE before it — rows must survive exactly once"
+      fail "the unknown collection answered $GHOST_AFTER after the restart (want 404) — a read created it"
+    fi
+    ROWS_AFTER=$(curl -s -m 10 -X POST "$BASE/api/collections/products/query" -H 'Content-Type: application/json' \
+      -d '{"filter":{}}' | tr -d ' ' | grep -o '"id":' | wc -l | tr -d ' ')
+    if [ -n "$ROWS_BEFORE" ] && [ "$ROWS_BEFORE" = "$ROWS_AFTER" ]; then
+      pass "the document query returns the same count after a restart ($ROWS_AFTER)"
+    else
+      fail "the document query returned $ROWS_AFTER after the restart but $ROWS_BEFORE before it — documents must survive exactly once"
     fi
     DOCS_AFTER=$(curl -s -m 5 "$BASE/api/collections/products" | tr -d ' ' | grep -o '"id":' | wc -l | tr -d ' ')
     if [ "$DOCS_BEFORE" = "$DOCS_AFTER" ]; then
-      pass "the documents endpoint agrees with SELECT after a restart ($DOCS_AFTER documents)"
+      pass "the documents endpoint agrees with the query after a restart ($DOCS_AFTER documents)"
     else
       fail "documents endpoint returned $DOCS_AFTER documents after the restart but $DOCS_BEFORE before it"
     fi
@@ -738,6 +734,26 @@ if stop_server "kill -9"; then
       fail "$PAD_BAD of $((PAD_OK + PAD_BAD)) recovered documents came back truncated"
     fi
   fi
+fi
+
+echo
+echo "== the SHIPPED console keeps the collection picker truthful =="
+# The picker chips are the panel's source of truth for "which collections exist".
+# Round-2 live review found the picker going stale after same-panel mutations
+# (a first insert kept showing "No collections yet" until re-entry or ⟳) — a
+# JS regression no HTTP check can see. Assert the wiring inside the artifact the
+# user actually downloads, not just the working tree.
+if ! command -v unzip >/dev/null 2>&1; then
+  fail "unzip not available — cannot inspect the shipped static/js/console.js"
+else
+  JS=$(unzip -p "$JAR" static/js/console.js 2>/dev/null)
+  fn_body() { echo "$JS" | awk "/^(async )?function $1\\(/,/^}/"; }
+  for f in insertDoc dropDocs cleanupExpired refreshCollections; do
+    case "$(fn_body "$f")" in
+      *loadColPicker*) pass "console.js $f() refreshes the collection picker" ;;
+      *) fail "console.js $f() no longer refreshes the collection picker (stale-chip regression)" ;;
+    esac
+  done
 fi
 
 echo

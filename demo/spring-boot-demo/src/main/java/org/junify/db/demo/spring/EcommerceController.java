@@ -29,7 +29,7 @@ public class EcommerceController {
             @RequestParam(required = false) Double minPrice,
             @RequestParam(required = false) Double maxPrice) {
         if (category != null && minPrice != null && maxPrice != null) {
-            return productService.findProductsWithSql(category, minPrice, maxPrice);
+            return productService.findByCategoryAndPriceRange(category, minPrice, maxPrice);
         }
         if (category != null && !category.isBlank()) {
             return productService.findByCategory(category);

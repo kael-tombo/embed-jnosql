@@ -158,16 +158,18 @@ public class ConsoleTaskSuccessTest {
         Response ok = get("/api/health");
         assertNotNull(ok.correlationId, "successful responses carry X-Correlation-Id");
 
-        Response badSql = post("/api/sql", "{\"query\":\"SELECT * FROM no_such_table\"}");
-        assertEquals(404, badSql.code, "unknown table is a client-state error");
-        assertNotNull(badSql.correlationId, "error responses carry X-Correlation-Id");
-        var errBody = JsonSerde.fromJson(badSql.body, Map.class);
-        assertEquals(badSql.correlationId, errBody.get("correlationId"),
+        // Seed the collection so a malformed filter is the only thing wrong with the request.
+        assertEquals(201, post("/api/collections/probe_collection", "{\"price\":10}").code);
+        Response badQuery = post("/api/collections/probe_collection/query", "{\"price\":{\"$bogus\":1}}");
+        assertEquals(400, badQuery.code, "a malformed filter is a client error");
+        assertNotNull(badQuery.correlationId, "error responses carry X-Correlation-Id");
+        var errBody = JsonSerde.fromJson(badQuery.body, Map.class);
+        assertEquals(badQuery.correlationId, errBody.get("correlationId"),
                 "the id in the error body must match the header, so a user can quote one value");
         assertNotNull(errBody.get("error"));
 
-        System.out.println("[TEST EVIDENCE] error correlation id: " + badSql.correlationId
-                + " body: " + badSql.body);
+        System.out.println("[TEST EVIDENCE] error correlation id: " + badQuery.correlationId
+                + " body: " + badQuery.body);
     }
 
     @Test
@@ -187,23 +189,18 @@ public class ConsoleTaskSuccessTest {
         // 401 permission: no credentials at all
         assertEquals(401, new TestClient(port, null).get("/api/collections", null).code);
 
-        // 400 validation: malformed SQL is a syntax problem
-        Response syntax = post("/api/sql", "{\"query\":\"SELECT FROM WHERE\"}");
-        assertEquals(400, syntax.code);
+        // 400 validation: a malformed filter is refused before it reaches the engine
+        assertEquals(201, post("/api/collections/validation_probe", "{\"price\":10}").code);
+        Response malformed = post("/api/collections/validation_probe/query", "{\"price\":{\"$bogus\":1}}");
+        assertEquals(400, malformed.code);
+        assertNotNull(malformed.correlationId);
 
-        // 400 validation: empty statement is refused before execution
-        assertEquals(400, post("/api/sql", "{\"query\":\"  \"}").code);
+        // 400 validation: a body that is not JSON is a client error, never a 500
+        assertEquals(400, post("/api/collections/validation_probe/query", "{not json").code);
 
-        // constraint violation from the earlier slice must surface as a client error
-        post("/api/sql", "{\"query\":\"CREATE TABLE items (id VARCHAR PRIMARY KEY, qty INT NOT NULL)\"}");
-        assertEquals(200, post("/api/sql", "{\"query\":\"INSERT INTO items (id, qty) VALUES ('i1', 5)\"}").code);
-        Response dup = post("/api/sql", "{\"query\":\"INSERT INTO items (id, qty) VALUES ('i1', 9)\"}");
-        assertEquals(400, dup.code, "duplicate primary key is a client error, not a 500");
-        assertNotNull(dup.correlationId);
-
-        // the rejected write must not have changed anything
-        assertEquals(1, db.sql("SELECT * FROM items").size(),
-                "a rejected statement must leave the table unchanged");
+        // the rejected query must not change the stored data
+        assertEquals(1, db.documentCollection("validation_probe").count(),
+                "a rejected query must leave data unchanged");
     }
 
     // --------------------------------------------------------- shipped assets
@@ -223,11 +220,14 @@ public class ConsoleTaskSuccessTest {
         }
         assertTrue(html.contains("id=\"statusbar\""), "status bar must be present in the layout");
 
-        // SQL workflow affordances added for task success.
-        for (String id : new String[]{"sqlCancel", "sqlRunSel", "sqlExportCsv", "sqlExportJson",
-                "sqlDestructive"}) {
-            assertTrue(html.contains("id=\"" + id + "\""), "SQL Studio is missing control: " + id);
+        // The SQL Studio is gone: no SQL editor, run/export control, or engine selector survives.
+        for (String removed : new String[]{"sqlCancel", "sqlRunSel", "sqlExportCsv", "sqlExportJson",
+                "sqlDestructive", "sqlQuery"}) {
+            assertFalse(html.contains("id=\"" + removed + "\""),
+                    "SQL Studio control must be removed: " + removed);
         }
+        assertFalse(html.contains("/api/sql"), "no shipped asset may call the removed SQL endpoint");
+        assertFalse(js.contains("/api/sql"), "console.js must not call the removed SQL endpoint");
 
         // The named confirmation dialog replaces the browser prompt for destructive actions,
         // because confirm() can state neither the target nor the impact.
@@ -249,11 +249,13 @@ public class ConsoleTaskSuccessTest {
         assertTrue(js.contains("Did data change?"), "error surfaces must state whether data changed");
         assertTrue(js.contains("Correlation ID"), "error surfaces must show the correlation id");
 
-        // Destructive SQL must be detected before it runs.
-        assertTrue(js.contains("destructiveReason"), "destructive-statement detection must exist");
+        // SQL-specific destructive-statement detection must be gone; the named confirmation
+        // dialog (asserted above) is what guards the remaining destructive operations.
+        assertFalse(js.contains("destructiveReason"),
+                "SQL destructive-statement detection must be removed with the SQL product");
 
-        System.out.println("[TEST EVIDENCE] shipped assets verified: status bar, destructive SQL guard, "
-                + "export, cancel, named confirmation dialog, explicit state vocabulary");
+        System.out.println("[TEST EVIDENCE] shipped assets verified: status bar, named confirmation "
+                + "dialog, explicit state vocabulary, SQL Studio absent");
     }
 
     // ---------------------------------------------------------------- helpers

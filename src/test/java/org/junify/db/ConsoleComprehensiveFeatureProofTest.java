@@ -20,7 +20,7 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Exhaustive Step-by-Step Validation Test Suite for JunifyDB Web Console UI.
+ * Exhaustive Step-by-Step Validation Test Suite for the JunifyDB NoSQL Web Console UI.
  * Exercises and proves all 18 features and subsystems step-by-step with concrete evidence.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -42,7 +42,7 @@ public class ConsoleComprehensiveFeatureProofTest {
 
         PROOF_LOG.append("# JunifyDB Web Console UI — Exhaustive Validation Proof Matrix\n\n");
         PROOF_LOG.append("**Execution Timestamp**: ").append(new Date()).append("\n\n");
-        PROOF_LOG.append("**Target Environment**: Embedded JunifyDB Server (Dual-Engine ANSI SQL + NoSQL)\n\n");
+        PROOF_LOG.append("**Target Environment**: Embedded JunifyDB NoSQL Server (Document + Key-Value)\n\n");
         PROOF_LOG.append("| Step | Feature / Subsystem | Method | Endpoint | HTTP Status | Latency | Validation Proof |\n");
         PROOF_LOG.append("|---|---|---|---|---|---|---|\n");
 
@@ -346,53 +346,44 @@ public class ConsoleComprehensiveFeatureProofTest {
                 "Created, verified read, updated price to 1499.99, deleted and confirmed 404");
     }
 
-    // --- STEP 8: ANSI SQL Studio Query Execution ---
+    // --- STEP 8: Document Filtered Query ---
     @Test
     @Order(8)
-    @DisplayName("Step 8: ANSI SQL Studio Query Execution")
-    void step08_sqlStudioExecution() throws Exception {
-        // Seed a document
+    @DisplayName("Step 8: Document Filtered Query")
+    void step08_documentFilteredQuery() throws Exception {
+        // Seed two documents with distinguishable prices.
         call("POST", "api/collections/items", JsonSerde.toJson(Map.of("id", "it-1", "name", "Mechanical Keyboard", "price", 89.50)), true, true);
+        call("POST", "api/collections/items", JsonSerde.toJson(Map.of("id", "it-2", "name", "Cheap Mouse", "price", 19.99)), true, true);
 
-        Map<String, Object> sqlPayload = Map.of("query", "SELECT * FROM items");
-        ResponseRecord resSql = call("POST", "api/sql", JsonSerde.toJson(sqlPayload), true, true);
-        assertEquals(200, resSql.statusCode);
+        // POST /api/collections/{name}/query applies a field predicate server-side.
+        ResponseRecord res = call("POST", "api/collections/items/query",
+                JsonSerde.toJson(Map.of("price", Map.of("$gt", 50))), true, true);
+        assertEquals(200, res.statusCode);
+        assertTrue(res.body.contains("Mechanical Keyboard"), "matching document must be returned: " + res.body);
+        assertFalse(res.body.contains("Cheap Mouse"), "non-matching document must be excluded: " + res.body);
 
-        Map<?, ?> result = JsonSerde.fromJson(resSql.body, Map.class);
-        assertEquals("success", result.get("status"));
-        assertNotNull(result.get("columns"));
-        assertNotNull(result.get("rows"));
-        assertTrue(((Number) result.get("rowCount")).intValue() >= 1);
-        assertNotNull(result.get("executionTimeMs"));
-
-        recordProof(8, "ANSI SQL Studio", "POST", "api/sql", resSql,
-                "Executed SELECT * FROM items in " + result.get("executionTimeMs") + "ms; columns & rows returned");
+        recordProof(8, "Document Filtered Query", "POST", "api/collections/items/query", res,
+                "Filtered documents by a field predicate; only the matching document was returned");
     }
 
-    // --- STEP 9: SQL Studio DDL / DML Lifecycle ---
+    // --- STEP 9: Document Collection Stats & Cleanup ---
     @Test
     @Order(9)
-    @DisplayName("Step 9: SQL Studio DDL/DML Lifecycle")
-    void step09_sqlStudioDdlDml() throws Exception {
-        // 1. CREATE TABLE
-        ResponseRecord resCreate = call("POST", "api/sql", JsonSerde.toJson(Map.of("query", "CREATE TABLE employees (id VARCHAR PRIMARY KEY, name VARCHAR, salary DOUBLE)")), true, true);
-        assertEquals(200, resCreate.statusCode);
+    @DisplayName("Step 9: Document Collection Stats & Cleanup")
+    void step09_collectionStatsAndCleanup() throws Exception {
+        call("POST", "api/collections/stats_probe", JsonSerde.toJson(Map.of("id", "s-1", "v", 1)), true, true);
 
-        // 2. INSERT INTO
-        ResponseRecord resInsert = call("POST", "api/sql", JsonSerde.toJson(Map.of("query", "INSERT INTO employees (id, name, salary) VALUES ('emp-1', 'Alice Johnson', 95000.0)")), true, true);
-        assertEquals(200, resInsert.statusCode);
+        ResponseRecord res = call("GET", "api/collections/stats_probe/stats", null, true, false);
+        assertEquals(200, res.statusCode);
+        assertTrue(res.body.contains("count"), "stats must report the document count: " + res.body);
+        assertTrue(res.body.contains("storageEngine"), "stats must report the storage engine: " + res.body);
 
-        // 3. SELECT WHERE
-        ResponseRecord resSelect = call("POST", "api/sql", JsonSerde.toJson(Map.of("query", "SELECT id, name, salary FROM employees WHERE salary > 90000")), true, true);
-        assertEquals(200, resSelect.statusCode);
-        assertTrue(resSelect.body.contains("Alice Johnson"));
+        ResponseRecord resCleanup = call("POST", "api/collections/stats_probe/cleanup", null, true, true);
+        assertTrue(resCleanup.statusCode == 200 || resCleanup.statusCode == 204,
+                "cleanup must succeed: " + resCleanup.statusCode + " " + resCleanup.body);
 
-        // 4. DROP TABLE
-        ResponseRecord resDrop = call("POST", "api/sql", JsonSerde.toJson(Map.of("query", "DROP TABLE employees")), true, true);
-        assertEquals(200, resDrop.statusCode);
-
-        recordProof(9, "SQL DDL/DML Engine", "POST", "api/sql", resSelect,
-                "Full lifecycle: CREATE TABLE, INSERT, SELECT WHERE, DROP TABLE executed cleanly");
+        recordProof(9, "Collection Stats & Cleanup", "GET/POST", "api/collections/stats_probe/{stats,cleanup}", res,
+                "Reported collection stats (count, storage engine) and ran the expired-document cleanup");
     }
 
     // --- STEP 10: NoSQL Query Engine ---

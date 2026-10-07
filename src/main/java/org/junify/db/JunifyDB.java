@@ -35,7 +35,6 @@ public class JunifyDB implements Closeable {
     private final EventBus eventBus;
     private final DatabaseMetrics metrics;
     private final CDCManager cdcManager;
-    private final org.junify.db.sql.engine.SqlEngine sqlEngine;
     private volatile boolean closed;
     private JunifyDBServer server;
 
@@ -60,7 +59,6 @@ public class JunifyDB implements Closeable {
         this.eventBus.onSystem(EventBus.EventType.AFTER_INSERT, cdcListener);
         this.eventBus.onSystem(EventBus.EventType.AFTER_UPDATE, cdcListener);
         this.eventBus.onSystem(EventBus.EventType.AFTER_DELETE, cdcListener);
-        this.sqlEngine = new org.junify.db.sql.engine.SqlEngine(this);
         this.closed = false;
     }
 
@@ -132,9 +130,9 @@ public class JunifyDB implements Closeable {
             eventBus.emit(EventBus.EventType.COLLECTION_CREATED, n);
             var collection = new DocumentCollection(n, engine, eventBus, metrics, null, config.dataDir());
             collection.loadIndexes();
-            // R-62: a collection's existence is durable from the moment it is created, so
-            // `CREATE TABLE t (id INT)` is still there after a restart even though it holds
-            // no rows. Engines with no empty-collection identity (see the SPI contract) are
+            // A collection's existence is durable from the moment it is created, so an
+            // empty collection is still there after a restart even though it holds no
+            // documents. Engines with no empty-collection identity (see the SPI contract) are
             // reported by ensureCollection() returning false, which costs the collection its
             // durability but is stated in the defect register rather than hidden.
             try {
@@ -156,7 +154,7 @@ public class JunifyDB implements Closeable {
 
     /**
      * Re-exposes collections that exist in the storage engine from a previous
-     * run. Without this, data persisted by an earlier process (e.g. via SQL)
+     * run. Without this, data persisted by an earlier process (via any model)
      * is invisible to {@link #documentCollection(String)} callers after a
      * restart until they happen to request the collection by name.
      *
@@ -165,7 +163,7 @@ public class JunifyDB implements Closeable {
      * empty set and which only {@code FileEngine} overrides. On LSM_TREE and
      * B_TREE the data survived a restart on disk (WAL/SSTables, index file) but
      * was <b>unreachable through every listing API</b>: {@code /api/collections}
-     * showed an empty catalog, SQL and backups saw nothing, and the data came
+     * showed an empty catalog, backups and the console saw nothing, and the data came
      * back only if a client happened to request the exact collection name.
      * Enumerate {@code collections()} instead — the live-and-persisted set that
      * every engine implements — with {@code collectionNames()} as a fallback
@@ -191,23 +189,10 @@ public class JunifyDB implements Closeable {
     }
 
     /**
-     * Executes an SQL statement (JunifyDB's built-in SQL dialect) against the relational engine.
-     */
-    public org.junify.db.sql.SqlResultSet sql(String sql, Object... params) {
-        checkOpen();
-        return sqlEngine.execute(sql, params);
-    }
-
-    /**
-     * Executes an SQL query (built-in dialect) and maps the result rows to an entity class.
-     */
-    public <T> java.util.List<T> sql(String sql, Class<T> entityClass, Object... params) {
-        checkOpen();
-        return sqlEngine.execute(sql, params).mapTo(entityClass);
-    }
-
-    /**
      * Starts a fluent, type-safe entity query builder for the given entity class.
+     *
+     * <p>Predicates are evaluated by the native document engine — there is no
+     * separate query engine behind this API.</p>
      */
     public <T> org.junify.db.api.EntityQuery<T> from(Class<T> entityClass) {
         checkOpen();
@@ -232,10 +217,6 @@ public class JunifyDB implements Closeable {
                 }
             }
         }
-    }
-
-    public org.junify.db.sql.engine.SqlEngine sqlEngine() {
-        return sqlEngine;
     }
 
     /**
@@ -287,11 +268,10 @@ public class JunifyDB implements Closeable {
     public Transaction beginTransaction() {
         checkOpen();
         metrics.recordTransaction();
-        // R-59: transactions write straight to the engine, so the catalog never learned about
-        // the collections they touched and getCollectionNames() omitted them — which then broke
-        // SQL reads (R-48 makes a read on an unlisted collection a hard 404) and made committed
-        // data invisible to backups and the console. The transaction reports its collections on
-        // successful commit.
+        // Transactions write straight to the engine, so the catalog never learned about
+        // the collections they touched and getCollectionNames() omitted them — which then made
+        // committed data invisible to backups, listings, and the console. The transaction
+        // reports its collections on successful commit.
         return new Transaction(engine, eventBus, metrics, mvcc).onCommit(this::registerCommittedCollection);
     }
 

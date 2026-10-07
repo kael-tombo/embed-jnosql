@@ -1,11 +1,9 @@
 name: Deploy GitHub Pages
 
 on:
-  # Manual-only: the live site deploys from the `gh-pages` branch (built-in
-  # "pages build and deployment"), so an automatic Actions deployment fails
-  # with "deployment not allowed" and shows a permanent red X on every push
-  # (release audit 53-WC-08). Switch the repo's Pages source to "GitHub
-  # Actions" first, then run this workflow from the Actions tab to adopt it.
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:

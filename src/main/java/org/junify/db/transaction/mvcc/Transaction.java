@@ -37,8 +37,8 @@ public class Transaction implements AutoCloseable {
      * <p><b>R-59 (2026-09-22):</b> a transactional write goes straight to the storage engine
      * through {@link TransactionalCollection}, bypassing the database's in-memory collection
      * catalog. Data committed through a transaction was therefore invisible to
-     * {@code JunifyDB.getCollectionNames()} — and so to SQL reads, backups and the console's
-     * catalog — until some unrelated call happened to resolve the collection by name. The
+     * {@code JunifyDB.getCollectionNames()} — and so to backups and the console's catalog —
+     * until some unrelated call happened to resolve the collection by name. The
      * names gathered here are handed to the owning database on a successful commit.</p>
      */
     private final Set<String> touchedCollections = new LinkedHashSet<>();

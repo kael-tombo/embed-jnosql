@@ -9,6 +9,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed — the product is NoSQL only
+
+JunifyDB no longer ships a relational database, a SQL engine, or a JDBC driver. The product is
+one embedded NoSQL database (Document + Key-Value, plus wide-column and experimental vector
+surfaces). Removed in this change:
+
+- The SQL engine: parser/lexer/AST, relational execution (SELECT/INSERT/UPDATE/DELETE/JOIN/
+  GROUP BY), table catalogs, and relational constraints (PRIMARY KEY/FOREIGN KEY/UNIQUE/
+  CHECK/NOT NULL).
+- The JDBC driver and its `META-INF/services/java.sql.Driver` registration.
+- The Jakarta Persistence provider (`JunifyPersistence`, `JunifyEntityManager`, JPQL).
+  Annotation mapping for `jakarta.persistence.*` / `org.hibernate.annotations.*` onto
+  documents is retained; the `EntityManager`/JPQL runtime is not.
+- Public API: `JunifyDB.sql(...)` and `JunifyDB.sqlEngine()`.
+- Console: `/api/sql`, `/api/sql/schema`, the SQL Studio panel, and the SQL/NoSQL engine
+  selector. A `#sql` deep link now falls back to a valid NoSQL panel.
+- Docs, examples, and tests that demonstrated SQL.
+
+### Changed
+
+- `db.from(Entity.class)` (fluent entity query) and `JunifyRepository` finders now compile to
+  native document `Query` predicates instead of SQL text.
+- Console navigation describes data models rather than an engine split.
+
+### Added
+
+- `Query.matching(Predicate<Document>)` and `JunifyRepository.findByQuery(Query)` as the
+  native extension points for the fluent/entity layers.
+- Migration and removal documentation: `docs/release-audit/refocus/`.
+
+> Historical entries below describe SQL-enabled builds that predate this removal. They are kept
+> for the record and marked obsolete where they reference SQL, JDBC, or JPA.
+
+### Fixed (historical)
+
 ### Fixed
 - **Console API correctness** (found by probing the running server; defect register R-31…R-52,
   evidence in `docs/release-audit/`):

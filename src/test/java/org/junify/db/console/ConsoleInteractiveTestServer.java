@@ -19,7 +19,7 @@ import java.util.Map;
 /**
  * Standalone runner for live Console UI validation and browser testing.
  * Binds on port 9095 (or fallback) with security and console enabled,
- * and seeds initial multi-model data across Document, SQL, KV, Column, and Vector engines.
+ * and seeds initial multi-model data across Document, KV, Column, and Vector data models.
  */
 public class ConsoleInteractiveTestServer {
 
@@ -116,14 +116,17 @@ public class ConsoleInteractiveTestServer {
         cf.put("host-srv-01", "ram_used_mb", "4096");
         cf.put("host-srv-01", "os_kernel", "Linux 6.8-generic");
 
-        // Seed SQL Table
+        // Seed Document Collection
         try {
-            db.sql("CREATE TABLE inventory (id VARCHAR(20), item_name VARCHAR(100), qty INT, unit_price DOUBLE)");
-            db.sql("INSERT INTO inventory (id, item_name, qty, unit_price) VALUES ('INV-01', 'High-Speed NVMe Drive', 150, 89.99)");
-            db.sql("INSERT INTO inventory (id, item_name, qty, unit_price) VALUES ('INV-02', 'DDR5 32GB RAM Stick', 300, 119.50)");
-            db.sql("INSERT INTO inventory (id, item_name, qty, unit_price) VALUES ('INV-03', '4K UHD IPS Monitor', 75, 299.00)");
+            var inventory = db.documentCollection("inventory");
+            inventory.insert(org.junify.db.nosql.document.Document.of("item_name", "High-Speed NVMe Drive")
+                    .add("qty", 150).add("unit_price", 89.99).id("INV-01"));
+            inventory.insert(org.junify.db.nosql.document.Document.of("item_name", "DDR5 32GB RAM Stick")
+                    .add("qty", 300).add("unit_price", 119.50).id("INV-02"));
+            inventory.insert(org.junify.db.nosql.document.Document.of("item_name", "4K UHD IPS Monitor")
+                    .add("qty", 75).add("unit_price", 299.00).id("INV-03"));
         } catch (Exception e) {
-            System.err.println("SQL seed note: " + e.getMessage());
+            System.err.println("Document seed note: " + e.getMessage());
         }
 
         // Record server details to a marker file

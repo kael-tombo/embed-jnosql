@@ -93,7 +93,7 @@ class JunifyRepositoryTest {
     }
 
     @Test
-    @DisplayName("Repository: findBy field and custom query")
+    @DisplayName("Repository: findBy field and native entity range query")
     void testRepositoryQueries() {
         repo.save(new Book("B-1", "Design Patterns", "GoF", 55.0));
         repo.save(new Book("B-2", "Refactoring", "Martin Fowler", 50.0));
@@ -103,7 +103,10 @@ class JunifyRepositoryTest {
         assertEquals(1, byAuthor.size());
         assertEquals("Refactoring", byAuthor.get(0).getTitle());
 
-        List<Book> expensive = repo.query("SELECT * FROM books WHERE price >= ? ORDER BY price DESC", 55.0);
+        List<Book> expensive = db.from(Book.class)
+                .where("price >= ?", 55.0)
+                .orderBy("price DESC")
+                .list();
         assertEquals(2, expensive.size());
         assertEquals("Domain-Driven Design", expensive.get(0).getTitle());
         assertEquals("Design Patterns", expensive.get(1).getTitle());

@@ -72,7 +72,8 @@ class BTreeAutoFlushPersistenceTest {
                 .build()) {
             db.documentCollection("invoices").insert(
                     org.junify.db.nosql.document.Document.of("sku", "B-1"));
-            db.sql("INSERT INTO ledger (id, note) VALUES (1, 'first')");
+            db.documentCollection("ledger").insert(
+                    org.junify.db.nosql.document.Document.of("note", "first").id("1"));
             waitForAutoFlush();
         }
 
@@ -82,8 +83,8 @@ class BTreeAutoFlushPersistenceTest {
                 .build()) {
             assertEquals(1, reopened.documentCollection("invoices").count(),
                     "document rows must survive a B_TREE restart");
-            assertEquals(1, reopened.sql("SELECT * FROM ledger").size(),
-                    "SQL rows must survive a B_TREE restart");
+            assertEquals(1, reopened.documentCollection("ledger").count(),
+                    "a second collection's rows must survive a B_TREE restart");
         }
     }
 

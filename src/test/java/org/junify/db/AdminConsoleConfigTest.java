@@ -2,6 +2,7 @@ package org.junify.db;
 
 import org.junify.db.config.ConfigurationResolver;
 import org.junify.db.config.ConsoleConfig;
+import org.junify.db.nosql.document.Document;
 import org.junify.db.config.SecurityConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -62,6 +63,28 @@ class AdminConsoleConfigTest {
 
         // Invalid scheme
         assertThrows(IllegalArgumentException.class, () -> ConsoleConfig.builder().scheme("ftp").build());
+    }
+
+    @Test
+    @DisplayName("Console is opt-in: the core starts no HTTP server by default")
+    void testNoHttpServerByDefault() {
+        // Runtime level: opening an embedded database binds no socket and still serves data.
+        JunifyDB db = JunifyDB.inMemory();
+        try {
+            // Config level: the default configuration must not enable the console.
+            assertFalse(db.config().consoleConfig().enabled(),
+                    "the embedded console must be explicitly enabled");
+            assertNull(db.consoleServer(), "in-memory embedding must not start an HTTP server");
+            assertNull(db.consoleUrl());
+            assertEquals(-1, db.consolePort());
+
+            db.documentCollection("no_console_probe")
+                    .insert(Document.of("name", "value").id("probe-1"));
+            assertEquals(1, db.documentCollection("no_console_probe").count(),
+                    "core read/write must work without any console");
+        } finally {
+            db.close();
+        }
     }
 
     @Test

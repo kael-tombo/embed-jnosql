@@ -4,19 +4,19 @@ import org.junify.db.JunifyDB;
 import org.junify.db.demo.query.model.Customer;
 import org.junify.db.demo.query.service.AnalyticsQueryService;
 import org.junify.db.nosql.document.Document;
-import org.junify.db.sql.SqlResultSet;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Automated test suite validating multi-table JOINs, aggregations, GROUP BY,
- * range/pattern filters, fluent entity queries, and NoSQL criteria.
+ * Automated test suite validating document predicate queries, aggregation helpers,
+ * range/substring filters, fluent entity queries, and compound document criteria.
  */
 public class AdvancedQueriesDemoTest {
 
@@ -38,50 +38,49 @@ public class AdvancedQueriesDemoTest {
     }
 
     @Test
-    @DisplayName("QUERY-01: Multi-Table ANSI SQL JOIN (customers x orders)")
-    void testMultiTableJoin() {
-        SqlResultSet rs = service.executeCustomerOrdersJoin();
-        assertNotNull(rs);
-        assertFalse(rs.isEmpty(), "JOIN result should not be empty");
-        assertTrue(rs.getColumnNames().contains("id"));
-        assertTrue(rs.getColumnNames().contains("name"));
-        assertTrue(rs.getColumnNames().contains("tier"));
-        assertTrue(rs.getColumnNames().contains("totalAmount"));
+    @DisplayName("QUERY-01: completed orders are filtered, sorted, and enriched")
+    void testCompletedOrdersEnriched() {
+        List<Map<String, Object>> rows = service.findCompletedOrdersEnriched();
+        assertNotNull(rows);
+        assertEquals(3, rows.size(), "ord-101, ord-102, ord-104 are COMPLETED");
 
-        // Verify order descending by totalAmount
-        double prevAmount = Double.MAX_VALUE;
-        for (var row : rs.getRows()) {
-            double amt = ((Number) row.get("totalAmount")).doubleValue();
-            assertTrue(amt <= prevAmount, "Rows should be ordered descending by totalAmount");
-            prevAmount = amt;
+        // Engine-side sort: totalAmount DESC.
+        double prev = Double.MAX_VALUE;
+        for (Map<String, Object> row : rows) {
+            double amount = ((Number) row.get("totalAmount")).doubleValue();
+            assertTrue(amount <= prev, "rows must be ordered descending by totalAmount");
+            prev = amount;
+            assertNotNull(row.get("customerName"), "each order is enriched with its customer name");
         }
+        assertEquals("Charlie Brown", rows.get(0).get("customerName"));
     }
 
     @Test
-    @DisplayName("QUERY-02: SQL Aggregations COUNT, AVG, MIN, MAX, SUM")
-    void testCategoryAggregations() {
-        SqlResultSet rs = service.executeCategoryAggregations();
-        assertNotNull(rs);
-        assertEquals(1, rs.size());
+    @DisplayName("QUERY-02: document aggregation helpers count/min/max/sum/avg")
+    void testCatalogAggregations() {
+        Map<String, Object> stats = service.catalogPriceStats();
+        assertEquals(6L, ((Number) stats.get("count")).longValue());
+        assertEquals(89.99, ((Number) stats.get("min")).doubleValue(), 0.01);
+        assertEquals(2499.99, ((Number) stats.get("max")).doubleValue(), 0.01);
+        assertTrue(((Number) stats.get("avg")).doubleValue() > 0);
 
-        var row = rs.first();
-        assertEquals(6L, row.getLong("COUNT(*)"));
-        assertTrue(row.getDouble("AVG(price)") > 0);
-        assertEquals(89.99, row.getDouble("MIN(price)"), 0.01);
-        assertEquals(2499.99, row.getDouble("MAX(price)"), 0.01);
+        @SuppressWarnings("unchecked")
+        Map<Object, Long> byCategory = (Map<Object, Long>) stats.get("byCategory");
+        assertEquals(2L, byCategory.get("Hardware"));
+        assertEquals(3L, byCategory.get("Peripherals"));
+        assertEquals(1L, byCategory.get("Software"));
     }
 
     @Test
-    @DisplayName("QUERY-03: SQL BETWEEN and Wildcard LIKE pattern matching")
-    void testBetweenAndWildcardLike() {
-        SqlResultSet rs = service.executeBetweenAndLikeQuery(1000.0, 3000.0, "%Laptop%");
-        assertNotNull(rs);
+    @DisplayName("QUERY-03: inclusive price range + name substring predicate")
+    void testRangeAndSubstringFilter() {
+        List<Document> rs = service.findCatalogInPriceRangeContaining(1000.0, 3000.0, "Laptop");
         assertEquals(2, rs.size(), "Should match Developer Laptop Pro and Gaming Laptop X");
 
-        for (var row : rs.getRows()) {
-            String name = (String) row.get("name");
+        for (Document doc : rs) {
+            String name = String.valueOf(doc.getRaw("name"));
             assertTrue(name.contains("Laptop"));
-            double price = ((Number) row.get("price")).doubleValue();
+            double price = ((Number) doc.getRaw("price")).doubleValue();
             assertTrue(price >= 1000.0 && price <= 3000.0);
         }
     }

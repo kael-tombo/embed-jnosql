@@ -4,7 +4,6 @@ import org.junify.db.nosql.document.Document;
 import org.junify.db.nosql.document.QueryParser;
 import org.junify.db.nosql.document.Query;
 import org.junify.db.nosql.query.QueryBuilder;
-import org.junify.db.core.cache.QueryCache;
 import org.junify.db.core.cache.QueryResultCache;
 import org.junify.db.core.util.CircuitBreaker;
 import org.junify.db.index.TextIndex;
@@ -468,97 +467,6 @@ class CoverageExtensionTest {
         cache.put("k3", List.of(docC)); // triggers eviction
         // At least k3 should be present
         assertNotNull(cache.get("k3"));
-    }
-
-    // =========================================================================
-    // QueryCache — SQL result cache
-    // =========================================================================
-
-    @Test
-    void queryCache_putAndGet() {
-        var cache = new QueryCache(100, 60_000);
-        cache.put("SELECT * FROM users", Map.of("col", "val"));
-        var result = cache.get("SELECT * FROM users");
-        assertTrue(result.isPresent());
-        assertEquals("val", result.get().get("col"));
-    }
-
-    @Test
-    void queryCache_miss_returnsEmpty() {
-        var cache = new QueryCache(100, 60_000);
-        assertTrue(cache.get("nonexistent").isEmpty());
-    }
-
-    @Test
-    void queryCache_invalidate() {
-        var cache = new QueryCache(100, 60_000);
-        cache.put("SELECT * FROM users", Map.of("x", 1));
-        cache.invalidate("users");
-        assertTrue(cache.get("SELECT * FROM users").isEmpty());
-    }
-
-    @Test
-    void queryCache_invalidatePattern() {
-        var cache = new QueryCache(100, 60_000);
-        cache.put("SELECT * FROM orders", Map.of("x", 1));
-        cache.put("SELECT * FROM users", Map.of("y", 2));
-        cache.invalidatePattern("orders");
-        assertTrue(cache.get("SELECT * FROM orders").isEmpty());
-        assertTrue(cache.get("SELECT * FROM users").isPresent());
-    }
-
-    @Test
-    void queryCache_clear() {
-        var cache = new QueryCache(100, 60_000);
-        cache.put("k1", Map.of("a", 1));
-        cache.clear();
-        assertTrue(cache.get("k1").isEmpty());
-    }
-
-    @Test
-    void queryCache_putWithSqlAndRows() {
-        var cache = new QueryCache(100, 60_000);
-        List<Map<String, Object>> rows = List.of(Map.of("id", "1", "name", "Alice"));
-        cache.put("q1", "SELECT * FROM users", rows, List.of("id", "name"));
-        // Stored under the SQL key
-        assertTrue(cache.get("SELECT * FROM users").isPresent());
-    }
-
-    @Test
-    void queryCache_stats() {
-        var cache = new QueryCache(100, 60_000);
-        cache.put("k", Map.of("x", 1));
-        var stats = cache.getStats();
-        assertNotNull(stats);
-        assertTrue(stats.containsKey("size"));
-        assertTrue(stats.containsKey("hits"));
-        assertTrue(stats.containsKey("misses"));
-    }
-
-    @Test
-    void queryCache_getCachedQueries() {
-        var cache = new QueryCache(100, 60_000);
-        cache.put("SELECT 1", Map.of("v", 1));
-        var keys = cache.getCachedQueries();
-        assertTrue(keys.contains("SELECT 1"));
-    }
-
-    @Test
-    void queryCache_ttlExpiry() throws InterruptedException {
-        var cache = new QueryCache(100, 50); // 50ms TTL
-        cache.put("k", Map.of("v", 1));
-        assertTrue(cache.get("k").isPresent());
-        Thread.sleep(100);
-        assertTrue(cache.get("k").isEmpty());
-    }
-
-    @Test
-    void queryCache_evictsWhenFull() {
-        var cache = new QueryCache(2, 60_000);
-        cache.put("k1", Map.of("v", 1));
-        cache.put("k2", Map.of("v", 2));
-        cache.put("k3", Map.of("v", 3)); // triggers eviction
-        assertTrue(cache.get("k3").isPresent());
     }
 
     // =========================================================================

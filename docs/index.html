@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>JunifyDB — The Embedded Dual-Engine Database for Java</title>
-  <meta name="description" content="JunifyDB is the embedded dual-engine database for Java: a Relational SQL Engine and a Non-Relational NoSQL Engine (documents, key-value, Redis-style structures, wide-column) in a single JAR. Zero Docker. Zero daemon. Spring Boot, Quarkus, Micronaut ready." />
-  <meta name="keywords" content="JunifyDB, embedded database, Java, NoSQL, SQL, relational, multi-model, Spring Boot, Quarkus, Micronaut, JNoSQL, JPA" />
-  <meta property="og:title" content="JunifyDB — The Embedded Dual-Engine Database for Java" />
-  <meta property="og:description" content="Relational SQL Engine + Non-Relational NoSQL Engine in a single JAR. Documents, Key-Value, Redis-style structures, Wide-Column — zero Docker, zero daemon." />
+  <title>JunifyDB — The Embedded NoSQL Database for Java</title>
+  <meta name="description" content="JunifyDB is the embedded NoSQL database for the JVM: Document and Key-Value models (plus wide-column and experimental vector) in a single pure-Java JAR. In-memory for tests, durable file storage for applications. Zero Docker. Zero daemon. Spring Boot, Quarkus, Micronaut ready." />
+  <meta name="keywords" content="JunifyDB, embedded database, Java, NoSQL, document database, key-value, multi-model, Spring Boot, Quarkus, Micronaut, JNoSQL" />
+  <meta property="og:title" content="JunifyDB — The Embedded NoSQL Database for Java" />
+  <meta property="og:description" content="Document + Key-Value NoSQL in a single JAR. Documents, Key-Value, Redis-style structures, Wide-Column — zero Docker, zero daemon." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://armand-ratombotiana.github.io/JunifyDB/" />
   <meta property="og:image" content="https://armand-ratombotiana.github.io/JunifyDB/assets/junifydb-banner.png" />
   <meta property="og:image:width" content="2172" />
   <meta property="og:image:height" content="724" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="JunifyDB — The Embedded Dual-Engine Database for Java" />
-  <meta name="twitter:description" content="Embedded multi-model NoSQL + built-in SQL in a single pure-Java JAR. Zero Docker, zero daemon, zero infrastructure." />
+  <meta name="twitter:title" content="JunifyDB — The Embedded NoSQL Database for Java" />
+  <meta name="twitter:description" content="Embedded multi-model NoSQL in a single pure-Java JAR. Zero Docker, zero daemon, zero infrastructure." />
   <meta name="twitter:image" content="https://armand-ratombotiana.github.io/JunifyDB/assets/junifydb-banner.png" />
 
   <!-- Canonical brand favicons (owner-supplied mark, 2026-09-21) -->
@@ -928,7 +928,7 @@
   <ul class="nav-links">
     <li><a href="#philosophy">Philosophy</a></li>
     <li><a href="#playground">Playground</a></li>
-    <li><a href="#engines">Engines</a></li>
+    <li><a href="#engines">Storage</a></li>
     <li><a href="#frameworks">Frameworks</a></li>
     <li><a href="#benchmarks">Performance</a></li>
     <li><a href="#install">Install</a></li>
@@ -948,7 +948,7 @@
 <div class="mobile-drawer" id="mobileDrawer">
   <a href="#philosophy" onclick="toggleMobileMenu()">Philosophy</a>
   <a href="#playground" onclick="toggleMobileMenu()">Query Playground</a>
-  <a href="#engines" onclick="toggleMobileMenu()">Storage Engines</a>
+  <a href="#engines" onclick="toggleMobileMenu()">Storage Modes</a>
   <a href="#frameworks" onclick="toggleMobileMenu()">Frameworks</a>
   <a href="#benchmarks" onclick="toggleMobileMenu()">Performance</a>
   <a href="#install" onclick="toggleMobileMenu()">Installation</a>
@@ -964,7 +964,7 @@
 
   <!-- Canonical brand row (owner-supplied logo, 2026-09-21) -->
   <div class="hero-mascot-row">
-    <div class="mascot-avatar-wrap" title="JunifyDB — the embedded dual-engine database for Java">
+    <div class="mascot-avatar-wrap" title="JunifyDB — the embedded NoSQL database for Java">
       <div class="mascot-aura"></div>
       <img class="mascot-svg" src="assets/junifydb-logo-512-transparent.png" alt="JunifyDB logo" width="252" height="252" />
     </div>
@@ -979,18 +979,18 @@
   </div>
 
   <h1>
-    <span class="text-white">Two Engines. One JAR.</span><br />
+    <span class="text-white">One Embedded Engine.</span><br />
     <span class="text-gradient">Zero Infrastructure.</span>
   </h1>
 
   <p class="hero-sub">
-    A <strong>Relational SQL Engine</strong> and a <strong>Non-Relational NoSQL Engine</strong> —
-    documents, key-value, Redis-style structures, and wide-column — embedded in your JVM,
-    in a single pure-Java JAR. No Docker, no daemon, no infrastructure.
+    A <strong>document and key-value NoSQL database</strong> — plus Redis-style structures
+    and wide-column — embedded in your JVM in a single pure-Java JAR.
+    No Docker, no daemon, no infrastructure.
   </p>
 
   <p class="hero-tagline">
-    <strong>"JunifyDB is to Document and Key-Value stores what H2 is to Relational databases."</strong>
+    <strong>"JunifyDB is to Document and Key-Value stores what H2 is to embedded databases."</strong>
   </p>
 
   <div class="hero-actions">
@@ -1045,22 +1045,21 @@
       <pre class="code-body" id="heroCode"><code><span class="cmt">// 1. Zero config — starts in milliseconds inside your JVM</span>
 <span class="cls">JunifyDB</span> db = <span class="cls">JunifyDB</span>.<span class="fn">inMemory</span>();
 
-<span class="cmt">// 2. Fluent NoSQL Document API</span>
-db.<span class="fn">collection</span>(<span class="str">"users"</span>).<span class="fn">insert</span>(<span class="cls">Document</span>.<span class="fn">of</span>(
-    <span class="str">"name"</span>, <span class="str">"Judicael"</span>,
-    <span class="str">"role"</span>, <span class="str">"ADMIN"</span>,
-    <span class="str">"tags"</span>, <span class="cls">List</span>.<span class="fn">of</span>(<span class="str">"java"</span>, <span class="str">"nosql"</span>, <span class="str">"embedded"</span>)
-));
+<span class="cmt">// 2. Schemaless documents, nested values, native predicates</span>
+db.<span class="fn">documentCollection</span>(<span class="str">"users"</span>).<span class="fn">insert</span>(
+    <span class="cls">Document</span>.<span class="fn">of</span>(<span class="str">"name"</span>, <span class="str">"Judicael"</span>)
+        .<span class="fn">add</span>(<span class="str">"role"</span>, <span class="str">"ADMIN"</span>)
+        .<span class="fn">add</span>(<span class="str">"tags"</span>, <span class="cls">List</span>.<span class="fn">of</span>(<span class="str">"java"</span>, <span class="str">"nosql"</span>))
+);
 
-<span class="cmt">// 3. In-process Redis-style data structures</span>
-db.<span class="fn">kv</span>().<span class="fn">list</span>(<span class="str">"events"</span>).<span class="fn">push</span>(<span class="str">"user_login"</span>);
-db.<span class="fn">kv</span>().<span class="fn">set</span>(<span class="str">"active_tags"</span>).<span class="fn">add</span>(<span class="str">"embedded"</span>);
+<span class="cmt">// 3. In-process Redis-style structures, same lifecycle</span>
+db.<span class="fn">listBucket</span>(<span class="str">"queue"</span>).<span class="fn">rpush</span>(<span class="str">"queue"</span>, <span class="str">"user_login"</span>);
+db.<span class="fn">setBucket</span>(<span class="str">"active_tags"</span>).<span class="fn">sadd</span>(<span class="str">"active_tags"</span>, <span class="str">"embedded"</span>);
 
-<span class="cmt">// 4. Same data, instant built-in SQL query!</span>
-<span class="cls">SqlResultSet</span> rs = db.<span class="fn">sql</span>(<span class="str">"SELECT name, role FROM users WHERE role = 'ADMIN'"</span>);
-<span class="kw">while</span> (rs.<span class="fn">next</span>()) {
-    <span class="cls">System</span>.out.<span class="fn">println</span>(rs.<span class="fn">getString</span>(<span class="str">"name"</span>));
-}</code></pre>
+<span class="cmt">// 4. Same data, native document query — no SQL, no dialect</span>
+<span class="cls">List</span>&lt;<span class="cls">Document</span>&gt; admins = db.<span class="fn">documentCollection</span>(<span class="str">"users"</span>)
+    .<span class="fn">find</span>(<span class="cls">Query</span>.<span class="fn">eq</span>(<span class="str">"role"</span>, <span class="str">"ADMIN"</span>)
+        .<span class="fn">sortBy</span>(<span class="str">"name"</span>, <span class="cls">Query</span>.<span class="cls">SortOrder</span>.<span class="cls">ASC</span>));</code></pre>
     </div>
   </div>
 </section>
@@ -1069,15 +1068,14 @@ db.<span class="fn">kv</span>().<span class="fn">set</span>(<span class="str">"a
 <section class="playground-section" id="playground">
   <div class="container">
     <div style="text-align: center;">        <span class="section-label">Interactive Playground</span>
-      <h2 class="section-title">One Dataset, <span class="text-gradient">Two Engines</span></h2>
-      <p class="section-desc" style="margin: 0 auto;">Switch between the Non-Relational NoSQL Engine (fluent document criteria) and the Relational SQL Engine (built-in SQL dialect) — both against the same underlying collection.</p>
+      <h2 class="section-title">One Dataset, <span class="text-gradient">One Query API</span></h2>
+      <p class="section-desc" style="margin: 0 auto;">A native document query — predicates, sorting, paging — against the same collection the console edits. The result below is the document engine's own JSON output.</p>
     </div>
 
     <div class="playground-box">
       <div class="playground-nav">
         <div class="playground-tabs">
           <button class="pg-tab active" onclick="switchPlaygroundTab('nosql', this)">📄 NoSQL Document Query</button>
-          <button class="pg-tab" onclick="switchPlaygroundTab('sql', this)">🗄️ SQL Query</button>
         </div>
         <button class="pg-run-btn" onclick="executePlaygroundQuery()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
@@ -1087,17 +1085,17 @@ db.<span class="fn">kv</span>().<span class="fn">set</span>(<span class="str">"a
 
       <div class="playground-grid">
         <div class="pg-editor-panel" id="pgEditor">
-          <div style="color: #64748b; margin-bottom: 8px;">// Fluent Document Query (Type-safe)</div>
-          <div style="color: #fbbf24;">db.collection(<span style="color: #86efac;">"orders"</span>)</div>
-          <div style="padding-left: 20px; color: #ffffff;">.find(Query.where(<span style="color: #86efac;">"status"</span>).eq(<span style="color: #86efac;">"SHIPPED"</span>)</div>
-          <div style="padding-left: 60px; color: #ffffff;">.and(<span style="color: #86efac;">"total"</span>).gte(<span style="color: #f97316;">150.0</span>))</div>
-          <div style="padding-left: 20px; color: #ffffff;">.sort(<span style="color: #86efac;">"createdAt"</span>, Sort.DESC)</div>
-          <div style="padding-left: 20px; color: #ffffff;">.limit(<span style="color: #f97316;">5</span>);</div>
+          <div style="color: #64748b; margin-bottom: 8px;">// Native document query — the real API</div>
+          <div style="color: #fbbf24;">db.<span style="color: #fbbf24;">documentCollection</span>(<span style="color: #86efac;">"orders"</span>)</div>
+          <div style="padding-left: 20px; color: #ffffff;">.find(<span style="color: #fbbf24;">Query</span>.eq(<span style="color: #86efac;">"status"</span>, <span style="color: #86efac;">"SHIPPED"</span>)</div>
+          <div style="padding-left: 60px; color: #ffffff;">.and(<span style="color: #fbbf24;">Query</span>.gte(<span style="color: #86efac;">"total"</span>, <span style="color: #f97316;">150.0</span>))</div>
+          <div style="padding-left: 20px; color: #ffffff;">.sortBy(<span style="color: #86efac;">"createdAt"</span>, <span style="color: #fbbf24;">Query</span>.<span style="color: #fbbf24;">SortOrder</span>.DESC)</div>
+          <div style="padding-left: 20px; color: #ffffff;">.limit(<span style="color: #f97316;">5</span>));</div>
         </div>
 
         <div class="pg-result-panel">
           <div class="pg-result-header">
-            <span>JVM In-Memory Result <em id="pgEngineNote" style="font-style: normal; color: var(--c-yellow); font-size: 11px;">— via NoSQL Document API</em></span>
+            <span>JVM In-Memory Result <em id="pgEngineNote" style="font-style: normal; color: var(--c-yellow); font-size: 11px;">— document engine · native predicates</em></span>
             <span class="pg-latency-badge" id="pgLatency">⚡ in-process</span>
           </div>
           <pre class="pg-output-json" id="pgOutput"><code>[
@@ -1147,16 +1145,16 @@ db.<span class="fn">kv</span>().<span class="fn">set</span>(<span class="str">"a
         <div class="pillar-desc">
           Fully operational with zero config files, zero environment variables, and zero JVM flags. Every option has a production-safe default. Add durability with one extra method call.
         </div>
-        <div class="pillar-code">JunifyDB.fileBased("./data")</div>
+        <div class="pillar-code">JunifyDB.embed().dataDir("./data")</div>
       </div>
 
       <div class="pillar-card">
         <div class="pillar-icon-box">🔀</div>
-        <div class="pillar-title">Dual-Engine: NoSQL + SQL</div>
+        <div class="pillar-title">Multi-Model NoSQL</div>
         <div class="pillar-desc">
-          Access your data via the fluent NoSQL API or the built-in SQL engine simultaneously. Both engines run against the exact same underlying storage substrate — same data, two query paradigms.
+          Documents, key-value buckets with TTL, Redis-style lists / sets / hashes, and wide-column families share one storage substrate and one lifecycle — a single engine with several data models, not two products bolted together.
         </div>
-        <div class="pillar-code">db.sql("SELECT * FROM orders")</div>
+        <div class="pillar-code">db.documentCollection("orders").find(Query.eq("status", "SHIPPED"))</div>
       </div>
 
       <div class="pillar-card">
@@ -1181,9 +1179,9 @@ db.<span class="fn">kv</span>().<span class="fn">set</span>(<span class="str">"a
         <div class="pillar-icon-box">🧾</div>
         <div class="pillar-title">Honest Capability Boundaries</div>
         <div class="pillar-desc">
-          The SQL surface is a built-in dialect — not a full ANSI grammar: basic DDL (CREATE TABLE, DROP TABLE) is supported, but no views, no sequences, no stored procedures. Vectors and the Kafka CDC connector ship as clearly-labeled experimental features.
+          JunifyDB is NoSQL only: there is no SQL engine, no JDBC driver, and no relational schema to migrate. Documents are schemaless unless you register validation rules, and a document reference is an id you resolve yourself — never an enforced foreign key. Vectors and the Kafka CDC connector ship as clearly-labeled experimental features.
         </div>
-        <div class="pillar-code">SELECT · INSERT · UPDATE · DELETE · JOIN · GROUP BY</div>
+        <div class="pillar-code">Documents · Key-Value · Lists/Sets/Hashes · Wide-Column</div>
       </div>
 
       <div class="pillar-card">
@@ -1224,8 +1222,8 @@ db.<span class="fn">kv</span>().<span class="fn">set</span>(<span class="str">"a
         <div class="quad-cell highlight">
           <div class="quad-cell-label">⚡ Embedded · Multi-Model</div>
           <div class="quad-cell-name">JunifyDB</div>
-          <div class="quad-cell-desc">Documents, Key-Value, Redis-style structures, Wide-Column + a built-in Relational SQL Engine.</div>
-          <span class="quad-badge gold">Embedded · Both Engines</span>
+          <div class="quad-cell-desc">Documents, Key-Value, Redis-style structures, and Wide-Column in one embedded engine — no SQL, no separate server.</div>
+          <span class="quad-badge gold">Embedded · NoSQL</span>
         </div>
 
         <div class="quad-cell">
@@ -1258,7 +1256,7 @@ db.<span class="fn">kv</span>().<span class="fn">set</span>(<span class="str">"a
         Drop in your existing entities — JunifyDB inspects them dynamically
       </div>
       <p style="color: var(--text-secondary); font-size: 0.95rem;">
-        Whether your model is annotated with Eclipse JNoSQL, Jakarta JPA, or legacy Hibernate, JunifyDB resolves ID generators, column mappings, and transient fields seamlessly.
+        Whether your model is annotated with Eclipse JNoSQL, Jakarta Persistence, or Hibernate, JunifyDB reads those annotations at runtime as mapping hints — id resolution, field mapping, transient fields — with no JPA runtime and no JDBC driver involved.
       </p>
 
       <div class="annotation-badges">
@@ -1290,38 +1288,37 @@ db.<span class="fn">kv</span>().<span class="fn">set</span>(<span class="str">"a
   </div>
 </section>
 
-<!-- ═══════════════════════════ QUERY ENGINES (SQL vs NoSQL) ═══════════════════════════ -->
+<!-- ═══════════════════════════ DATA MODELS ═══════════════════════════ -->
 <section id="query-engines">
   <div class="container">
-    <span class="section-label">Two Query Engines</span>
-    <h2 class="section-title">One Relational SQL Engine, <span class="text-gradient">One Non-Relational NoSQL Engine</span></h2>
-    <p class="section-desc">JunifyDB is not “a NoSQL database with a query bolted on”. Both engines are first-class, share the same storage substrate, and have deliberately different semantics.</p>
+    <span class="section-label">One Engine, Several Models</span>
+    <h2 class="section-title">Document and Key-Value, <span class="text-gradient">One NoSQL Core</span></h2>
+    <p class="section-desc">JunifyDB has exactly one execution engine. Documents, key-value buckets, Redis-style structures, and wide-column families are data models on top of the same storage substrate — no second engine to configure, no dialect to keep in sync.</p>
 
     <div class="engines-grid">
       <div class="engine-card">
-        <span class="engine-badge amber">Relational · SQL</span>
-        <div class="engine-name">Relational SQL Engine</div>
+        <span class="engine-badge amber">Document</span>
+        <div class="engine-name">Document Collections</div>
         <div class="engine-desc">
-          A built-in SQL dialect over collections: <code>SELECT</code> with <code>JOIN</code>, <code>GROUP BY</code>, <code>WHERE</code>, <code>ORDER BY</code>, <code>LIMIT</code>, plus <code>INSERT</code> / <code>UPDATE</code> / <code>DELETE</code> with parameter binding and typed result sets.
+          Schemaless documents with native predicates (<code>$eq $ne $gt $gte $lt $lte $in $nin $regex $exists $and $or</code>), sorting, pagination, TTL, and secondary field indexes you can create, rebuild, and drop at runtime.
         </div>
-        <div class="engine-use">Best for: <strong>reporting, aggregation, teams that think in tables</strong></div>
-        <div class="engine-use">DDL support: <code>CREATE TABLE</code> and <code>DROP TABLE</code> only — no <code>ALTER</code>, no <code>CREATE INDEX</code></div>
-        <div class="engine-use" style="color: var(--text-muted);">Constraints enforced: <strong>PRIMARY KEY, UNIQUE, NOT NULL, FOREIGN KEY &amp; CHECK</strong> (inline and table-level). A working <strong>JDBC driver</strong> is bundled. Not included: <strong>views, sequences, stored procedures, explicit JDBC transactions</strong></div>
+        <div class="engine-use">Best for: <strong>flexible schemas, entity mapping, application state, tests</strong></div>
+        <div class="engine-use">Optional <strong>validation rules</strong> check documents at insert time. There are no relational constraints: a stored reference is an id you resolve, not a foreign key.</div>
       </div>
 
       <div class="engine-card">
-        <span class="engine-badge gold">Non-Relational · NoSQL</span>
-        <div class="engine-name">Non-Relational NoSQL Engine</div>
+        <span class="engine-badge gold">Key-Value &amp; Redis Structures</span>
+        <div class="engine-name">Key-Value, Lists, Sets, Hashes, Wide-Column</div>
         <div class="engine-desc">
-          Document collections with fluent criteria queries, key-value buckets with TTL, Redis-style lists / sets / hashes, wide-column families, and secondary + text indexes.
+          String key-value buckets with per-key TTL, plus Redis-style lists, sets, and hashes and wide-column families — all reachable from the same handle and the same lifecycle.
         </div>
-        <div class="engine-use">Best for: <strong>flexible schemas, caches, queues, session state</strong></div>
+        <div class="engine-use">Best for: <strong>caches, queues, counters, session state, coordination primitives</strong></div>
         <div class="engine-use" style="color: var(--text-muted);">Experimental: <strong>HNSW vector search (dimensionality from the first vector), Kafka CDC connector</strong></div>
       </div>
     </div>
 
     <p class="section-desc" style="margin-top: 1.5rem; font-size: 0.85rem;">
-      <strong>Shared by both engines:</strong> the four storage engines below, MVCC transactions, WAL-based recovery, the metrics and event bus, and the embedded Console.
+      <strong>Shared across every model:</strong> the four storage modes below, MVCC transactions, WAL-based recovery, the metrics and event bus, and the embedded Console.
       <strong>Experimental (not production features):</strong> HNSW vector search and the Kafka CDC connector — the file CDC connector is fully supported.
     </p>
   </div>
@@ -1332,7 +1329,7 @@ db.<span class="fn">kv</span>().<span class="fn">set</span>(<span class="str">"a
   <div class="container">
     <span class="section-label">Pluggable Core</span>
     <h2 class="section-title">Four Storage Engines, <span class="text-gradient">One Unified API</span></h2>
-    <p class="section-desc">Underneath both query engines, pick the durability and access-pattern characteristics for your workload with a single configuration flag. The SQL and NoSQL APIs stay identical across all four.</p>
+    <p class="section-desc">Choose the durability and access-pattern characteristics for your workload with a single configuration flag. The document and key-value APIs stay identical across all four.</p>
 
     <div class="engines-grid">
       <div class="engine-card">
@@ -1637,7 +1634,7 @@ db.<span class="fn">kv</span>().<span class="fn">set</span>(<span class="str">"a
     <img src="assets/junifydb-logo-512-transparent.png" alt="JunifyDB logo" width="44" height="44" style="border-radius:10px;" />
     Junify<span>DB</span>
   </div>
-  <div class="footer-tagline">The embedded dual-engine database for Java — Relational SQL + Non-Relational NoSQL, zero infrastructure.</div>
+  <div class="footer-tagline">The embedded NoSQL database for the JVM — Document and Key-Value, zero infrastructure.</div>
   <div class="footer-links">
     <a href="https://github.com/armand-ratombotiana/JunifyDB" target="_blank" rel="noopener">GitHub</a>
     <a href="https://github.com/armand-ratombotiana/JunifyDB/blob/main/README.md" target="_blank" rel="noopener">Documentation</a>
@@ -1680,74 +1677,13 @@ db.<span class="fn">kv</span>().<span class="fn">set</span>(<span class="str">"a
   }
 
   /* ── Query Playground Controller ── */
-  let currentPgTab = 'nosql';
+  /* The playground exposes a single data model: the document engine.
+     The tab button stays for layout; there is no engine switching. */
   function switchPlaygroundTab(tab, btn) {
-    currentPgTab = tab;
-    const tabs = document.querySelectorAll('.pg-tab');
-    tabs.forEach(t => t.classList.remove('active'));
-    const active = btn || [...tabs].find(t => t.textContent.includes(tab === 'nosql' ? 'NoSQL' : 'SQL'));
-    if (active) active.classList.add('active');
-
-    const editor = document.getElementById('pgEditor');
-    const output = document.getElementById('pgOutput');
+    document.querySelectorAll('.pg-tab').forEach(t => t.classList.remove('active'));
+    if (btn) btn.classList.add('active');
     const note = document.getElementById('pgEngineNote');
-
-    if (tab === 'nosql') {
-      if (note) note.textContent = '— via the Non-Relational NoSQL Engine (Document API)';
-      editor.innerHTML = `
-        <div style="color: #64748b; margin-bottom: 8px;">// Fluent Document Query (Type-safe)</div>
-        <div style="color: #fbbf24;">db.collection(<span style="color: #86efac;">"orders"</span>)</div>
-        <div style="padding-left: 20px; color: #ffffff;">.find(Query.where(<span style="color: #86efac;">"status"</span>).eq(<span style="color: #86efac;">"SHIPPED"</span>)</div>
-        <div style="padding-left: 60px; color: #ffffff;">.and(<span style="color: #86efac;">"total"</span>).gte(<span style="color: #f97316;">150.0</span>))</div>
-        <div style="padding-left: 20px; color: #ffffff;">.sort(<span style="color: #86efac;">"createdAt"</span>, Sort.DESC)</div>
-        <div style="padding-left: 20px; color: #ffffff;">.limit(<span style="color: #f97316;">5</span>);</div>
-      `;
-      output.innerHTML = `<code>[
-  {
-    "_id": "ord_9842",
-    "customer": "Judicael R.",
-    "status": "SHIPPED",
-    "total": 349.50,
-    "items": ["Laptop Stand", "Mechanical Keyboard"],
-    "createdAt": 1726569100000
-  },
-  {
-    "_id": "ord_9811",
-    "customer": "Sarah Connor",
-    "status": "SHIPPED",
-    "total": 182.00,
-    "items": ["USB-C Dock"],
-    "createdAt": 1726567200000
-  }
-]</code>`;
-    } else {
-      if (note) note.textContent = '— via the Relational SQL Engine (built-in dialect)';
-      editor.innerHTML = `
-        <div style="color: #64748b; margin-bottom: 8px;">-- Relational SQL Engine (built-in dialect) — same collection</div>
-        <div style="color: #fbbf24;">SELECT</div>
-        <div style="padding-left: 20px; color: #ffffff;">customer,</div>
-        <div style="padding-left: 20px; color: #ffffff;">COUNT(*) <span style="color: #fbbf24;">AS</span> order_count,</div>
-        <div style="padding-left: 20px; color: #ffffff;">SUM(total) <span style="color: #fbbf24;">AS</span> total_revenue</div>
-        <div style="color: #fbbf24;">FROM</div>
-        <div style="padding-left: 20px; color: #ffffff;">orders</div>
-        <div style="color: #fbbf24;">WHERE</div>
-        <div style="padding-left: 20px; color: #ffffff;">status = <span style="color: #86efac;">'SHIPPED'</span></div>
-        <div style="color: #fbbf24;">GROUP BY</div>
-        <div style="padding-left: 20px; color: #ffffff;">customer;</div>
-      `;
-      output.innerHTML = `<code>[
-  {
-    "customer": "Judicael R.",
-    "order_count": 6,
-    "total_revenue": 1420.75
-  },
-  {
-    "customer": "Sarah Connor",
-    "order_count": 3,
-    "total_revenue": 589.20
-  }
-]</code>`;
-    }
+    if (note) note.textContent = '— document engine · native predicates';
   }
 
   function executePlaygroundQuery() {

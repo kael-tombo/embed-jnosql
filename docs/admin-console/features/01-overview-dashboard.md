@@ -11,7 +11,7 @@ System health, live JVM telemetry, database operations counter, storage engine s
 
 ### Key Capabilities
 - Seamless embedded management directly inside the browser without external tooling.
-- Direct synchronization with the core dual-engine storage substrate.
+- Direct synchronization with the core NoSQL storage substrate.
 - Zero external runtime dependencies; lightweight, responsive single-page architecture.
 
 ---
@@ -42,7 +42,7 @@ The deep analysis across this feature revealed the following UX and operational 
 - **Enhancement**: Add animated SVG sparkline/mini-charts for ops/sec and memory usage.
 - **Enhancement**: Interactive cards with hover elevation and click-to-navigate action triggers.
 - **Enhancement**: Color-coded health telemetry gauges (green/amber/red based on memory thresholds).
-- **Enhancement**: Add a 'Quick Actions' bar (e.g. New Document, Run Query, Backup Now, Open SQL Studio).
+- **Enhancement**: Add a 'Quick Actions' bar (e.g. New Document, Run Query, Backup Now, Open Key-Value Editor).
 
 ### Interaction & Ergonomics
 - **Micro-Interactions**: Smooth transitions, loading spinners, and instant visual feedback on submission.

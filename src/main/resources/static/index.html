@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>JunifyDB Console — Embedded Admin UI</title>
-  <meta name="description" content="JunifyDB embedded Console: manage collections, key-value data, and run Relational SQL queries against the embedded database.">
+  <meta name="description" content="JunifyDB embedded NoSQL Console: inspect and operate document collections, key-value data, and wide-column families in your embedded database.">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/console.css">
 </head>
@@ -34,15 +34,18 @@
     <!-- ================= Topbar ================= -->
     <div class="topbar">
       <div>
+        <nav class="crumbs" id="crumbs" aria-label="Breadcrumb"></nav>
         <div class="topbar-title" id="panelTitle">Overview</div>
         <div class="topbar-sub" id="panelSub">Database at a glance</div>
       </div>
       <div class="topbar-spacer"></div>
       <span class="topbar-chip" id="chipHealth"><span class="dot"></span><span id="chipHealthText">…</span></span>
       <span class="topbar-chip"><span id="chipEngine">—</span></span>
+      <span class="topbar-chip" title="Server build version (from the jar manifest)"><span id="chipVersion">v—</span></span>
       <span class="topbar-chip"><span id="chipUptime">—</span></span>
       <button class="icon-btn" id="btnTheme" title="Toggle theme">◐</button>
       <button class="icon-btn" id="btnRefreshAll" title="Refresh data (R)">⟳</button>
+      <button class="btn sm" id="btnHelp" title="Open help, shortcuts, and engine documentation">?</button>
       <button class="btn sm" id="btnLogout" title="End session and return to sign-in">Sign out</button>
     </div>
 
@@ -66,7 +69,13 @@
     </div>
 
     <!-- ================= Sidebar ================= -->
-    <nav class="nav" id="nav"></nav>
+    <nav class="nav" id="nav" aria-label="Console navigation">
+      <div class="nav-search-wrap">
+        <input type="text" id="navSearch" class="nav-search" placeholder="Filter pages…"
+               aria-label="Filter navigation pages" autocomplete="off">
+      </div>
+    </nav>
+    <a class="skip-link" href="#main">Skip to main content</a>
 
     <!-- ================= Main ================= -->
     <main id="main">
@@ -74,7 +83,7 @@
       <!-- ========== OVERVIEW (shared) ========== -->
       <section class="panel" id="panel-overview">
         <div class="panel-head">
-          <h1>Overview <span class="engine-tag shared" title="Shared capability — both engines">Both Engines</span></h1>
+          <h1>Overview <span class="engine-tag nosql" title="Embedded NoSQL engine">NoSQL</span></h1>
           <span class="hint">Live counters, health, and engine info</span>
         </div>
         <div class="grid kpi" id="kpiRow"></div>
@@ -90,6 +99,16 @@
           </div>
         </div>
 
+        <div class="card" style="margin-top:16px">
+          <div class="card-head">
+            <h2>Storage &amp; WAL</h2>
+            <div class="spacer"></div>
+            <span class="hint">Live engine/durability truth — same source as the status bar</span>
+            <button class="btn sm" id="ovStorageRefresh" title="Reload storage and WAL status">⟳</button>
+          </div>
+          <div class="card-pad" id="ovStorage"><div class="loading-row"><span class="spinner"></span>Loading storage status…</div></div>
+        </div>
+
         <div class="grid cols-2" style="margin-top:16px">
           <div class="card">
             <div class="card-head"><h2>Collections</h2><div class="spacer"></div><button class="btn sm" data-goto="collections">Open</button></div>
@@ -102,49 +121,10 @@
         </div>
       </section>
 
-      <!-- ========== SQL STUDIO (Relational SQL Engine) ========== -->
-      <section class="panel" id="panel-sql">
-        <div class="panel-head">
-          <h1>SQL Studio <span class="engine-tag sql" title="Relational SQL Engine — built-in SQL dialect">Relational SQL Engine</span></h1>
-          <span class="hint">Built-in dialect (SELECT · INSERT · UPDATE · DELETE · JOIN · GROUP BY) — <kbd>Ctrl</kbd>+<kbd>Enter</kbd> to run</span>
-        </div>
-        <div class="card">
-          <div class="card-head">
-            <h2>Editor</h2>
-            <div class="spacer"></div>
-            <span class="badge" id="sqlStatus">idle</span>
-            <span class="badge" id="sqlDestructive" hidden></span>
-            <button class="btn sm" id="sqlCancel" hidden>Cancel</button>
-            <button class="btn sm" id="sqlClear">Clear</button>
-            <button class="btn sm" id="sqlRunSel" title="Run only the highlighted statement">▹ Run selection</button>
-            <button class="btn primary sm" id="sqlRun">▸ Run</button>
-          </div>
-          <div class="card-pad">
-            <label class="fld" for="sqlInput">Statement (one statement per run)</label>
-            <textarea id="sqlInput" rows="7" spellcheck="false" aria-describedby="sqlHint"
-              placeholder="SELECT * FROM products WHERE price > 10 ORDER BY price DESC LIMIT 20"></textarea>
-            <div class="hint" id="sqlHint" style="margin-top:6px">
-              <kbd>Ctrl</kbd>+<kbd>Enter</kbd> runs everything; <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Enter</kbd> runs the selected text.
-              Destructive statements (DROP, DELETE/UPDATE without a WHERE clause) ask for confirmation first.
-            </div>
-            <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap" id="sqlExamples"></div>
-          </div>
-          <div class="card-head" style="border-top:1px solid var(--line-0);border-bottom:0">
-            <h2>Results</h2>
-            <div class="spacer"></div>
-            <span class="badge" id="sqlMeta"></span>
-            <button class="btn sm" id="sqlExportCsv" hidden>Export CSV</button>
-            <button class="btn sm" id="sqlExportJson" hidden>Export JSON</button>
-            <button class="btn sm" id="sqlCopy">Copy SQL</button>
-          </div>
-          <div class="card-pad" style="padding-top:0"><div id="sqlOut"><div class="empty"><svg class="empty-logo" aria-hidden="true"><use href="#brand-mark"/></svg><br>No query run yet — write SQL above and press <kbd>Ctrl</kbd>+<kbd>Enter</kbd>.</div></div></div>
-        </div>
-      </section>
-
       <!-- ========== COLLECTIONS (Non-Relational NoSQL Engine) ========== -->
       <section class="panel" id="panel-collections">
         <div class="panel-head">
-          <h1>Collections <span class="engine-tag nosql" title="Non-Relational NoSQL Engine — document model">Non-Relational NoSQL Engine</span></h1>
+          <h1>Collections <span class="engine-tag nosql" title="NoSQL — document model">NoSQL</span></h1>
           <span class="hint">Documents — create, inspect, edit, TTL, and schema</span>
         </div>
         <div class="card">
@@ -166,7 +146,14 @@
         </div>
         <div class="grid cols-2" style="margin-top:16px">
           <div class="card">
-            <div class="card-head"><h2>Insert / replace document</h2></div>
+            <div class="card-head">
+              <h2>Insert / replace document</h2>
+              <div class="spacer"></div>
+              <button class="btn sm" id="colPickerRefresh" title="Refresh the collection list from the engine">⟳</button>
+            </div>
+            <div class="card-pad" style="padding-bottom:6px">
+              <div id="colPicker" class="chip-row" aria-label="Known collections"></div>
+            </div>
             <div class="card-pad">
               <label class="fld">Collection</label>
               <input type="text" id="insCol" placeholder="users">
@@ -179,23 +166,62 @@
             </div>
           </div>
           <div class="card">
-            <div class="card-head"><h2>Document detail</h2></div>
+            <div class="card-head">
+              <h2>Document detail</h2>
+              <div class="spacer"></div>
+              <div class="view-toggle" role="group" aria-label="Document view mode">
+                <button class="btn sm active" id="docViewJson" aria-pressed="true">JSON</button>
+                <button class="btn sm" id="docViewTree" aria-pressed="false">Tree</button>
+              </div>
+            </div>
             <div class="card-pad" id="docDetail"><span class="empty" style="padding:12px"><svg class="empty-logo" aria-hidden="true"><use href="#brand-mark"/></svg><br>No document selected — click a row in the table to inspect it.</span></div>
           </div>
           </div>
+        <div class="card" style="margin-top:16px">
+          <div class="card-head">
+            <h2>Query builder</h2>
+            <div class="spacer"></div>
+            <span class="badge" id="qbStatus" data-scope="Query builder"></span>
+            <button class="btn sm" id="qbRun">Run filter</button>
+          </div>
+          <div class="card-pad" id="qbBody">
+            <div class="hint" style="margin-bottom:8px">Builds a filter for the engine's QueryParser. Supported operators: $eq · $ne · $gt · $gte · $lt · $lte · $in · $nin · $regex · $exists, combined with $and / $or. Regex is substring matching; anchor with ^ and $ deliberately.</div>
+            <div id="qbRows"></div>
+            <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:flex-end">
+              <div><label class="fld" for="qbSortField">Sort by (optional)</label><input type="text" id="qbSortField" placeholder="field" style="width:140px"></div>
+              <div><label class="fld" for="qbSortDir">Direction</label>
+                <select id="qbSortDir" style="width:100px"><option value="asc">ascending</option><option value="desc">descending</option></select></div>
+              <div><label class="fld" for="qbLimit">Limit</label><input type="number" id="qbLimit" value="100" min="1" style="width:90px"></div>
+              <div><label class="fld" for="qbOffset">Offset</label><input type="number" id="qbOffset" value="0" min="0" style="width:90px"></div>
+              <div class="spacer"></div>
+              <button class="btn sm" id="qbAddRow">+ Add condition</button>
+              <button class="btn sm" id="qbClear">Clear</button>
+            </div>
+            <div class="card-pad" style="padding:10px 0 0">
+              <label class="fld" for="qbPreview">Query preview (JSON sent to the engine)</label>
+              <pre class="code json" id="qbPreview" style="max-height:120px"></pre>
+            </div>
+            <div class="card-pad" style="padding-top:0"><div id="qbOut"></div></div>
+            <div class="qb-pager" id="qbPager" hidden>
+              <button class="btn sm" id="qbPrev" title="Step the offset back by one page">← Prev</button>
+              <span class="hint" id="qbPageInfo" aria-live="polite"></span>
+              <button class="btn sm" id="qbNext" title="Advance the offset by one page">Next →</button>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- ========== KV & REDIS STRUCTURES (Non-Relational NoSQL Engine) ========== -->
       <section class="panel" id="panel-kv">
         <div class="panel-head">
-          <h1>Key-Value &amp; Redis Structures <span class="engine-tag nosql" title="Non-Relational NoSQL Engine — key-value model">Non-Relational NoSQL Engine</span></h1>
+          <h1>Key-Value &amp; Redis Structures <span class="engine-tag nosql" title="NoSQL — key-value model">NoSQL</span></h1>
           <span class="hint">Simple KV, lists, sets, and hashes</span>
         </div>
-        <div class="tabs" id="kvTabs">
-          <button class="tab active" data-kvtab="kv">KV</button>
-          <button class="tab" data-kvtab="list">Lists</button>
-          <button class="tab" data-kvtab="set">Sets</button>
-          <button class="tab" data-kvtab="hash">Hashes</button>
+        <div class="tabs" id="kvTabs" role="tablist" aria-label="Key-value data structure kind">
+          <button class="tab active" data-kvtab="kv" role="tab" aria-selected="true">KV browser</button>
+          <button class="tab" data-kvtab="list" role="tab" aria-selected="false">Lists</button>
+          <button class="tab" data-kvtab="set" role="tab" aria-selected="false">Sets</button>
+          <button class="tab" data-kvtab="hash" role="tab" aria-selected="false">Hashes</button>
         </div>
         <div class="card" id="kvCard">
           <div class="card-head"><h2 id="kvHead">Simple KV</h2><div class="spacer"></div><span class="badge" id="kvStatus"></span></div>
@@ -206,7 +232,7 @@
       <!-- ========== COLUMN FAMILIES (Non-Relational NoSQL Engine) ========== -->
       <section class="panel" id="panel-columns">
         <div class="panel-head">
-          <h1>Wide-Column Families <span class="engine-tag nosql" title="Non-Relational NoSQL Engine — wide-column model">Non-Relational NoSQL Engine</span></h1>
+          <h1>Wide-Column Families <span class="engine-tag nosql" title="NoSQL — wide-column model">NoSQL</span></h1>
           <span class="hint">Row → column matrix with per-cell TTL</span>
         </div>
         <div class="card">
@@ -235,7 +261,7 @@
       <!-- ========== VECTORS (Non-Relational NoSQL Engine · EXPERIMENTAL) ========== -->
       <section class="panel" id="panel-vectors">
         <div class="panel-head">
-          <h1>Vector Index (HNSW) <span class="engine-tag nosql" title="Non-Relational NoSQL Engine — vector model">Non-Relational NoSQL Engine</span></h1>
+          <h1>Vector Index (HNSW) <span class="engine-tag nosql" title="NoSQL — vector model">NoSQL</span></h1>
           <span class="hint experimental" title="Experimental feature: excluded from coverage gates; API may change">⚠ Experimental — fixed 128 dimensions, API may change</span>
         </div>
         <div class="grid cols-2">
@@ -269,7 +295,7 @@
       <!-- ========== SCHEMA (Non-Relational NoSQL Engine) ========== -->
       <section class="panel" id="panel-schema">
         <div class="panel-head">
-          <h1>Schema Validation <span class="engine-tag nosql" title="Non-Relational NoSQL Engine — document validation">Non-Relational NoSQL Engine</span></h1>
+          <h1>Schema Validation <span class="engine-tag nosql" title="NoSQL — document validation">NoSQL</span></h1>
           <span class="hint">Per-collection field schemas enforced on insert</span>
         </div>
         <div class="grid cols-2">
@@ -298,13 +324,13 @@
       <!-- ========== TRANSACTIONS (shared) ========== -->
       <section class="panel" id="panel-tx">
         <div class="panel-head">
-          <h1>Transactions <span class="engine-tag shared" title="Shared capability — both engines">Both Engines</span></h1>
+          <h1>Transactions <span class="engine-tag nosql" title="Embedded NoSQL engine">NoSQL</span></h1>
           <span class="hint">Begin, inspect, commit, or roll back active transactions (MVCC)</span>
         </div>
         <div class="card" style="border-left: 3px solid var(--warn, #E8B923); margin-bottom: 12px;">
           <div style="font-size: 13px; line-height: 1.6;">
             <strong>Scope:</strong> this panel manages transaction <em>lifecycle</em> only. Console
-            CRUD — collection writes, bulk, KV and the SQL workspace — writes directly to the
+            CRUD — collection writes, bulk, and KV — writes directly to the
             engine and is <strong>not</strong> governed by a transaction begun here, and no REST
             write path currently accepts a transaction id. To put writes inside a transaction,
             use the Java API (<code>db.beginTransaction()</code>).
@@ -324,7 +350,7 @@
       <!-- ========== INDEXES (Non-Relational NoSQL Engine) ========== -->
       <section class="panel" id="panel-indexes">
         <div class="panel-head">
-          <h1>Secondary Indexes <span class="engine-tag nosql" title="Non-Relational NoSQL Engine — document indexes">Non-Relational NoSQL Engine</span></h1>
+          <h1>Secondary Indexes <span class="engine-tag nosql" title="NoSQL — document indexes">NoSQL</span></h1>
           <span class="hint">Per-collection field indexes</span>
         </div>
         <div class="card">
@@ -346,7 +372,7 @@
       <!-- ========== BACKUP (shared) ========== -->
       <section class="panel" id="panel-backup">
         <div class="panel-head">
-          <h1>Backup &amp; Restore <span class="engine-tag shared" title="Shared capability — both engines">Both Engines</span></h1>
+          <h1>Backup &amp; Restore <span class="engine-tag nosql" title="Embedded NoSQL engine">NoSQL</span></h1>
           <span class="hint">Snapshot the data directory or restore from a backup file</span>
         </div>
         <div class="grid cols-2">
@@ -372,7 +398,7 @@
       <!-- ========== CDC & EVENTS (shared) ========== -->
       <section class="panel" id="panel-cdc">
         <div class="panel-head">
-          <h1>Change Data Capture <span class="engine-tag shared" title="Shared capability — both engines">Both Engines</span></h1>
+          <h1>Change Data Capture <span class="engine-tag nosql" title="Embedded NoSQL engine">NoSQL</span></h1>
           <span class="hint">Event log, connectors, and enable/disable</span>
         </div>
         <div class="grid cols-2">
@@ -408,7 +434,7 @@
       <!-- ========== AUDIT (shared) ========== -->
       <section class="panel" id="panel-audit">
         <div class="panel-head">
-          <h1>Audit Trail <span class="engine-tag shared" title="Shared capability — both engines">Both Engines</span></h1>
+          <h1>Audit Trail <span class="engine-tag nosql" title="Embedded NoSQL engine">NoSQL</span></h1>
           <span class="hint">Recent mutating operations (bounded in-memory log)</span>
         </div>
         <div class="card">
@@ -420,7 +446,7 @@
       <!-- ========== SERVER (CLI / legacy) ========== -->
       <section class="panel" id="panel-server">
         <div class="panel-head">
-          <h1>Server <span class="engine-tag shared" title="Shared capability — both engines">Both Engines</span></h1>
+          <h1>Server <span class="engine-tag nosql" title="Embedded NoSQL engine">NoSQL</span></h1>
           <span class="hint">Health details, JVM metrics, and connection info</span>
         </div>
         <div class="grid cols-2">
@@ -439,6 +465,37 @@
   </div>
 
   <div id="toasts"></div>
+
+  <!-- ================= Help / shortcuts / documentation dialog ================= -->
+  <div class="modal-backdrop" id="helpBackdrop" hidden>
+    <div class="modal" id="helpDialog" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+      <div class="modal-head">
+        <h2 id="helpTitle">Help — keyboard shortcuts &amp; data-model reference</h2>
+      </div>
+      <div class="modal-body" id="helpBody">
+        <h3>Keyboard</h3>
+        <dl class="help-keys">
+          <dt><kbd>1</kbd>–<kbd>9</kbd>, <kbd>0</kbd></dt><dd>Switch panels</dd>
+          <dt><kbd>Esc</kbd></dt><dd>Close a dialog / cancel destructive confirmation</dd>
+        </dl>
+        <h3>Data models</h3>
+        <p><strong>Documents</strong> (MongoDB-style filters
+        $eq $ne $gt $gte $lt $lte $in $nin $regex $exists, $and/$or), key-value buckets with TTL,
+        Redis-style lists/sets/hashes, wide-column families, HNSW vector search (experimental).
+        Secondary field indexes via the Indexes panel.</p>
+        <h3>Safety</h3>
+        <p>Destructive statements and actions always ask first and name their target. Console writes
+        do not join transactions begun in the Transactions panel — that boundary is stated in the
+        status bar, not hidden.</p>
+        <p class="help-meta" id="helpVersion"></p>
+      </div>
+      <div class="modal-foot">
+        <span class="hint">Documentation: docs/admin-console/ · docs/product/USER_STORY_MAP.md</span>
+        <div class="spacer"></div>
+        <button class="btn sm" id="helpClose">Close</button>
+      </div>
+    </div>
+  </div>
 
   <!-- ================= Confirmation dialog =================
        Destructive actions name their target, quantify the impact, and state what
