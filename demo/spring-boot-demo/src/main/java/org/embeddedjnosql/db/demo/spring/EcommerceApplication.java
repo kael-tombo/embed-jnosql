@@ -5,8 +5,11 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.embeddedjnosql.db.spring.boot.data.EnableEmbedJpaRepositories;
 
 @SpringBootApplication
+@EnableEmbedJpaRepositories(basePackages = "org.embeddedjnosql.db.demo.spring",
+        entityBaseClasses = HibernateOrder.class)
 public class EcommerceApplication {
 
     public static void main(String[] args) {

@@ -37,6 +37,32 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-tx</artifactId>
         </dependency>
+        <!-- Optional Spring Data repository support (Spring Data JPA-style developer experience
+             over the document engine). Optional + provided-shape: apps that declare
+             @EnableEmbedJpaRepositories bring their own spring-data-commons/jpa versions
+             (e.g. via spring-boot-starter-data-jpa); everything else is unaffected. Pinned to
+             3.3.0 because Boot 3.2.5's BOM manages 3.2.5, which predates the v3.3 API used. -->
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-commons</artifactId>
+            <version>3.3.0</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-jpa</artifactId>
+            <version>3.3.0</version>
+            <optional>true</optional>
+            <exclusions>
+                <!-- JpaRepository is consumed as an interface only; the ORM runtime layer
+                     (spring-orm/Hibernate) is never referenced, and 6.1.6 is unavailable
+                     offline anyway. Apps that use real JPA bring their own spring-orm. -->
+                <exclusion>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-orm</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-configuration-processor</artifactId>

@@ -39,14 +39,38 @@ public class EmbedJNoSQLTxRoutingPostProcessor implements BeanPostProcessor {
         if (!enabled || !(bean instanceof EmbedJNoSQL db)) {
             return bean;
         }
-        if (org.springframework.aop.support.AopUtils.isAopProxy(bean)) {
-            return bean; // already routed; never wrap twice
-        }
+        return routed(db); // routed() is a no-op for already-proxied beans
+    }
 
+    /**
+     * Wraps a raw {@link EmbedJNoSQL} in the transaction-routing proxy. Called directly from
+     * the auto-configuration {@code embedJNoSQL} {@code @Bean} factory method so the singleton
+     * published to the container is the routed proxy from birth — even when the bean is
+     * finalized during {@code registerBeanPostProcessors}' type-checking cascade, before BPPs
+     * are registered. The {@link BeanPostProcessor} stays as a safety net for user-defined
+     * (non-auto-configured) database beans.
+     */
+    public static EmbedJNoSQL routed(EmbedJNoSQL db) {
+        if (db == null || org.springframework.aop.support.AopUtils.isAopProxy(db)) {
+            return db; // already routed; never wrap twice
+        }
         ProxyFactory proxyFactory = new ProxyFactory(db);
         proxyFactory.setProxyTargetClass(true);
         proxyFactory.addAdvice(new RoutingInterceptor(db));
-        return proxyFactory.getProxy();
+        return (EmbedJNoSQL) proxyFactory.getProxy();
+    }
+
+    /**
+     * The routing seam itself, runnable from any holder of the raw database: produces the
+     * {@link TransactionAwareDocumentCollection} that stages into the currently active
+     * Spring-bound transaction. Shared with the Spring Data repository layer so writes
+     * through bare (instrumentation-bypassed) database references honor {@code @Transactional}
+     * identically to writes through the proxied bean.
+     */
+    public static TransactionAwareDocumentCollection routedCollection(EmbedJNoSQL rawDb, String name,
+            org.embeddedjnosql.db.transaction.mvcc.Transaction tx) {
+        return new TransactionAwareDocumentCollection(name, rawDb.storageEngine(),
+                rawDb.eventBus(), rawDb.metrics(), tx);
     }
 
     private static class RoutingInterceptor implements MethodInterceptor {
@@ -96,7 +120,7 @@ public class EmbedJNoSQLTxRoutingPostProcessor implements BeanPostProcessor {
          * transaction's staged buffer, so there is nothing to cache (and nothing to leak).
          */
         private TransactionAwareDocumentCollection routedCollection(Transaction tx, String name) {
-            return new TransactionAwareDocumentCollection(name, engine(), eventBus(), metrics(), tx);
+            return EmbedJNoSQLTxRoutingPostProcessor.routedCollection(target, name, tx);
         }
 
         private org.embeddedjnosql.db.storage.spi.StorageEngine engine() {

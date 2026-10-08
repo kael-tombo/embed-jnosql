@@ -15,7 +15,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
  * <p>Not public API on purpose: everything outside the starter goes through
  * {@code EmbedJNoSQLTransactionManager} and the routed collections.</p>
  */
-final class SpringTransactionHolder {
+public final class SpringTransactionHolder {
 
     private SpringTransactionHolder() {
     }

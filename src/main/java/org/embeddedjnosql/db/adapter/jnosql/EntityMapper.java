@@ -252,6 +252,59 @@ public class EntityMapper {
     }
 
     /**
+     * Resolves the mapped document field name (column) for the given entity property:
+     * the property name itself, bridged through {@link AnnotationResolver#resolveColumnName}
+     * so annotations such as {@code @Column(name=...)} on a matching declared field rename it.
+     *
+     * <p>Public so external tooling (Spring Data integration, codegen) resolves the exact
+     * names {@link #toDocument}/{@link #fromDocument} write and read.</p>
+     *
+     * @param clazz       the entity class owning the property
+     * @param propertyName the Java property name (e.g. {@code orderTitle})
+     * @return the mapped document field name, or the property name when no annotated field matches
+     */
+    public static String resolveDocumentField(Class<?> clazz, String propertyName) {
+        for (Field f : getAllFields(clazz)) {
+            if (!Modifier.isStatic(f.getModifiers()) && f.getName().equals(propertyName)) {
+                return AnnotationResolver.resolveColumnName(f);
+            }
+        }
+        return propertyName;
+    }
+
+    /**
+     * Reads the value of a property by reflective field access, honoring the same
+     * annotation-priority field resolution as {@link #toDocument}.
+     *
+     * @param entity       the entity instance
+     * @param propertyName the Java property name
+     * @return the property value, or {@code null} when the field is absent or null
+     * @throws IllegalArgumentException when no matching field and no accessible getter exist
+     */
+    public static Object readPropertyValue(Object entity, String propertyName) {
+        Class<?> clazz = entity.getClass();
+        for (Field f : getAllFields(clazz)) {
+            if (!Modifier.isStatic(f.getModifiers()) && f.getName().equals(propertyName)) {
+                f.setAccessible(true);
+                try {
+                    return f.get(entity);
+                } catch (IllegalAccessException e) {
+                    return null;
+                }
+            }
+        }
+        // record-style / getter-only support
+        String getter = "get" + Character.toUpperCase(propertyName.charAt(0)) + propertyName.substring(1);
+        try {
+            java.lang.reflect.Method m = clazz.getMethod(getter);
+            return m.invoke(entity);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalArgumentException(
+                    "No property '" + propertyName + "' on " + clazz.getName());
+        }
+    }
+
+    /**
      * Returns the runtime value of the designated ID field for the entity,
      * or {@code null} if no ID field is found or the value is null.
      */

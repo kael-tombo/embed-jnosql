@@ -162,3 +162,46 @@ updates after a drop — zero console errors throughout.
 | Maven Central publish / Pages deploy | BLOCKED by policy (no credentials, nothing pushed) |
 | `docs/assets/embedjnosql-banner.png` wording | NOT VERIFIED (raster, no text chunks) |
 | `EmbedJNoSQLPool`, `ReactiveJNoSQL`, `MigrationManager` | LABELED EXPERIMENTAL (round-3 decision: keep, don't delete) — `@Experimental` + javadoc on each, enforced by the sweep's label assertion; still no caller, no functional test, still JaCoCo-excluded (see Finding 7) |
+
+## 7. Spring Data JPA-style repository layer (round 4)
+
+New capability in `spring-boot-starter` (`org.embeddedjnosql.db.spring.boot.data`): interfaces
+extending Spring Data's `JpaRepository<T, ID>` are backed by the embedded document engine —
+no JPA provider, no relational store. Verified by the starter suite (**42/42**) and a new demo
+suite (**41/41**, including the 5-test `SpringDataJpaIntegrationTest`).
+
+| Capability | Verification |
+|---|---|
+| Derived PartTree queries (`findBy…StartingWith`, `…IgnoreCase`, `…LessThan…OrderBy…Asc`, `countBy…`, `existsBy…`, `findBy…` on `@Enumerated(STRING)` columns) | starter `EmbedJpaSpringDataIntegrationTest` 7/7; demo `derivedQueriesTranslateToDocumentQueries` |
+| Paging & sorting (`Pageable`/`Sort` through `findAll`) | starter + demo `pagingAndSortingThroughTheInterface` |
+| Query-by-Example with `ExampleMatcher` ignore-paths | starter + demo `queryByExampleWithMatcher` |
+| CRUD (`save`, `findById`, `findAllById`, `deleteById`) | demo `crudRoundTripThroughRepository` |
+| `@Transactional` staging + rollback through repositories | starter `transactionalStagingAndRollbackThroughRepository`; demo `HibernateParityIntegrationTest` 8/8 |
+
+### Key findings (round 4)
+
+1. **Bean-ordering root cause (the important one).** A repository `FactoryBean` whose constructor
+   resolves the `embedJNoSQL` bean can force the database singleton to be finalized during
+   `registerBeanPostProcessors`' type-checking cascade (`getTypeForFactoryBean` →
+   `getSingletonFactoryBeanForTypeCheck` → `autowireConstructor` → `resolveReference`) — i.e.
+   *before* the transaction-routing `BeanPostProcessor` is registered. The container then caches
+   the raw, un-proxied database, and writes through it silently bypass `@Transactional` staging.
+   **Fix:** the auto-configuration now publishes the routing proxy directly from the
+   `embedJNoSQL` `@Bean` factory method (`EmbedJNoSQLTxRoutingPostProcessor.routed(db)`), so the
+   singleton is transaction-routed from birth regardless of when it is finalized; the BPP remains
+   as a safety net for user-defined beans, and `TxCollectionFactory` gives bare database
+   references (captured before proxying) an equivalent per-call routing fallback.
+2. **PartTree enum/temporal coercion.** Derived predicates must compare in the *persisted* shape:
+   `@Enumerated(STRING)` values are stored as names and temporals as ISO strings, so
+   `EmbedJpaPartTreeQueryCreator` now coerces `eq`/`ne`/`in`/`not-in` bind parameters through the
+   same `storedShape` mapping the query-by-example builder uses. Without it, `countByPriority(LOW)`
+   compared an enum instance to the stored `"LOW"` string and matched nothing.
+3. **QBE with primitive entity fields.** A bare `new Entity()` probe carries non-null defaults for
+   primitive columns (`double`, `boolean`), so a default-matching `Example` can never match; the
+   demo test documents the pitfall and ignores those paths in the `ExampleMatcher` — the same
+   gotcha a JPA developer hits with primitive columns.
+4. Demo test-fixture hygiene: `@SpringBootTest` shares one in-memory database across test classes,
+   so assertions are scoped to per-test reference prefixes (`bucket` filtering) to survive
+   cross-test leakage.
+
+Test totals after round 4: starter 42/42, demo 41/41 (36 pre-existing + 5 new).

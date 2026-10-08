@@ -301,3 +301,22 @@ step are authorized and executed, and the social banner asset is regenerated/ver
 **Smallest remaining milestone to ship**: sign and publish `embed-jnosql-core-1.0.0` (plus the three
 optional adapters) to the chosen repository, then re-run `mvn -B clean verify` on the tagged commit
 and refresh the banner image — everything else required for the NoSQL-only release is in place.
+
+---
+
+## Addendum (round 4): Spring Data JPA-style repository layer
+
+- New starter package `org.embeddedjnosql.db.spring.boot.data`: `@EnableEmbedJpaRepositories`
+  registers Spring Data `JpaRepository` interfaces over the document engine (PartTree derivation,
+  paging/sorting, query-by-example, `@Transactional` staging). Starter suite 42/42; demo 41/41.
+- **Tx-routing root cause fixed at the seam:** repository `FactoryBean`s can finalize the
+  `embedJNoSQL` singleton during `registerBeanPostProcessors` type-checking, before the routing
+  BPP is registered, caching a raw database whose writes bypassed `@Transactional` staging. The
+  auto-configuration now returns the routed proxy from the `@Bean` factory method itself
+  (`EmbedJNoSQLTxRoutingPostProcessor.routed`), with the BPP kept as a safety net and
+  `TxCollectionFactory` as the per-call fallback for bare references. Previously-green demo
+  `HibernateParityIntegrationTest` rollback tests were re-verified green after this change.
+- `EmbedJpaPartTreeQueryCreator` now coerces derived-query bind parameters (`eq`/`ne`/`in`) to the
+  persisted shape (enum names, ISO temporals), matching what `EntityMapper.toDocument` writes.
+- §7 "READY" statement updated by round 4 evidence: the Spring Boot demo is now 41/41 including
+  the Spring Data JPA integration suite.

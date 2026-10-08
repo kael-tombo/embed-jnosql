@@ -108,7 +108,11 @@ public class EmbedJNoSQLAutoConfiguration {
             logger.info("EmbedJNoSQL Administration Console: {}", db.consoleUrl());
             logger.info("==========================================================================");
         }
-        return db;
+        // Publish the routed proxy from birth: a bean finalized during the
+        // registerBeanPostProcessors type-checking cascade (repository FactoryBeans resolving
+        // their database dependency early) would otherwise cache a raw instance that no BPP
+        // can ever wrap. Mirror of TransactionAwareDataSourceProxy built at the DataSource seam.
+        return properties.isTransactionsEnabled() ? EmbedJNoSQLTxRoutingPostProcessor.routed(db) : db;
     }
 
     /**

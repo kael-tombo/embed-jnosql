@@ -53,7 +53,6 @@ public class EmbedJNoSQLTransactionManager extends AbstractPlatformTransactionMa
     public EmbedJNoSQL getDatabase() {
         return db;
     }
-
     /**
      * Unwraps the tx-routing proxy (if any) down to the raw {@link EmbedJNoSQL} target so
      * resource binding uses the exact instance the routing interceptor consults.
