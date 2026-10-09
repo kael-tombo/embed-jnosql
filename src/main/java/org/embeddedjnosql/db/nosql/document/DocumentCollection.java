@@ -302,8 +302,11 @@ public class DocumentCollection {
         if (query.sortOrder() != Query.SortOrder.NONE && query.sortField() != null) {
             var sf = query.sortField();
             Comparator<Document> cmp = (a, b) -> {
-                var va = toComparable(a.getRaw(sf));
-                var vb = toComparable(b.getRaw(sf));
+                // Dotted paths sort on nested values; a missing path sorts as null.
+                var ra = a.resolvePath(sf);
+                var rb = b.resolvePath(sf);
+                var va = ra == Document.PATH_MISSING ? null : toComparable(ra);
+                var vb = rb == Document.PATH_MISSING ? null : toComparable(rb);
                 if (va == null && vb == null) return 0;
                 if (va == null) return -1;
                 if (vb == null) return 1;

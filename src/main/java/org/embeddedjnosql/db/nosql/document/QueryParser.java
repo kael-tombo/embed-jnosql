@@ -139,8 +139,11 @@ public class QueryParser {
 
     private static Predicate<Document> parseEq(String field, Object value) {
         return doc -> {
-            if (!doc.has(field)) return value == null;
-            var v = doc.getRaw(field);
+            // Dotted paths resolve nested values; PATH_MISSING means the path
+            // itself is absent (preserving the old has()/getRaw() semantics for
+            // plain fields).
+            var v = doc.resolvePath(field);
+            if (v == Document.PATH_MISSING) return value == null;
             return v != null ? v.equals(value) : value == null;
         };
     }
@@ -151,8 +154,8 @@ public class QueryParser {
 
     private static Predicate<Document> parseGt(String field, Object value) {
         return doc -> {
-            if (!doc.has(field)) return false;
-            var v = doc.getRaw(field);
+            var v = doc.resolvePath(field);
+            if (v == Document.PATH_MISSING) return false;
             if (v instanceof Number n && value instanceof Number nv) {
                 return n.doubleValue() > nv.doubleValue();
             }
@@ -162,8 +165,8 @@ public class QueryParser {
 
     private static Predicate<Document> parseGte(String field, Object value) {
         return doc -> {
-            if (!doc.has(field)) return false;
-            var v = doc.getRaw(field);
+            var v = doc.resolvePath(field);
+            if (v == Document.PATH_MISSING) return false;
             if (v instanceof Number n && value instanceof Number nv) {
                 return n.doubleValue() >= nv.doubleValue();
             }
@@ -173,8 +176,8 @@ public class QueryParser {
 
     private static Predicate<Document> parseLt(String field, Object value) {
         return doc -> {
-            if (!doc.has(field)) return false;
-            var v = doc.getRaw(field);
+            var v = doc.resolvePath(field);
+            if (v == Document.PATH_MISSING) return false;
             if (v instanceof Number n && value instanceof Number nv) {
                 return n.doubleValue() < nv.doubleValue();
             }
@@ -184,8 +187,8 @@ public class QueryParser {
 
     private static Predicate<Document> parseLte(String field, Object value) {
         return doc -> {
-            if (!doc.has(field)) return false;
-            var v = doc.getRaw(field);
+            var v = doc.resolvePath(field);
+            if (v == Document.PATH_MISSING) return false;
             if (v instanceof Number n && value instanceof Number nv) {
                 return n.doubleValue() <= nv.doubleValue();
             }
@@ -195,8 +198,8 @@ public class QueryParser {
 
     private static Predicate<Document> parseIn(String field, List<Object> values) {
         return doc -> {
-            if (!doc.has(field)) return false;
-            var v = doc.getRaw(field);
+            var v = doc.resolvePath(field);
+            if (v == Document.PATH_MISSING) return false;
             return values.contains(v);
         };
     }
@@ -236,15 +239,15 @@ public class QueryParser {
                     "Invalid $regex pattern for field '" + field + "': " + e.getMessage());
         }
         return doc -> {
-            if (!doc.has(field)) return false;
-            var v = doc.getRaw(field);
+            var v = doc.resolvePath(field);
+            if (v == Document.PATH_MISSING) return false;
             if (v == null) return false;
             return compiled.matcher(v.toString()).find();
         };
     }
 
     private static Predicate<Document> parseExists(String field, Boolean shouldExist) {
-        return doc -> doc.has(field) == shouldExist;
+        return doc -> doc.hasPath(field) == shouldExist;
     }
 
     private static Predicate<Document> parseAnd(List<Map<String, Object>> queries) {

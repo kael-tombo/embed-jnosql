@@ -6,10 +6,19 @@ import org.embeddedjnosql.db.core.util.JsonSerde;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 public class Document implements UnifiedRecord {
+
+    /**
+     * Sentinel returned by {@link #resolvePath(String)} when a dotted path cannot
+     * be walked to a leaf (an intermediate segment is absent or not a map/list).
+     * Distinct from {@code null}, which a document may legitimately store as a
+     * leaf value — callers must distinguish "absent" from "present but null".
+     */
+    public static final Object PATH_MISSING = new Object();
 
     private String id;
     private Map<String, Object> fields;
@@ -146,6 +155,53 @@ public class Document implements UnifiedRecord {
 
     public boolean has(String key) {
         return fields.containsKey(key);
+    }
+
+    /**
+     * Resolves a possibly-dotted field path against the document's values —
+     * the read-side complement of nested document storage.
+     *
+     * <p>{@code "address.city"} walks the nested map; a numeric segment indexes
+     * into an array ({@code "tags.0"}). A path with no dot behaves exactly like
+     * {@link #getRaw(String)}. Returns {@link #PATH_MISSING} when any intermediate
+     * segment is absent or not a container; a stored {@code null} leaf is returned
+     * as {@code null} so callers can preserve the missing/null distinction that
+     * {@code has()}/{@code getRaw()} used to give them.</p>
+     *
+     * <p>Used by the query engine ({@link QueryParser}, {@link Query}) and the
+     * sort comparator so filters like {@code {"address.city": {"$eq": "Nairobi"}}}
+     * match nested values instead of silently matching nothing. Top-level keys
+     * containing a literal dot are shadowed by the path interpretation — the same
+     * trade-off MongoDB makes.</p>
+     */
+    public Object resolvePath(String path) {
+        if (path.indexOf('.') < 0) {
+            return fields.containsKey(path) ? fields.get(path) : PATH_MISSING;
+        }
+        Object current = fields;
+        for (String segment : path.split("\\.", -1)) {
+            if (current instanceof Map<?, ?> map) {
+                if (!map.containsKey(segment)) return PATH_MISSING;
+                current = map.get(segment);
+            } else if (current instanceof List<?> list) {
+                int index;
+                try {
+                    index = Integer.parseInt(segment);
+                } catch (NumberFormatException e) {
+                    return PATH_MISSING;
+                }
+                if (index < 0 || index >= list.size()) return PATH_MISSING;
+                current = list.get(index);
+            } else {
+                return PATH_MISSING;
+            }
+        }
+        return current;
+    }
+
+    /** True when {@link #resolvePath(String)} found a leaf (present, possibly null). */
+    public boolean hasPath(String path) {
+        return resolvePath(path) != PATH_MISSING;
     }
 
     /** Alias for {@link #has(String)} — Map-style compatibility. */

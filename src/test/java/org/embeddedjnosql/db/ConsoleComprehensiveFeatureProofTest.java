@@ -211,11 +211,12 @@ public class ConsoleComprehensiveFeatureProofTest {
         assertEquals("DENY", res.getHeader("X-Frame-Options"));
         assertNotNull(res.getHeader("Content-Security-Policy"));
 
+        // Legacy compatibility assets were removed; they must no longer be served.
         ResponseRecord resCss = call("GET", "css/enhancements.css", null, false, false);
-        assertEquals(200, resCss.statusCode);
+        assertEquals(404, resCss.statusCode);
 
         ResponseRecord resJs = call("GET", "js/enhancements.js", null, false, false);
-        assertEquals(200, resJs.statusCode);
+        assertEquals(404, resJs.statusCode);
 
         recordProof(2, "Static Assets & Security Headers", "GET", "index.html, css, js", res,
                 "HTTP 200 with X-Content-Type-Options: nosniff, X-Frame-Options: DENY, CSP");

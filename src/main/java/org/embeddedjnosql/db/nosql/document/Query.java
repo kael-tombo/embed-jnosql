@@ -63,13 +63,17 @@ public class Query {
 
     public static Query eq(String field, Object value) {
         var q = new Query(doc -> {
-            if (!doc.has(field)) return false;
-            var v = doc.getRaw(field);
+            var v = doc.resolvePath(field);
+            if (v == Document.PATH_MISSING) return false;
             if (v == null) return value == null;
             return v.equals(value);
         });
-        q.indexedField = field;
-        q.indexedValue = value;
+        // Nested dotted paths are not secondary-indexable — indexing stays a
+        // top-level-field optimization; a dotted path falls back to a scan.
+        if (field.indexOf('.') < 0) {
+            q.indexedField = field;
+            q.indexedValue = value;
+        }
         return q;
     }
 
@@ -92,16 +96,16 @@ public class Query {
 
     public static Query contains(String field, String substring) {
         return new Query(doc -> {
-            if (!doc.has(field)) return false;
-            var v = doc.getRaw(field);
+            var v = doc.resolvePath(field);
+            if (v == Document.PATH_MISSING) return false;
             return v != null && v.toString().contains(substring);
         });
     }
 
     public static Query gt(String field, Number value) {
         return new Query(doc -> {
-            if (!doc.has(field)) return false;
-            var v = doc.getRaw(field);
+            var v = doc.resolvePath(field);
+            if (v == Document.PATH_MISSING) return false;
             if (v instanceof Number n) {
                 return n.doubleValue() > value.doubleValue();
             }
@@ -111,8 +115,8 @@ public class Query {
 
     public static Query gte(String field, Number value) {
         return new Query(doc -> {
-            if (!doc.has(field)) return false;
-            var v = doc.getRaw(field);
+            var v = doc.resolvePath(field);
+            if (v == Document.PATH_MISSING) return false;
             if (v instanceof Number n) {
                 return n.doubleValue() >= value.doubleValue();
             }
@@ -122,8 +126,8 @@ public class Query {
 
     public static Query lt(String field, Number value) {
         return new Query(doc -> {
-            if (!doc.has(field)) return false;
-            var v = doc.getRaw(field);
+            var v = doc.resolvePath(field);
+            if (v == Document.PATH_MISSING) return false;
             if (v instanceof Number n) {
                 return n.doubleValue() < value.doubleValue();
             }
@@ -133,8 +137,8 @@ public class Query {
 
     public static Query lte(String field, Number value) {
         return new Query(doc -> {
-            if (!doc.has(field)) return false;
-            var v = doc.getRaw(field);
+            var v = doc.resolvePath(field);
+            if (v == Document.PATH_MISSING) return false;
             if (v instanceof Number n) {
                 return n.doubleValue() <= value.doubleValue();
             }
@@ -144,29 +148,29 @@ public class Query {
 
     public static Query in(String field, List<?> values) {
         return new Query(doc -> {
-            if (!doc.has(field)) return false;
-            var v = doc.getRaw(field);
+            var v = doc.resolvePath(field);
+            if (v == Document.PATH_MISSING) return false;
             return values.contains(v);
         });
     }
 
     public static Query ne(String field, Object value) {
         return new Query(doc -> {
-            if (!doc.has(field)) return false;
-            var v = doc.getRaw(field);
+            var v = doc.resolvePath(field);
+            if (v == Document.PATH_MISSING) return false;
             if (v == null) return value != null;
             return !v.equals(value);
         });
     }
 
     public static Query exists(String field) {
-        return new Query(doc -> doc.has(field));
+        return new Query(doc -> doc.hasPath(field));
     }
 
     public static Query between(String field, Number lower, Number upper) {
         return new Query(doc -> {
-            if (!doc.has(field)) return false;
-            var v = doc.getRaw(field);
+            var v = doc.resolvePath(field);
+            if (v == Document.PATH_MISSING) return false;
             if (v instanceof Number n) {
                 return n.doubleValue() >= lower.doubleValue() && n.doubleValue() <= upper.doubleValue();
             }
@@ -177,8 +181,8 @@ public class Query {
     public static Query regex(String field, String pattern) {
         var regex = java.util.regex.Pattern.compile(pattern);
         return new Query(doc -> {
-            if (!doc.has(field)) return false;
-            var v = doc.getRaw(field);
+            var v = doc.resolvePath(field);
+            if (v == Document.PATH_MISSING) return false;
             return v != null && regex.matcher(v.toString()).find();
         });
     }

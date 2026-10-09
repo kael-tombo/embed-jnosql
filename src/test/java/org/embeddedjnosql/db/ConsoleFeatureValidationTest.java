@@ -166,13 +166,13 @@ public class ConsoleFeatureValidationTest {
         assertEquals(200, loginResp.code);
         assertTrue(loginResp.body.contains("EmbedJNoSQL"));
 
-        // /css/enhancements.css
+        // /css/enhancements.css — removed from the console; must 404
         Response cssResp = execute("GET", "/css/enhancements.css", null, null, null);
-        assertEquals(200, cssResp.code);
+        assertEquals(404, cssResp.code);
 
-        // /js/enhancements.js
+        // /js/enhancements.js — removed from the console; must 404
         Response jsResp = execute("GET", "/js/enhancements.js", null, null, null);
-        assertEquals(200, jsResp.code);
+        assertEquals(404, jsResp.code);
 
         // /logo.svg
         Response logoResp = execute("GET", "/logo.svg", null, null, null);
