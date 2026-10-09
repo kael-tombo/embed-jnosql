@@ -585,7 +585,7 @@ function showDoc(d) {
   $('#docDel').onclick = async () => {
     const ok = await confirmAction({
       title: 'Delete document',
-      target: `document "${d.id}" in collection "${$('#colSel').value}" (Non-Relational NoSQL Engine)`,
+      target: `document "${d.id}" in collection "${$('#colSel').value}"`,
       impact: 'Removes this document permanently. The collection and its other documents remain.',
       irrecoverable: true,
       confirmLabel: 'Delete document',
@@ -672,7 +672,7 @@ async function dropDocs() {
   // Name the target and quantify the damage before deleting anything.
   const ok = await confirmAction({
     title: 'Delete every document',
-    target: `collection "${col}" (Non-Relational NoSQL Engine) — ${count} document${count === 1 ? '' : 's'}`,
+    target: `collection "${col}" — ${count} document${count === 1 ? '' : 's'}`,
     impact: `Permanently deletes all ${count} document${count === 1 ? '' : 's'} in "${col}". `
           + 'The collection itself remains and stays usable.',
     irrecoverable: true,
@@ -929,7 +929,7 @@ async function kvBrowse() {
     $$('#kvBrowser [data-kvdel]').forEach((b) => b.onclick = async () => {
       const ok = await confirmAction({
         title: 'Delete key',
-        target: `key "${b.dataset.kvdel}" in bucket "${bucketName}" (Non-Relational NoSQL Engine)`,
+        target: `key "${b.dataset.kvdel}" in bucket "${bucketName}"`,
         impact: 'Removes this key and its value. TTL metadata for the key is dropped with it.',
         irrecoverable: true,
         confirmLabel: 'Delete key',
@@ -1177,7 +1177,7 @@ async function bkRestore() {
   // as any other destructive action — this one is named for the whole database.
   const ok = await confirmAction({
     title: 'Restore from backup',
-    target: `database (Both Engines) from file "${file}"`,
+    target: `database from file "${file}"`,
     impact: 'Restores the snapshot over the current data. Documents written since the snapshot may be replaced or lost.',
     irrecoverable: true,
     confirmLabel: 'Restore now',
@@ -1319,6 +1319,9 @@ async function pollStatus() {
   chip.className = 'topbar-chip ok';
   $('#chipHealthText').textContent = h.status === 'ok' ? 'Healthy' : 'Degraded';
   $('#chipEngine').textContent = h.engine ?? '—';
+  // The server states the product identity (NoSQL-only) — the chip labels it
+  // explicitly so the console can never be mistaken for a dual-engine UI.
+  if (h.context?.nosqlEngine) $('#chipEngine').textContent += ' · NoSQL';
   $('#chipUptime').textContent = 'up ' + fmtUptime(h.uptime ?? 0);
   const versionChip = $('#chipVersion');
   if (versionChip) versionChip.textContent = 'v' + (h.version ?? '?');

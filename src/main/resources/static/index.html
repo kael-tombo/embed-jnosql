@@ -26,7 +26,7 @@
         <img src="/logo.svg" alt="">
       </span>
       <div>
-        <div class="brand-name">Jembed<em>DB</em></div>
+        <div class="brand-name">EmbedJNoSQL</div>
         <div class="brand-sub">Console</div>
       </div>
     </header>
@@ -49,25 +49,6 @@
       <button class="btn sm" id="btnLogout" title="End session and return to sign-in">Sign out</button>
     </div>
 
-    <!-- ================= Status bar (always visible) =================
-         Every label here is fed from GET /api/health `context`, which reads the
-         live configuration — never from a guess in the front end. -->
-    <div class="statusbar" id="statusbar" role="status" aria-label="Active database context">
-      <span class="sb-item" id="sbEngine" title="Storage engine type">engine —</span>
-      <span class="sb-sep" aria-hidden="true"></span>
-      <span class="sb-item" id="sbStorage" title="Storage mode and durability guarantee">storage —</span>
-      <span class="sb-sep" aria-hidden="true"></span>
-      <span class="sb-item" id="sbDatabase" title="Active database / data directory">database —</span>
-      <span class="sb-sep" aria-hidden="true"></span>
-      <span class="sb-item" id="sbConnection" title="Console-to-engine connection status">connection —</span>
-      <span class="sb-sep" aria-hidden="true"></span>
-      <span class="sb-item" id="sbTx" title="Active transactions and whether Console writes are transactional">tx —</span>
-      <span class="sb-sep" aria-hidden="true"></span>
-      <span class="sb-item" id="sbUser" title="Security context for the current session">user —</span>
-      <span class="sb-spacer"></span>
-      <span class="sb-item sb-context" id="sbContext" title="Active panel context (collection or schema)">context: none</span>
-    </div>
-
     <!-- ================= Sidebar ================= -->
     <nav class="nav" id="nav" aria-label="Console navigation">
       <div class="nav-search-wrap">
@@ -83,7 +64,7 @@
       <!-- ========== OVERVIEW (shared) ========== -->
       <section class="panel" id="panel-overview">
         <div class="panel-head">
-          <h1>Overview <span class="engine-tag nosql" title="Embedded NoSQL engine">NoSQL</span></h1>
+          <h1>Overview</h1>
           <span class="hint">Live counters, health, and engine info</span>
         </div>
         <div class="grid kpi" id="kpiRow"></div>
@@ -121,10 +102,10 @@
         </div>
       </section>
 
-      <!-- ========== COLLECTIONS (Non-Relational NoSQL Engine) ========== -->
+      <!-- ========== COLLECTIONS ========== -->
       <section class="panel" id="panel-collections">
         <div class="panel-head">
-          <h1>Collections <span class="engine-tag nosql" title="NoSQL — document model">NoSQL</span></h1>
+          <h1>Collections</h1>
           <span class="hint">Documents — create, inspect, edit, TTL, and schema</span>
         </div>
         <div class="card">
@@ -211,10 +192,10 @@
         </div>
       </section>
 
-      <!-- ========== KV & REDIS STRUCTURES (Non-Relational NoSQL Engine) ========== -->
+      <!-- ========== KV & REDIS STRUCTURES ========== -->
       <section class="panel" id="panel-kv">
         <div class="panel-head">
-          <h1>Key-Value &amp; Redis Structures <span class="engine-tag nosql" title="NoSQL — key-value model">NoSQL</span></h1>
+          <h1>Key-Value &amp; Redis Structures</h1>
           <span class="hint">Simple KV, lists, sets, and hashes</span>
         </div>
         <div class="tabs" id="kvTabs" role="tablist" aria-label="Key-value data structure kind">
@@ -229,10 +210,10 @@
         </div>
       </section>
 
-      <!-- ========== COLUMN FAMILIES (Non-Relational NoSQL Engine) ========== -->
+      <!-- ========== COLUMN FAMILIES ========== -->
       <section class="panel" id="panel-columns">
         <div class="panel-head">
-          <h1>Wide-Column Families <span class="engine-tag nosql" title="NoSQL — wide-column model">NoSQL</span></h1>
+          <h1>Wide-Column Families</h1>
           <span class="hint">Row → column matrix with per-cell TTL</span>
         </div>
         <div class="card">
@@ -258,10 +239,10 @@
         </div>
       </section>
 
-      <!-- ========== VECTORS (Non-Relational NoSQL Engine · EXPERIMENTAL) ========== -->
+      <!-- ========== VECTORS (EXPERIMENTAL) ========== -->
       <section class="panel" id="panel-vectors">
         <div class="panel-head">
-          <h1>Vector Index (HNSW) <span class="engine-tag nosql" title="NoSQL — vector model">NoSQL</span></h1>
+          <h1>Vector Index (HNSW)</h1>
           <span class="hint experimental" title="Experimental feature: excluded from coverage gates; API may change">⚠ Experimental — fixed 128 dimensions, API may change</span>
         </div>
         <div class="grid cols-2">
@@ -292,10 +273,10 @@
         </div>
       </section>
 
-      <!-- ========== SCHEMA (Non-Relational NoSQL Engine) ========== -->
+      <!-- ========== SCHEMA ========== -->
       <section class="panel" id="panel-schema">
         <div class="panel-head">
-          <h1>Schema Validation <span class="engine-tag nosql" title="NoSQL — document validation">NoSQL</span></h1>
+          <h1>Schema Validation</h1>
           <span class="hint">Per-collection field schemas enforced on insert</span>
         </div>
         <div class="grid cols-2">
@@ -324,7 +305,7 @@
       <!-- ========== TRANSACTIONS (shared) ========== -->
       <section class="panel" id="panel-tx">
         <div class="panel-head">
-          <h1>Transactions <span class="engine-tag nosql" title="Embedded NoSQL engine">NoSQL</span></h1>
+          <h1>Transactions</h1>
           <span class="hint">Begin, inspect, commit, or roll back active transactions (MVCC)</span>
         </div>
         <div class="card" style="border-left: 3px solid var(--warn, #E8B923); margin-bottom: 12px;">
@@ -347,10 +328,10 @@
         </div>
       </section>
 
-      <!-- ========== INDEXES (Non-Relational NoSQL Engine) ========== -->
+      <!-- ========== INDEXES ========== -->
       <section class="panel" id="panel-indexes">
         <div class="panel-head">
-          <h1>Secondary Indexes <span class="engine-tag nosql" title="NoSQL — document indexes">NoSQL</span></h1>
+          <h1>Secondary Indexes</h1>
           <span class="hint">Per-collection field indexes</span>
         </div>
         <div class="card">
@@ -372,7 +353,7 @@
       <!-- ========== BACKUP (shared) ========== -->
       <section class="panel" id="panel-backup">
         <div class="panel-head">
-          <h1>Backup &amp; Restore <span class="engine-tag nosql" title="Embedded NoSQL engine">NoSQL</span></h1>
+          <h1>Backup &amp; Restore</h1>
           <span class="hint">Snapshot the data directory or restore from a backup file</span>
         </div>
         <div class="grid cols-2">
@@ -398,7 +379,7 @@
       <!-- ========== CDC & EVENTS (shared) ========== -->
       <section class="panel" id="panel-cdc">
         <div class="panel-head">
-          <h1>Change Data Capture <span class="engine-tag nosql" title="Embedded NoSQL engine">NoSQL</span></h1>
+          <h1>Change Data Capture</h1>
           <span class="hint">Event log, connectors, and enable/disable</span>
         </div>
         <div class="grid cols-2">
@@ -434,7 +415,7 @@
       <!-- ========== AUDIT (shared) ========== -->
       <section class="panel" id="panel-audit">
         <div class="panel-head">
-          <h1>Audit Trail <span class="engine-tag nosql" title="Embedded NoSQL engine">NoSQL</span></h1>
+          <h1>Audit Trail</h1>
           <span class="hint">Recent mutating operations (bounded in-memory log)</span>
         </div>
         <div class="card">
@@ -446,7 +427,7 @@
       <!-- ========== SERVER (CLI / legacy) ========== -->
       <section class="panel" id="panel-server">
         <div class="panel-head">
-          <h1>Server <span class="engine-tag nosql" title="Embedded NoSQL engine">NoSQL</span></h1>
+          <h1>Server</h1>
           <span class="hint">Health details, JVM metrics, and connection info</span>
         </div>
         <div class="grid cols-2">

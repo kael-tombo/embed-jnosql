@@ -1,8 +1,0 @@
-/* ============================================================
-   Legacy entrypoint — retained for backward compatibility.
-   All design-system styles now live in /css/console.css,
-   which is loaded directly by index.html. This file is no
-   longer imported by any page; it remains so that requests
-   to /css/enhancements.css keep returning 200.
-   ============================================================ */
-@import url("console.css");

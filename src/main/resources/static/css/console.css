@@ -152,29 +152,6 @@ body {
 .brand-name em { color: var(--accent); font-style: normal; }
 .brand-sub { font-size: 11px; color: var(--text-2); letter-spacing: .4px; text-transform: uppercase; }
 
-/* ============ Engine tags (data model, not query engine) ============ */
-/* Color is never the only signal: each tag also carries distinct text + an
-   icon glyph, and the title attribute spells the engine out. */
-.engine-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  vertical-align: middle;
-  font-size: 10px;
-  font-weight: 650;
-  letter-spacing: .3px;
-  text-transform: uppercase;
-  border-radius: 999px;
-  padding: 1px 8px;
-  border: 1px solid var(--line-0);
-  color: var(--text-1);
-  background: var(--bg-2);
-}
-.engine-tag::before { content: '◆'; font-size: 8px; line-height: 1; }
-.engine-tag.nosql::before { content: '◈'; }
-.engine-tag.nosql { color: var(--ok); border-color: var(--ok-dim); background: var(--ok-dim); }
-.engine-tag.shared { color: var(--text-1); }
-
 /* Experimental-feature hint (vectors): visible warning, not color-only */
 .hint.experimental {
   color: var(--warn);
