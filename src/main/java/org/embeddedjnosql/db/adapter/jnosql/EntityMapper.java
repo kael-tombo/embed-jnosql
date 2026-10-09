@@ -61,6 +61,12 @@ public class EntityMapper {
         Document doc = new Document();
         doc.add("_entity", collectionName);
 
+        if (AnnotationResolver.hasInheritance(clazz)) {
+            String discCol = AnnotationResolver.resolveDiscriminatorColumn(clazz);
+            String discVal = AnnotationResolver.resolveDiscriminatorValue(clazz);
+            doc.add(discCol, discVal);
+        }
+
         List<Field> fields = getAllFields(clazz);
         Field idField = findDesignatedIdField(fields);
 
@@ -104,7 +110,13 @@ public class EntityMapper {
                 } else {
                     if (value != null) {
                         String fieldName = AnnotationResolver.resolveColumnName(field);
-                        if (value instanceof Enum<?> e) {
+                        Optional<Class<?>> convClass = AnnotationResolver.resolveConverterClass(field);
+                        if (convClass.isPresent()) {
+                            value = convertWithAttributeConverter(convClass.get(), value, true);
+                            doc.add(fieldName, value);
+                        } else if (AnnotationResolver.isEmbeddable(field.getType())) {
+                            doc.add(fieldName, toEmbeddableMap(value));
+                        } else if (value instanceof Enum<?> e) {
                             if (AnnotationResolver.isEnumeratedOrdinal(field)) {
                                 doc.add(fieldName, e.ordinal());
                             } else {
@@ -156,11 +168,24 @@ public class EntityMapper {
      */
     public static <T> T fromDocument(Document doc, Class<T> clazz) {
         try {
-            Constructor<T> ctor = clazz.getDeclaredConstructor();
-            ctor.setAccessible(true);   // handles package-private / inner-class entities
-            T entity = ctor.newInstance();
+            Class<?> targetClass = clazz;
+            if (AnnotationResolver.hasInheritance(clazz)) {
+                String discCol = AnnotationResolver.resolveDiscriminatorColumn(clazz);
+                Object discVal = doc.getRaw(discCol);
+                if (discVal != null) {
+                    Class<?> sub = resolveSubclass(clazz, discVal.toString());
+                    if (sub != null) {
+                        targetClass = sub;
+                    }
+                }
+            }
 
-            List<Field> fields = getAllFields(clazz);
+            Constructor<?> ctor = targetClass.getDeclaredConstructor();
+            ctor.setAccessible(true);   // handles package-private / inner-class entities
+            @SuppressWarnings("unchecked")
+            T entity = (T) ctor.newInstance();
+
+            List<Field> fields = getAllFields(targetClass);
             Field idField = findDesignatedIdField(fields);
 
             for (Field field : fields) {
@@ -188,12 +213,21 @@ public class EntityMapper {
                 }
 
                 if (value != null) {
-                    field.set(entity, convertValue(value, field.getType()));
+                    Optional<Class<?>> convClass = AnnotationResolver.resolveConverterClass(field);
+                    if (convClass.isPresent()) {
+                        value = convertWithAttributeConverter(convClass.get(), value, false);
+                        field.set(entity, value);
+                    } else if (AnnotationResolver.isEmbeddable(field.getType())) {
+                        Object embedObj = fromEmbeddableMap(value, field.getType());
+                        field.set(entity, embedObj);
+                    } else {
+                        field.set(entity, convertValue(value, field.getType()));
+                    }
                 }
             }
 
             // Trigger JPA @PostLoad callback
-            invokeLifecycleMethods(entity, AnnotationResolver.findPostLoadMethods(clazz));
+            invokeLifecycleMethods(entity, AnnotationResolver.findPostLoadMethods(targetClass));
 
             return entity;
         } catch (Exception e) {
@@ -529,6 +563,115 @@ public class EntityMapper {
             return val != null ? val.toString().toLowerCase() : null;
         }
 
+        return null;
+    }
+
+    // -------------------------------------------------------------------------
+    // AttributeConverter, Embeddable, and Polymorphism Helpers
+    // -------------------------------------------------------------------------
+
+    private static final Map<Class<?>, Object> CONVERTER_CACHE = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final Map<String, Class<?>> SUBCLASS_REGISTRY = new java.util.concurrent.ConcurrentHashMap<>();
+
+    public static void registerEntitySubclass(Class<?> baseClass, Class<?> subClass) {
+        String discVal = AnnotationResolver.resolveDiscriminatorValue(subClass);
+        SUBCLASS_REGISTRY.put(baseClass.getName() + ":" + discVal.toUpperCase(Locale.ROOT), subClass);
+    }
+
+    private static Class<?> resolveSubclass(Class<?> baseClass, String discVal) {
+        if (discVal == null) return null;
+        Class<?> sub = SUBCLASS_REGISTRY.get(baseClass.getName() + ":" + discVal.toUpperCase(Locale.ROOT));
+        if (sub != null) return sub;
+        for (var entry : SUBCLASS_REGISTRY.entrySet()) {
+            if (entry.getKey().startsWith(baseClass.getName() + ":") &&
+                    entry.getKey().equalsIgnoreCase(baseClass.getName() + ":" + discVal)) {
+                return entry.getValue();
+            }
+        }
+        return null;
+    }
+
+    private static Object convertWithAttributeConverter(Class<?> convClass, Object value, boolean toDb) {
+        if (value == null) return null;
+        Object conv = CONVERTER_CACHE.computeIfAbsent(convClass, c -> {
+            try {
+                var ctor = c.getDeclaredConstructor();
+                ctor.setAccessible(true);
+                return ctor.newInstance();
+            } catch (Exception e) {
+                throw new RuntimeException("Cannot instantiate AttributeConverter: " + c.getName(), e);
+            }
+        });
+        String targetMethodName = toDb ? "convertToDatabaseColumn" : "convertToEntityAttribute";
+        for (java.lang.reflect.Method m : conv.getClass().getMethods()) {
+            if (m.getName().equals(targetMethodName) && m.getParameterCount() == 1) {
+                try {
+                    m.setAccessible(true);
+                    return m.invoke(conv, value);
+                } catch (Exception ignored) {}
+            }
+        }
+        return value;
+    }
+
+    private static Map<String, Object> toEmbeddableMap(Object embeddable) {
+        if (embeddable == null) return null;
+        Map<String, Object> map = new LinkedHashMap<>();
+        for (Field f : getAllFields(embeddable.getClass())) {
+            if (Modifier.isStatic(f.getModifiers()) || AnnotationResolver.isTransient(f)) continue;
+            f.setAccessible(true);
+            try {
+                Object fVal = f.get(embeddable);
+                if (fVal != null) {
+                    Optional<Class<?>> convClass = AnnotationResolver.resolveConverterClass(f);
+                    if (convClass.isPresent()) {
+                        fVal = convertWithAttributeConverter(convClass.get(), fVal, true);
+                    } else if (AnnotationResolver.isEmbeddable(f.getType())) {
+                        fVal = toEmbeddableMap(fVal);
+                    }
+                    String col = AnnotationResolver.resolveColumnName(f);
+                    map.put(col, fVal);
+                }
+            } catch (Exception ignored) {}
+        }
+        return map;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <E> E fromEmbeddableMap(Object raw, Class<E> embedClass) {
+        if (raw == null) return null;
+        if (embedClass.isInstance(raw)) return (E) raw;
+        try {
+            if (raw instanceof String str && (str.startsWith("{") || str.startsWith("["))) {
+                return JsonSerde.fromJson(str, embedClass);
+            }
+            if (raw instanceof Map<?, ?> map) {
+                var ctor = embedClass.getDeclaredConstructor();
+                ctor.setAccessible(true);
+                E instance = ctor.newInstance();
+                for (Field f : getAllFields(embedClass)) {
+                    if (Modifier.isStatic(f.getModifiers()) || AnnotationResolver.isTransient(f)) continue;
+                    String col = AnnotationResolver.resolveColumnName(f);
+                    Object val = map.get(col);
+                    if (val == null) {
+                        val = map.get(f.getName());
+                    }
+                    if (val != null) {
+                        f.setAccessible(true);
+                        Optional<Class<?>> convClass = AnnotationResolver.resolveConverterClass(f);
+                        if (convClass.isPresent()) {
+                            val = convertWithAttributeConverter(convClass.get(), val, false);
+                        } else if (AnnotationResolver.isEmbeddable(f.getType())) {
+                            val = fromEmbeddableMap(val, f.getType());
+                        } else {
+                            val = convertValue(val, f.getType());
+                        }
+                        f.set(instance, val);
+                    }
+                }
+                return instance;
+            }
+        } catch (Exception ignored) {}
         return null;
     }
 }

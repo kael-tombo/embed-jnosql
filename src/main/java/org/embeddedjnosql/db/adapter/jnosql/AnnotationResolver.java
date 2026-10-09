@@ -29,9 +29,15 @@ class AnnotationResolver {
     // Annotation class names (loaded lazily / defensively)
     // -------------------------------------------------------------------------
 
-    private static final String JNOSQL_ENTITY       = "jakarta.nosql.Entity";
-    private static final String JNOSQL_ID           = "jakarta.nosql.Id";
-    private static final String JNOSQL_COLUMN       = "jakarta.nosql.Column";
+    private static final String JNOSQL_ENTITY            = "jakarta.nosql.Entity";
+    private static final String JNOSQL_ID                = "jakarta.nosql.Id";
+    private static final String JNOSQL_COLUMN            = "jakarta.nosql.Column";
+    private static final String JNOSQL_CONVERT           = "jakarta.nosql.Convert";
+    private static final String JNOSQL_EMBEDDABLE        = "jakarta.nosql.Embeddable";
+    private static final String JNOSQL_INHERITANCE       = "jakarta.nosql.Inheritance";
+    private static final String JNOSQL_DISCRIM_COL       = "jakarta.nosql.DiscriminatorColumn";
+    private static final String JNOSQL_DISCRIM_VAL       = "jakarta.nosql.DiscriminatorValue";
+    private static final String JNOSQL_MAPPED_SUPERCLASS = "jakarta.nosql.MappedSuperclass";
 
     private static final String JPA_ENTITY          = "jakarta.persistence.Entity";
     private static final String JPA_TABLE           = "jakarta.persistence.Table";
@@ -45,6 +51,12 @@ class AnnotationResolver {
     private static final String JPA_PRE_UPDATE      = "jakarta.persistence.PreUpdate";
     private static final String JPA_POST_PERSIST    = "jakarta.persistence.PostPersist";
     private static final String JPA_POST_LOAD       = "jakarta.persistence.PostLoad";
+    private static final String JPA_CONVERT         = "jakarta.persistence.Convert";
+    private static final String JPA_EMBEDDABLE      = "jakarta.persistence.Embeddable";
+    private static final String JPA_INHERITANCE     = "jakarta.persistence.Inheritance";
+    private static final String JPA_DISCRIM_COL     = "jakarta.persistence.DiscriminatorColumn";
+    private static final String JPA_DISCRIM_VAL     = "jakarta.persistence.DiscriminatorValue";
+    private static final String JPA_MAPPED_SUPERCLASS = "jakarta.persistence.MappedSuperclass";
 
     // Hibernate annotations
     private static final String HIBERNATE_CREATION_TS = "org.hibernate.annotations.CreationTimestamp";
@@ -238,6 +250,56 @@ class AnnotationResolver {
     }
 
     // -------------------------------------------------------------------------
+    // Jakarta NoSQL / Eclipse JNoSQL Mapping Details
+    // -------------------------------------------------------------------------
+
+    static Optional<Class<?>> resolveConverterClass(Field field) {
+        Optional<Class<?>> jnosql = readAnnotationClassAttribute(field, JNOSQL_CONVERT, "value");
+        if (jnosql.isPresent()) return jnosql;
+        return readAnnotationClassAttribute(field, JPA_CONVERT, "converter");
+    }
+
+    static boolean isEmbeddable(Class<?> clazz) {
+        if (clazz == null || clazz.isPrimitive() || clazz.getName().startsWith("java.")) return false;
+        return isAnnotationPresent(clazz, JNOSQL_EMBEDDABLE)
+                || isAnnotationPresent(clazz, JPA_EMBEDDABLE)
+                || clazz.isAnnotationPresent(Embeddable.class);
+    }
+
+    static boolean hasInheritance(Class<?> clazz) {
+        if (clazz == null || clazz == Object.class) return false;
+        if (isAnnotationPresent(clazz, JNOSQL_INHERITANCE) || isAnnotationPresent(clazz, JPA_INHERITANCE)) {
+            return true;
+        }
+        return hasInheritance(clazz.getSuperclass());
+    }
+
+    static String resolveDiscriminatorColumn(Class<?> clazz) {
+        Class<?> curr = clazz;
+        while (curr != null && curr != Object.class) {
+            Optional<String> jnosql = readAnnotationAttribute(curr, JNOSQL_DISCRIM_COL, "value");
+            if (jnosql.isPresent() && !jnosql.get().isEmpty()) return jnosql.get();
+            Optional<String> jpa = readAnnotationAttribute(curr, JPA_DISCRIM_COL, "name");
+            if (jpa.isPresent() && !jpa.get().isEmpty()) return jpa.get();
+            curr = curr.getSuperclass();
+        }
+        return "DTYPE";
+    }
+
+    static String resolveDiscriminatorValue(Class<?> clazz) {
+        Optional<String> jnosql = readAnnotationAttribute(clazz, JNOSQL_DISCRIM_VAL, "value");
+        if (jnosql.isPresent() && !jnosql.get().isEmpty()) return jnosql.get();
+        Optional<String> jpa = readAnnotationAttribute(clazz, JPA_DISCRIM_VAL, "value");
+        if (jpa.isPresent() && !jpa.get().isEmpty()) return jpa.get();
+        return clazz.getSimpleName();
+    }
+
+    static boolean isMappedSuperclass(Class<?> clazz) {
+        return isAnnotationPresent(clazz, JNOSQL_MAPPED_SUPERCLASS)
+                || isAnnotationPresent(clazz, JPA_MAPPED_SUPERCLASS);
+    }
+
+    // -------------------------------------------------------------------------
     // Reflective helpers (no compile-time dep on optional annotation JARs)
     // -------------------------------------------------------------------------
 
@@ -320,6 +382,42 @@ class AnnotationResolver {
             Method method = annClass.getDeclaredMethod(attributeName);
             Object value = method.invoke(ann);
             return Optional.ofNullable(value instanceof String s ? s : null);
+        } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
+            return Optional.empty();
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Optional<Class<?>> readAnnotationClassAttribute(
+            Field element, String annotationClassName, String attributeName) {
+        try {
+            Class<? extends Annotation> annClass =
+                    (Class<? extends Annotation>) Class.forName(annotationClassName);
+            Annotation ann = element.getAnnotation(annClass);
+            if (ann == null) return Optional.empty();
+            Method method = annClass.getDeclaredMethod(attributeName);
+            Object value = method.invoke(ann);
+            return Optional.ofNullable(value instanceof Class<?> c ? c : null);
+        } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
+            return Optional.empty();
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Optional<Class<?>> readAnnotationClassAttribute(
+            Class<?> element, String annotationClassName, String attributeName) {
+        try {
+            Class<? extends Annotation> annClass =
+                    (Class<? extends Annotation>) Class.forName(annotationClassName);
+            Annotation ann = element.getAnnotation(annClass);
+            if (ann == null) return Optional.empty();
+            Method method = annClass.getDeclaredMethod(attributeName);
+            Object value = method.invoke(ann);
+            return Optional.ofNullable(value instanceof Class<?> c ? c : null);
         } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
             return Optional.empty();
         } catch (Exception e) {

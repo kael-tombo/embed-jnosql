@@ -238,6 +238,36 @@ public class EmbedJNoSQL implements Closeable {
     }
 
     /**
+     * Returns an EclipseDocumentTemplate for the default collection.
+     * Implements both EmbedJNoSQL DocumentTemplate and jakarta.nosql.Template.
+     */
+    public org.embeddedjnosql.db.adapter.jnosql.EclipseDocumentTemplate documentTemplate() {
+        return org.embeddedjnosql.db.adapter.jnosql.EclipseDocumentTemplate.of(documentCollection("_default"));
+    }
+
+    /**
+     * Returns an EclipseDocumentTemplate for the specified collection name.
+     */
+    public org.embeddedjnosql.db.adapter.jnosql.EclipseDocumentTemplate documentTemplate(String collectionName) {
+        return org.embeddedjnosql.db.adapter.jnosql.EclipseDocumentTemplate.of(documentCollection(collectionName));
+    }
+
+    /**
+     * Returns an EclipseDocumentTemplate for the collection associated with the given entity class.
+     */
+    public <T> org.embeddedjnosql.db.adapter.jnosql.EclipseDocumentTemplate documentTemplate(Class<T> entityClass) {
+        String colName = org.embeddedjnosql.db.adapter.jnosql.EntityMapper.getCollectionName(entityClass);
+        return org.embeddedjnosql.db.adapter.jnosql.EclipseDocumentTemplate.of(documentCollection(colName));
+    }
+
+    /**
+     * Returns an Eclipse JNoSQL NoSQLRepository for the given entity class.
+     */
+    public <T, K> org.embeddedjnosql.db.adapter.jnosql.EmbedNoSQLRepository<T, K> noSqlRepository(Class<T> entityClass) {
+        return org.embeddedjnosql.db.adapter.jnosql.EmbedNoSQLRepository.of(entityClass, this);
+    }
+
+    /**
      * The live storage engine backing this database. Admin surfaces (backup, diagnostics)
      * must use this instance rather than constructing a new engine: a fresh engine reports
      * none of the live collections, which silently turns a backup into an empty file.

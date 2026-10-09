@@ -114,4 +114,11 @@ public class EmbedRepository<T, ID> {
     public Class<T> getEntityClass() {
         return entityClass;
     }
+
+    /**
+     * Bridges this repository to the standard Eclipse JNoSQL {@link org.eclipse.jnosql.mapping.NoSQLRepository} interface.
+     */
+    public EmbedNoSQLRepository<T, ID> asNoSQLRepository() {
+        return EmbedNoSQLRepository.of(entityClass, db);
+    }
 }

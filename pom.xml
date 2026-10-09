@@ -126,14 +126,39 @@
         </dependency>
 
         <!--
-            Eclipse JNoSQL Mapping API — optional, provided.
-            Allows entities annotated with jakarta.nosql.@Entity / @Id / @Column
-            to be mapped transparently. Users who want JNoSQL annotations must add
-            this dependency to their own project; EmbedJNoSQL detects it via reflection.
+            Eclipse JNoSQL & Jakarta NoSQL / Jakarta Data APIs — optional, provided.
+            Allows entities annotated with jakarta.nosql.* (@Entity, @Id, @Column,
+            @Embeddable, @Convert, @Inheritance, etc.) and repositories using
+            jakarta.nosql.Template and org.eclipse.jnosql.mapping.NoSQLRepository
+            to be mapped and executed directly with EmbedJNoSQL.
         -->
+        <dependency>
+            <groupId>jakarta.nosql</groupId>
+            <artifactId>jakarta.nosql-api</artifactId>
+            <version>1.0.0</version>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>jakarta.data</groupId>
+            <artifactId>jakarta.data-api</artifactId>
+            <version>1.0.1</version>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+
         <dependency>
             <groupId>org.eclipse.jnosql.mapping</groupId>
             <artifactId>jnosql-mapping-api-core</artifactId>
+            <version>1.1.8</version>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.eclipse.jnosql.communication</groupId>
+            <artifactId>jnosql-communication-core</artifactId>
             <version>1.1.8</version>
             <scope>provided</scope>
             <optional>true</optional>
