@@ -13,7 +13,8 @@ public record EmbedJNoSQLConfig(
         boolean autoFlush,
         int flushIntervalMs,
         ConsoleConfig consoleConfig,
-        SecurityConfig securityConfig
+        SecurityConfig securityConfig,
+        boolean queryCacheEnabled
 ) {
     public EmbedJNoSQLConfig {
         Objects.requireNonNull(storageEngine, "storageEngine cannot be null");
@@ -30,7 +31,15 @@ public record EmbedJNoSQLConfig(
      * Backward-compatible 4-argument constructor.
      */
     public EmbedJNoSQLConfig(StorageEngineType storageEngine, Path dataDir, boolean autoFlush, int flushIntervalMs) {
-        this(storageEngine, dataDir, autoFlush, flushIntervalMs, ConsoleConfig.disabled(), SecurityConfig.disabled());
+        this(storageEngine, dataDir, autoFlush, flushIntervalMs, ConsoleConfig.disabled(), SecurityConfig.disabled(), true);
+    }
+
+    /**
+     * Backward-compatible 6-argument constructor (query cache defaults to on).
+     */
+    public EmbedJNoSQLConfig(StorageEngineType storageEngine, Path dataDir, boolean autoFlush, int flushIntervalMs,
+            ConsoleConfig consoleConfig, SecurityConfig securityConfig) {
+        this(storageEngine, dataDir, autoFlush, flushIntervalMs, consoleConfig, securityConfig, true);
     }
 
     public enum StorageEngineType {
@@ -69,6 +78,18 @@ public record EmbedJNoSQLConfig(
         private int flushIntervalMs = 1000;
         private ConsoleConfig consoleConfig = ConsoleConfig.disabled();
         private SecurityConfig securityConfig = SecurityConfig.disabled();
+        /**
+         * Query result cache switch. On by default: predicate queries against a
+         * collection hit the in-memory cache until the collection is written to.
+         * Disable for write-heavy workloads where the invalidation cost dominates.
+         */
+        private boolean queryCacheEnabled = true;
+
+        /** Disables the query result cache for this database instance. */
+        public Builder queryCacheEnabled(boolean enabled) {
+            this.queryCacheEnabled = enabled;
+            return this;
+        }
 
         public Builder storageEngine(StorageEngineType engine) {
             this.storageEngine = engine;
@@ -124,7 +145,7 @@ public record EmbedJNoSQLConfig(
         }
 
         public EmbedJNoSQLConfig buildConfig() {
-            return new EmbedJNoSQLConfig(storageEngine, dataDir, autoFlush, flushIntervalMs, consoleConfig, securityConfig);
+            return new EmbedJNoSQLConfig(storageEngine, dataDir, autoFlush, flushIntervalMs, consoleConfig, securityConfig, queryCacheEnabled);
         }
 
         public EmbedJNoSQL build() {

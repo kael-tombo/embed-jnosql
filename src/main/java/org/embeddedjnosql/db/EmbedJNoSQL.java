@@ -35,6 +35,8 @@ public class EmbedJNoSQL implements Closeable {
     private final EventBus eventBus;
     private final DatabaseMetrics metrics;
     private final CDCManager cdcManager;
+    /** Shared query result cache handed to every document collection (null = disabled). */
+    private final org.embeddedjnosql.db.core.cache.QueryResultCache queryCache;
     private volatile boolean closed;
     private EmbedJNoSQLServer server;
 
@@ -54,6 +56,14 @@ public class EmbedJNoSQL implements Closeable {
         this.eventBus = new EventBus();
         this.metrics = new DatabaseMetrics();
         this.cdcManager = new CDCManager();
+        // One cache per database, shared by all collections: DocumentCollection
+        // already invalidates on every write path (insert/update/delete) via
+        // invalidatePattern(name), so cross-collection staleness is not a risk and
+        // repeated predicate queries stop rescanning the engine. Previously the
+        // cache existed but was never wired — every find() paid the full scan.
+        this.queryCache = config.queryCacheEnabled()
+                ? new org.embeddedjnosql.db.core.cache.QueryResultCache()
+                : null;
         // Feed document change events into CDC so the change feed has a real
         // producer (previously the CDC subsystem had no write-path wiring).
         var cdcListener = cdcManager.changeListener();
@@ -131,7 +141,7 @@ public class EmbedJNoSQL implements Closeable {
         checkOpen();
         var col = collections.computeIfAbsent(name, n -> {
             eventBus.emit(EventBus.EventType.COLLECTION_CREATED, n);
-            var collection = new DocumentCollection(n, engine, eventBus, metrics, null, config.dataDir());
+            var collection = new DocumentCollection(n, engine, eventBus, metrics, queryCache, config.dataDir());
             collection.loadIndexes();
             // A collection's existence is durable from the moment it is created, so an
             // empty collection is still there after a restart even though it holds no
@@ -291,6 +301,15 @@ public class EmbedJNoSQL implements Closeable {
 
     public MVCCManager mvcc() {
         return mvcc;
+    }
+
+    /**
+     * The shared query result cache, or {@code null} when the query cache is
+     * disabled in the config. Exposed so operators can inspect hit/miss stats
+     * and force-clear between test phases.
+     */
+    public org.embeddedjnosql.db.core.cache.QueryResultCache queryCache() {
+        return queryCache;
     }
 
     public EventBus eventBus() {

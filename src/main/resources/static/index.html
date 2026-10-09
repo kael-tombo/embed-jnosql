@@ -49,6 +49,25 @@
       <button class="btn sm" id="btnLogout" title="End session and return to sign-in">Sign out</button>
     </div>
 
+    <!-- ================= Status bar (always visible) =================
+         Every label here is fed from GET /api/health `context`, which reads the
+         live configuration — never from a guess in the front end. -->
+    <div class="statusbar" id="statusbar" role="status" aria-label="Active database context">
+      <span class="sb-item" id="sbEngine" title="Storage engine type">engine —</span>
+      <span class="sb-sep" aria-hidden="true"></span>
+      <span class="sb-item" id="sbStorage" title="Storage mode and durability guarantee">storage —</span>
+      <span class="sb-sep" aria-hidden="true"></span>
+      <span class="sb-item" id="sbDatabase" title="Active database / data directory">database —</span>
+      <span class="sb-sep" aria-hidden="true"></span>
+      <span class="sb-item" id="sbConnection" title="Console-to-engine connection status">connection —</span>
+      <span class="sb-sep" aria-hidden="true"></span>
+      <span class="sb-item" id="sbTx" title="Active transactions and whether Console writes are transactional">tx —</span>
+      <span class="sb-sep" aria-hidden="true"></span>
+      <span class="sb-item" id="sbUser" title="Security context for the current session">user —</span>
+      <span class="sb-spacer"></span>
+      <span class="sb-item sb-context" id="sbContext" title="Active panel context (collection or schema)">context: none</span>
+    </div>
+
     <!-- ================= Sidebar ================= -->
     <nav class="nav" id="nav" aria-label="Console navigation">
       <div class="nav-search-wrap">
