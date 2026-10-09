@@ -141,7 +141,12 @@ public class EmbedJNoSQL implements Closeable {
         checkOpen();
         var col = collections.computeIfAbsent(name, n -> {
             eventBus.emit(EventBus.EventType.COLLECTION_CREATED, n);
-            var collection = new DocumentCollection(n, engine, eventBus, metrics, queryCache, config.dataDir());
+            // For IN_MEMORY engines, index persistence is a no-op: pass null so that
+            // DocumentCollection.saveIndexes/loadIndexes skip file I/O entirely and no
+            // "Failed to save indexes: data\.indexes" warning appears in test output.
+            boolean isPersistent = config.storageEngine() != EmbedJNoSQLConfig.StorageEngineType.IN_MEMORY;
+            var effectiveDataDir = isPersistent ? config.dataDir() : null;
+            var collection = new DocumentCollection(n, engine, eventBus, metrics, queryCache, effectiveDataDir);
             collection.loadIndexes();
             // A collection's existence is durable from the moment it is created, so an
             // empty collection is still there after a restart even though it holds no

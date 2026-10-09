@@ -62,20 +62,28 @@ public class DocumentCollection {
 
     public void loadIndexes() {
         if (dataDir == null) return;
-        
+
         var indexFile = dataDir.resolve(".indexes");
         if (!Files.exists(indexFile)) return;
-        
+
         try {
             var content = Files.readString(indexFile);
             var map = JsonSerde.fromJson(content, Map.class);
             var collectionIndexes = (Map<?, ?>) map.get(name);
             if (collectionIndexes == null) return;
-            
+
+            // The .indexes file records *which fields* were indexed.
+            // We rebuild each index from the current storage-engine contents rather
+            // than trusting the serialized entry set, because saveIndexes() is only
+            // called from createIndex()/dropIndex() — not after every document
+            // mutation. Rebuilding from live data is always correct and consistent.
+            var allDocs = findAll();
             for (var entry : collectionIndexes.entrySet()) {
                 var field = (String) entry.getKey();
-                var idxJson = (String) entry.getValue();
-                var idx = SecondaryIndex.fromJson(idxJson);
+                var idx = new SecondaryIndex(name, field);
+                for (var doc : allDocs) {
+                    idx.add(doc);
+                }
                 indexes.put(field, idx);
             }
         } catch (IOException e) {

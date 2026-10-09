@@ -308,7 +308,7 @@ public class Query {
         return sortOrder;
     }
 
-    String sortField() {
+    public String sortField() {
         return sortField;
     }
 
