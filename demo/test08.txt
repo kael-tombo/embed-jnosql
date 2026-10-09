@@ -1,0 +1,44 @@
+package org.embeddedjnosql.db.demo.demos.redisstylesets;
+
+import org.embeddedjnosql.db.EmbedJNoSQL;
+import org.embeddedjnosql.db.nosql.kv.SetBucket;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class RedisSetDemoTest {
+
+    private EmbedJNoSQL db;
+
+    @BeforeEach
+    void setUp() { db = EmbedJNoSQL.inMemory(); }
+
+    @AfterEach
+    void tearDown() { if (db != null) db.close(); }
+
+    @Test
+    @DisplayName("membership, move, cardinality and random sample behave")
+    void runDemo() {
+        var r = RedisSetDemo.runDemo(db);
+        assertTrue(r.aliceTagged());
+        assertEquals(4, r.javaDevs());
+        assertTrue(r.moved());
+        assertTrue(r.seniors().contains("bob"));
+        assertFalse(r.seniors().contains("dave"));
+    }
+
+    @Test
+    @DisplayName("sadd returns only newly-added count and spop removes")
+    void addAndPopCounts() {
+        var sets = db.setBucket("set_counts");
+        assertEquals(2, sets.sadd("k", "a", "b"));
+        assertEquals(0, sets.sadd("k", "a", "b")); // all duplicates
+        String popped = sets.spop("k");
+        assertNotNull(popped);
+        assertEquals(1, sets.scard("k"));
+        assertFalse(sets.sismember("k", popped));
+    }
+}

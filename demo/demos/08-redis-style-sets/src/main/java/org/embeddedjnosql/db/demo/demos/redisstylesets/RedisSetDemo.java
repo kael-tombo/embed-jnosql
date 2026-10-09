@@ -1,0 +1,57 @@
+package org.embeddedjnosql.db.demo.demos.redisstylesets;
+
+import org.embeddedjnosql.db.EmbedJNoSQL;
+import org.embeddedjnosql.db.nosql.kv.SetBucket;
+
+import java.util.Set;
+
+/**
+ * Demo 08 — Redis-style sets: unique membership, union via smembers across
+ * keys, move between sets, cardinality and random sampling for A/B picks.
+ */
+public class RedisSetDemo {
+
+    public record Result(boolean aliceTagged, long javaDevs, boolean moved,
+                         Set<String> seniors, String sampled) {}
+
+    public static Result runDemo(EmbedJNoSQL db) {
+        SetBucket tags = db.setBucket("tags");
+
+        // 1. Tag users — sadd deduplicates automatically
+        tags.sadd("devs:java", "alice", "bob", "carol");
+        tags.sadd("devs:java", "alice"); // duplicate: no-op
+        boolean alice = tags.sismember("devs:java", "alice");
+
+        // 2. Second interest group
+        tags.sadd("devs:senior", "bob", "dave");
+
+        // 3. Move a member between sets
+        boolean moved = tags.smove("devs:senior", "devs:java", "dave");
+
+        // 4. Cardinality and full membership
+        long card = tags.scard("devs:java");
+        Set<String> members = tags.smembers("devs:java");
+
+        // 5. Random member without removal (A/B pick)
+        String pick = tags.srandmember("devs:java");
+
+        Result r = new Result(alice, card, moved, members, pick);
+        if (!r.aliceTagged() || r.javaDevs() != 4 || !r.moved()
+                || !r.seniors().contains("bob") || !r.seniors().contains(pick)) {
+            throw new AssertionError("Unexpected set results: " + r);
+        }
+        return r;
+    }
+
+    public static void main(String[] args) {
+        try (EmbedJNoSQL db = EmbedJNoSQL.inMemory()) {
+            Result r = runDemo(db);
+            System.out.println("== Redis-style set demo ==");
+            System.out.println("alice tagged     : " + r.aliceTagged());
+            System.out.println("java devs        : " + r.javaDevs());
+            System.out.println("dave moved       : " + r.moved());
+            System.out.println("senior members   : " + r.seniors());
+            System.out.println("random pick      : " + r.sampled());
+        }
+    }
+}

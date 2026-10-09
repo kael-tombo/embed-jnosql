@@ -1,0 +1,21 @@
+package org.embeddedjnosql.db.demo.demos.secondaryindexes;
+
+import org.embeddedjnosql.db.EmbedJNoSQL;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class SecondaryIndexDemoTest {
+
+    @Test
+    void createQueryAndDropIndex() {
+        try (EmbedJNoSQL db = EmbedJNoSQL.inMemory()) {
+            SecondaryIndexDemo.Result r = SecondaryIndexDemo.runDemo(db);
+            assertEquals(List.of("category"), r.indexedFields());
+            assertTrue(r.plannerUsedIndex());
+            assertEquals(100, r.matchesAfterDrop());
+        }
+    }
+}

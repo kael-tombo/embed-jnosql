@@ -1,0 +1,38 @@
+package org.embeddedjnosql.db.demo.demos.textsearch;
+
+import org.embeddedjnosql.db.EmbedJNoSQL;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class TextSearchDemoTest {
+
+    private EmbedJNoSQL db;
+
+    @BeforeEach
+    void setUp() { db = EmbedJNoSQL.inMemory(); }
+
+    @AfterEach
+    void tearDown() { if (db != null) db.close(); }
+
+    @Test
+    @DisplayName("relevant docs rank above irrelevant ones and typos score high similarity")
+    void runDemo() {
+        var r = TextSearchDemo.runDemo(db);
+        assertTrue(r.rankedIds().contains("a1"));
+        assertTrue(r.rankedIds().contains("a3"));
+        assertFalse(r.rankedIds().contains("a2"));
+        assertTrue(r.typoSimilarity() >= 0.7);
+    }
+
+    @Test
+    @DisplayName("levenshtein distance behaves on known inputs")
+    void levenshteinBasics() {
+        assertEquals(0, TextSearch.FuzzySearch.levenshteinDistance("kitten", "kitten"));
+        assertEquals(3, TextSearch.FuzzySearch.levenshteinDistance("kitten", "sitting"));
+        assertEquals(1.0, TextSearch.FuzzySearch.similarity("same", "same"));
+    }
+}

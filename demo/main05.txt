@@ -1,0 +1,60 @@
+package org.embeddedjnosql.db.demo.demos.ttlexpiry;
+
+import org.embeddedjnosql.db.EmbedJNoSQL;
+import org.embeddedjnosql.db.nosql.document.Document;
+import org.embeddedjnosql.db.nosql.document.DocumentCollection;
+import org.embeddedjnosql.db.nosql.kv.KeyValueBucket;
+import org.embeddedjnosql.db.nosql.column.ColumnFamily;
+
+import java.time.Duration;
+
+/**
+ * Demo 05 — TTL (time-to-live) across three models: documents (insert with ttlSeconds),
+ * key-value buckets (put with Duration), and wide-column cells (putWithTtl). Expired
+ * entries disappear on read or via the cleanup sweep.
+ */
+public class TtlExpiryDemo {
+
+    public record Result(boolean docGone, boolean kvGone, boolean colGone, boolean durableSurvived) {}
+
+    public static Result runDemo(EmbedJNoSQL db) throws InterruptedException {
+        DocumentCollection sessions = db.documentCollection("sessions");
+        KeyValueBucket cache = db.keyValueBucket("price_cache");
+        ColumnFamily metrics = db.columnFamily("session_metrics");
+
+        // 1. Document TTL: 1 second
+        sessions.insert(new Document().id("s1").add("user", "ada"), 1);
+
+        // 2. KV TTL: 1 second
+        cache.put("eur:sku-1", "1899.99", Duration.ofSeconds(1));
+
+        // 3. Column TTL: 1 second
+        metrics.putWithTtl("row-1", "hits", 42, 1);
+
+        // 4. A durable document with no TTL must outlive all of them
+        sessions.insert(new Document().id("s2").add("user", "bob"));
+
+        Thread.sleep(1300); // let every 1s TTL lapse
+
+        boolean docGone = sessions.findById("s1").isEmpty();
+        boolean kvGone = cache.get("eur:sku-1") == null;
+        boolean colGone = metrics.getWithTtlCheck("row-1", "hits") == null;
+        boolean durableSurvived = sessions.findById("s2").isPresent();
+
+        if (!docGone || !kvGone || !colGone || !durableSurvived) {
+            throw new AssertionError("TTL expiry inconsistent: " + new Result(docGone, kvGone, colGone, durableSurvived));
+        }
+        return new Result(docGone, kvGone, colGone, durableSurvived);
+    }
+
+    public static void main(String[] args) throws Exception {
+        try (EmbedJNoSQL db = EmbedJNoSQL.inMemory()) {
+            Result r = runDemo(db);
+            System.out.println("== TTL expiry demo ==");
+            System.out.println("document expired : " + r.docGone());
+            System.out.println("kv entry expired : " + r.kvGone());
+            System.out.println("column expired   : " + r.colGone());
+            System.out.println("durable survived : " + r.durableSurvived());
+        }
+    }
+}

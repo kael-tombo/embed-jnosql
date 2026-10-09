@@ -1,0 +1,86 @@
+package org.embeddedjnosql.db.demo.demos.sqltonosqlmigration;
+
+import org.embeddedjnosql.db.EmbedJNoSQL;
+import org.embeddedjnosql.db.nosql.document.Document;
+import org.embeddedjnosql.db.nosql.document.Query;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Demo 13 — SQL to NoSQL migration: the classic join-table pattern
+ * (customers + orders) becomes one document with the order items nested
+ * inside. The migration reads both "tables", stitches the aggregate, and the
+ * assertions prove no data was lost in translation.
+ */
+public class SqlMigrationDemo {
+
+    public record Result(Document migratedOrder, long ordersForAlice, boolean itemsNested,
+                         boolean totalsMatch) {}
+
+    public static Result runDemo(EmbedJNoSQL db) {
+        // --- The "relational" side: two normalized tables ---
+        var customers = db.documentCollection("r_customers");
+        customers.insert(new Document().id("1").add("name", "Alice"));
+        customers.insert(new Document().id("2").add("name", "Bob"));
+
+        var lineItems = db.documentCollection("r_order_items");
+        lineItems.insert(new Document().id("li1").add("order_id", "101").add("sku", "LAPTOP").add("qty", 1).add("price", 1899.99));
+        lineItems.insert(new Document().id("li2").add("order_id", "101").add("sku", "MOUSE").add("qty", 2).add("price", 49.99));
+        lineItems.insert(new Document().id("li3").add("order_id", "102").add("sku", "BOOK").add("qty", 1).add("price", 59.99));
+
+        var rOrders = db.documentCollection("r_orders");
+        rOrders.insert(new Document().id("101").add("customer_id", "1").add("status", "PAID"));
+        rOrders.insert(new Document().id("102").add("customer_id", "1").add("status", "NEW"));
+
+        // --- The migration: denormalize into document aggregates ---
+        var migrated = db.documentCollection("orders");
+        for (var order : rOrders.findAll()) {
+            String customerId = order.get("customer_id");
+            var customer = customers.findById(customerId);
+
+            List<Map<String, Object>> items = lineItems.find(Query.eq("order_id", order.id())).stream()
+                    .map(li -> Map.<String, Object>of(
+                            "sku", li.get("sku"),
+                            "qty", li.get("qty"),
+                            "price", li.get("price")))
+                    .toList();
+
+            double total = items.stream()
+                    .mapToDouble(li -> ((Number) li.get("price")).doubleValue() * ((Number) li.get("qty")).intValue())
+                    .sum();
+
+            migrated.insert(new Document()
+                    .id(order.id())
+                    .add("customer", Map.of("id", customerId, "name", customer != null ? customer.get("name") : null))
+                    .add("status", order.get("status"))
+                    .add("items", items)
+                    .add("total", total));
+        }
+
+        // --- Verify nothing was lost ---
+        var order101 = migrated.findById("101");
+        var aliceOrders = migrated.find(Query.eq("customer.name", "Alice")); // nested-field query!
+        boolean totalsOk = order101 != null
+                && Math.abs((Double) order101.get("total") - (1899.99 + 2 * 49.99)) < 0.01;
+
+        Result r = new Result(order101, aliceOrders.size(),
+                order101 != null && order101.get("items") instanceof List<?> l && l.size() == 2,
+                totalsOk);
+        if (r.migratedOrder() == null || r.ordersForAlice() != 2 || !r.itemsNested() || !r.totalsMatch()) {
+            throw new AssertionError("Unexpected migration results: " + r);
+        }
+        return r;
+    }
+
+    public static void main(String[] args) {
+        try (EmbedJNoSQL db = EmbedJNoSQL.inMemory()) {
+            Result r = runDemo(db);
+            System.out.println("== SQL to NoSQL migration demo ==");
+            System.out.println("migrated order : " + r.migratedOrder());
+            System.out.println("orders (nested query on customer.name=Alice): " + r.ordersForAlice());
+            System.out.println("items nested   : " + r.itemsNested());
+            System.out.println("totals match   : " + r.totalsMatch());
+        }
+    }
+}

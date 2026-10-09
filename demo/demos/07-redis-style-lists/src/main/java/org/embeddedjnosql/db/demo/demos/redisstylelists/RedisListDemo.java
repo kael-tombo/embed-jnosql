@@ -1,0 +1,59 @@
+package org.embeddedjnosql.db.demo.demos.redisstylelists;
+
+import org.embeddedjnosql.db.EmbedJNoSQL;
+import org.embeddedjnosql.db.nosql.kv.ListBucket;
+
+import java.util.List;
+
+/**
+ * Demo 07 — Redis-style lists: bounded producer/consumer queues and stacks via
+ * RPUSH/LPOP, LREM, RPOPLPUSH hand-off between queues, and negative indexing.
+ */
+public class RedisListDemo {
+
+    public record Result(List<String> firstTwo, long queueDepth, String handoffItem,
+                         long remaining, String peekedTail) {}
+
+    public static Result runDemo(EmbedJNoSQL db) {
+        ListBucket tasks = db.listBucket("queues");
+
+        // 1. FIFO work queue: rpush to enqueue, lpop to dequeue
+        tasks.rpush("jobs", "job-a", "job-b", "job-c");
+        String a = tasks.lpop("jobs");
+        String b = tasks.lpop("jobs");
+        long depth = tasks.llen("jobs");
+
+        // 2. Retry lane: rpoplpush moves work between queues atomically-ish
+        tasks.rpush("jobs", "job-c");
+        tasks.rpush("jobs", "job-d");
+        String moved = tasks.rpoplpush("jobs", "retries");
+
+        // 3. Negative index peek: -1 is the tail
+        String tail = tasks.lindex("jobs", -1);
+
+        // 4. lrem: purge a poisoned job wherever it sits
+        tasks.rpush("jobs", "poison");
+        long removed = tasks.lrem("jobs", 0, "poison");
+
+        long after = tasks.llen("jobs");
+        Result r = new Result(List.of(a, b), depth, moved, after, tail);
+        if (!"job-a".equals(a) || !"job-b".equals(b) || r.queueDepth() != 1
+                || !"job-d".equals(moved) || r.remaining() != 2 || !"job-c".equals(tail)
+                || removed != 1) {
+            throw new AssertionError("Unexpected list results: " + r);
+        }
+        return r;
+    }
+
+    public static void main(String[] args) {
+        try (EmbedJNoSQL db = EmbedJNoSQL.inMemory()) {
+            Result r = runDemo(db);
+            System.out.println("== Redis-style list demo ==");
+            System.out.println("first two dequeued : " + r.firstTwo());
+            System.out.println("queue depth after  : " + r.queueDepth());
+            System.out.println("handed to retries  : " + r.handoffItem());
+            System.out.println("remaining after lrem: " + r.remaining());
+            System.out.println("tail peek (lindex -1): " + r.peekedTail());
+        }
+    }
+}
