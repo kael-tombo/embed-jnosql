@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>EmbedJNoSQL — The Embedded NoSQL Database for Java</title>
-  <meta name="description" content="EmbedJNoSQL is the embedded NoSQL database for the JVM: Document and Key-Value models (plus wide-column and experimental vector) in a single pure-Java JAR. In-memory for tests, durable file storage for applications. Zero Docker. Zero daemon. Spring Boot, Quarkus, Micronaut ready." />
+  <meta name="description" content="EmbedJNoSQL is the embedded NoSQL database for the JVM: Document and Key-Value models (plus Redis-style structures, wide-column and experimental vector) in a single pure-Java JAR. In-memory for tests, durable file storage for applications. Zero Docker. Zero daemon." />
   <meta name="keywords" content="EmbedJNoSQL, embedded database, Java, NoSQL, document database, key-value, multi-model, Spring Boot, Quarkus, Micronaut, JNoSQL" />
   <meta property="og:title" content="EmbedJNoSQL — The Embedded NoSQL Database for Java" />
   <meta property="og:description" content="Document + Key-Value NoSQL in a single JAR. Documents, Key-Value, Redis-style structures, Wide-Column — zero Docker, zero daemon." />
@@ -24,71 +24,36 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
 
   <style>
     /* ═══════════════════════════════════════════════
-       DESIGN TOKENS — ELECTRIC YELLOW / GOLD / WHITE THEME
+       TOKENS — evolved dark-gold identity.
+       Gold is the only accent; everything else is
+       neutral ink on near-black. Hierarchy comes from
+       hairlines and spacing, not shadows or glow.
     ═══════════════════════════════════════════════ */
     :root {
-      --c-bg:           #08090d;
-      --c-bg-card:      #0e1017;
-      --c-bg-card-alt:  #131620;
-      --c-bg-glass:     rgba(251, 191, 36, 0.03);
-      --c-border:       rgba(251, 191, 36, 0.12);
-      --c-border-hover: rgba(251, 191, 36, 0.35);
-      --c-border-glow:  rgba(251, 191, 36, 0.5);
+      --bg:        #0A0B0F;
+      --card:      #12141C;
+      --card-2:    #161925;
+      --gold:      #FBBF24;
+      --gold-dim:  rgba(251, 191, 36, 0.15);
+      --text:      #E7E9EE;
+      --text-2:    #9AA3B2;
+      --line:      rgba(251, 191, 36, 0.15);
+      --line-soft: rgba(255, 255, 255, 0.08);
 
-      /* Yellow & Gold Palette */
-      --c-yellow-light: #fef08a; /* Canary 200 */
-      --c-yellow:       #fbbf24; /* Amber Gold 400 */
-      --c-amber:        #f59e0b; /* Solar Gold 500 */
-      --c-amber-dark:   #d97706; /* Bronze 600 */
-      --c-amber-deep:   #b45309; /* Flame 700 */
+      --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+      --font-body:    'Inter', system-ui, -apple-system, sans-serif;
+      --font-mono:    'JetBrains Mono', 'Fira Code', monospace;
 
-      /* Pure White & Neutral Gradients */
-      --c-white:        #ffffff;
-      --text-primary:   #ffffff;
-      --text-secondary: #cbd5e1;
-      --text-muted:     #808ea3;
-
-      /* Gradients */
-      --gradient-gold:      linear-gradient(135deg, #fff7ed 0%, #fbbf24 45%, #f59e0b 100%);
-      --gradient-gold-text: linear-gradient(135deg, #ffffff 0%, #fbbf24 60%, #f59e0b 100%);
-      --gradient-button:    linear-gradient(135deg, #fef08a 0%, #fbbf24 50%, #f59e0b 100%);
-      --gradient-card:      linear-gradient(135deg, rgba(251, 191, 36, 0.06) 0%, rgba(245, 158, 11, 0.02) 100%);
-      --gradient-badge:     linear-gradient(135deg, rgba(251, 191, 36, 0.18) 0%, rgba(245, 158, 11, 0.08) 100%);
-
-      /* Typography */
-      --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
-
-      /* Radius */
-      --radius-sm: 6px;
-      --radius-md: 12px;
-      --radius-lg: 20px;
-      --radius-xl: 28px;
-
-      /* Glow & Shadows */
-      --shadow-glow:  0 0 50px rgba(251, 191, 36, 0.16), 0 0 100px rgba(245, 158, 11, 0.08);
-
-      /* Z-index scale (single source for the site) */
-      --z-bg: 0;          /* grid + radial glow backdrops   */
-      --z-content: 1;     /* sections                        */
-      --z-drawer: 99;     /* mobile nav drawer               */
-      --z-nav: 100;       /* fixed top navigation            */
-      --z-tooltip: 200;
-      --shadow-card:  0 8px 32px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(251, 191, 36, 0.1) inset;
-      --shadow-btn:   0 8px 28px rgba(251, 191, 36, 0.35);
+      --radius: 12px;
+      --max:    1100px;
     }
 
-    /* ═══════════════════════════════════════════════
-       RESET & BASE
-    ═══════════════════════════════════════════════ */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
-
-    /* A11y: honor the OS reduced-motion preference (mascot float, grid pulse, glows) */
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         animation-duration: 0.01ms !important;
@@ -98,1010 +63,437 @@
       html { scroll-behavior: auto; }
     }
     body {
-      font-family: var(--font-sans);
-      background: var(--c-bg);
-      color: var(--text-primary);
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text);
       line-height: 1.65;
-      overflow-x: hidden;
-      position: relative;
+      font-size: 16px;
     }
-    ::selection { background: rgba(251, 191, 36, 0.35); color: #ffffff; }
+    ::selection { background: rgba(251, 191, 36, 0.3); color: #ffffff; }
+    a { color: inherit; }
+    :focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; border-radius: 4px; }
 
-    /* Scrollbar */
-    ::-webkit-scrollbar { width: 7px; }
-    ::-webkit-scrollbar-track { background: var(--c-bg); }
-    ::-webkit-scrollbar-thumb { background: rgba(251, 191, 36, 0.3); border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(251, 191, 36, 0.6); }
-
-    /* Animated Grid Background with Warm Amber Photons */
-    .bg-grid {
-      position: fixed; inset: 0; z-index: var(--z-bg); pointer-events: none;
-      background-image:
-        linear-gradient(rgba(251, 191, 36, 0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(251, 191, 36, 0.04) 1px, transparent 1px);
-      background-size: 56px 56px;
-      animation: gridPulse 9s ease-in-out infinite;
-    }
-    .bg-radial-glow {
-      position: fixed; inset: 0; z-index: var(--z-bg); pointer-events: none;
-      background: radial-gradient(circle at 50% 15%, rgba(251, 191, 36, 0.09) 0%, transparent 60%),
-                  radial-gradient(circle at 85% 70%, rgba(245, 158, 11, 0.05) 0%, transparent 50%);
-    }
-    @keyframes gridPulse {
-      0%, 100% { opacity: 0.6; }
-      50% { opacity: 1; }
-    }
+    h1, h2, h3 { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
+    code { font-family: var(--font-mono); }
 
     /* ═══════════════════════════════════════════════
-       NAVIGATION
+       NAV
     ═══════════════════════════════════════════════ */
     nav {
-      position: fixed; top: 0; left: 0; right: 0; z-index: var(--z-nav);
-      background: rgba(8, 9, 13, 0.88);
-      backdrop-filter: blur(20px);
-      border-bottom: 1px solid var(--c-border);
-      padding: 0 2rem;
-      height: 88px;
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(10, 11, 15, 0.85);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--line-soft);
       display: flex; align-items: center; justify-content: space-between;
-      transition: background 0.3s;
+      padding: 0 2rem; height: 64px;
     }
-    .nav-logo {
-      display: flex; align-items: center; gap: 12px;
-      text-decoration: none;
-    }
-    .nav-logo-icon {
-      width: 60px; height: 60px;
-      display: flex; align-items: center; justify-content: center;
-      border-radius: 14px;
-      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-    .nav-logo:hover .nav-logo-icon { transform: scale(1.08) rotate(4deg); }
-    .nav-logo-text {
-      font-size: 20px; font-weight: 800; letter-spacing: -0.02em;
-      color: var(--c-white);
-    }
-    .nav-logo-text span {
-      background: var(--gradient-gold);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    }
-    .nav-mascot-pill {
-      display: inline-flex; align-items: center; gap: 6px;
-      font-size: 11px; font-weight: 700;
-      color: #0f1117; background: var(--c-yellow);
-      padding: 2px 8px; border-radius: 100px;
-      margin-left: 4px; text-transform: uppercase; letter-spacing: 0.04em;
-    }
-    .nav-links {
-      display: flex; align-items: center; gap: 2.2rem;
-      list-style: none;
-    }
+    .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .nav-logo img { width: 32px; height: 32px; border-radius: 8px; }
+    .nav-logo-text { font-family: var(--font-display); font-size: 17px; font-weight: 700; color: var(--text); }
+    .nav-links { display: flex; align-items: center; gap: 1.8rem; list-style: none; }
     .nav-links a {
-      color: var(--text-secondary); text-decoration: none; font-size: 14px; font-weight: 500;
-      padding: 10px 2px; /* comfortable touch/click target (44px+ with line box) */
-      transition: color 0.2s, transform 0.2s;
+      color: var(--text-2); text-decoration: none; font-size: 14px; font-weight: 500;
+      padding: 8px 2px; transition: color 0.2s;
     }
-    .nav-links a:hover { color: var(--c-yellow); }
+    .nav-links a:hover { color: var(--gold); }
     .nav-cta {
-      background: var(--gradient-button);
-      color: #0f1117 !important;
-      padding: 9px 20px; border-radius: var(--radius-sm);
-      font-size: 13.5px !important; font-weight: 700 !important;
-      box-shadow: 0 4px 16px rgba(251, 191, 36, 0.3);
-      transition: transform 0.2s, box-shadow 0.2s !important;
+      color: #0A0B0F !important; background: var(--gold);
+      padding: 8px 16px !important; border-radius: 8px; font-weight: 700 !important;
+      transition: background 0.2s;
     }
-    .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 6px 22px rgba(251, 191, 36, 0.45); }
-
-    /* Mobile Hamburger */
-    .mobile-menu-btn {
-      display: none;
-      background: none; border: none; cursor: pointer;
-      padding: 8px; color: var(--c-white);
-    }
-    .mobile-drawer {
-      display: none;
-      position: fixed; top: 68px; left: 0; right: 0;
-      background: rgba(12, 14, 20, 0.98);
-      border-bottom: 1px solid var(--c-border);
-      padding: 1.5rem 2rem;
-      flex-direction: column; gap: 1.2rem;
-      backdrop-filter: blur(25px);
-      z-index: var(--z-drawer);
-      transform: translateY(-10px); opacity: 0;
-      transition: transform 0.3s ease, opacity 0.3s ease;
-    }
-    .mobile-drawer.open {
-      display: flex; transform: translateY(0); opacity: 1;
-    }
-    .mobile-drawer a {
-      color: var(--text-primary); text-decoration: none; font-size: 16px; font-weight: 600;
-      padding: 6px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    .nav-cta:hover { background: #fde047; color: #0A0B0F !important; }
+    @media (max-width: 720px) {
+      .nav-links li:not(:last-child) { display: none; }
+      nav { padding: 0 1.25rem; }
     }
 
     /* ═══════════════════════════════════════════════
-       HERO SECTION — DYNAMIC MASCOT & VALUE PROPOSITION
+       SECTIONS — single-column narrative, left aligned.
+       The hero is the only centered moment.
+    ═══════════════════════════════════════════════ */
+    section { padding: 88px 2rem; }
+    .container { max-width: var(--max); margin: 0 auto; }
+    .section-title { font-size: clamp(1.7rem, 3.5vw, 2.4rem); margin-bottom: 0.9rem; }
+    .section-desc { color: var(--text-2); max-width: 640px; font-size: 1.02rem; }
+    .section-desc + .section-desc { margin-top: 0.9rem; }
+
+    /* ═══════════════════════════════════════════════
+       HERO — the one bold moment on the page.
     ═══════════════════════════════════════════════ */
     .hero {
-      position: relative; z-index: var(--z-content);
-      min-height: 94vh;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      text-align: center;
-      padding: 130px 2rem 80px;
+      min-height: 92vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: 120px 2rem 88px;
     }
-    .hero-badge {
-      display: inline-flex; align-items: center; gap: 10px;
-      background: var(--gradient-badge);
-      border: 1px solid var(--c-border-hover);
-      border-radius: 100px;
-      padding: 7px 18px; margin-bottom: 2rem;
-      font-size: 13px; font-weight: 700; color: var(--c-yellow-light);
-      box-shadow: 0 4px 20px rgba(251, 191, 36, 0.15);
-    }
-    .hero-badge-dot {
-      width: 8px; height: 8px; border-radius: 50%;
-      background: var(--c-yellow);
-      box-shadow: 0 0 10px var(--c-yellow);
-      animation: badgePulse 2s ease-in-out infinite;
-    }
-    @keyframes badgePulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(0.7); }
-    }
-
-    /* Mascot Hero Display Container */
     .hero-mascot-row {
       display: flex; align-items: center; justify-content: center;
-      gap: 2.5rem; margin-bottom: 2.2rem;
-      flex-wrap: wrap;
+      gap: 2rem; margin-bottom: 2.2rem; flex-wrap: wrap;
     }
     .mascot-avatar-wrap {
-      position: relative;
-      width: 252px; height: 252px;
+      width: 180px; height: 180px;
       display: flex; align-items: center; justify-content: center;
-      animation: floatMascot 4.5s ease-in-out infinite;
+      animation: floatMascot 5s ease-in-out infinite; /* the single motion moment */
     }
     @keyframes floatMascot {
-      0%, 100% { transform: translateY(0px) rotate(0deg); }
-      50% { transform: translateY(-8px) rotate(1.5deg); }
+      0%, 100% { transform: translateY(0); }
+      50%      { transform: translateY(-7px); }
     }
-    .mascot-aura {
-      position: absolute; inset: -15px;
-      background: radial-gradient(circle, rgba(251, 191, 36, 0.35) 0%, rgba(245, 158, 11, 0.1) 50%, transparent 70%);
-      border-radius: 50%; z-index: 0;
-      animation: auraPulse 3s ease-in-out infinite;
-    }
-    @keyframes auraPulse {
-      0%, 100% { transform: scale(1); opacity: 0.8; }
-      50% { transform: scale(1.15); opacity: 1; }
-    }
-    .mascot-svg {
-      position: relative; z-index: 1;
-      object-fit: contain;
-      filter: drop-shadow(0 16px 32px rgba(0, 0, 0, 0.65));
-    }
+    .mascot-avatar-wrap img { width: 180px; height: 180px; object-fit: contain; }
     .mascot-speech-bubble {
-      background: var(--c-bg-card-alt);
-      border: 1px solid var(--c-border-hover);
-      border-radius: var(--radius-lg);
-      padding: 14px 20px;
-      max-width: 320px;
-      text-align: left;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px 20px; max-width: 320px; text-align: left;
       position: relative;
-      z-index: var(--z-content); /* keep the bubble above the mascot aura glow */
-      box-shadow: 0 10px 30px rgba(0,0,0,0.4), 0 0 20px rgba(251, 191, 36, 0.1);
     }
-    .hero-mascot-row { z-index: var(--z-content); }
     .mascot-speech-bubble::before {
       content: '';
-      position: absolute; left: -10px; top: 50%; transform: translateY(-50%);
-      border-width: 8px 10px 8px 0;
-      border-style: solid;
-      border-color: transparent var(--c-border-hover) transparent transparent;
+      position: absolute; left: -9px; top: 50%; transform: translateY(-50%);
+      border-width: 8px 9px 8px 0; border-style: solid;
+      border-color: transparent var(--line) transparent transparent;
     }
-    .mascot-name-tag {
-      font-size: 11px; font-weight: 800; text-transform: uppercase;
-      color: var(--c-yellow); letter-spacing: 0.05em; margin-bottom: 3px;
-    }
-    .mascot-speech-text {
-      font-size: 13px; color: var(--text-primary); line-height: 1.45;
-    }
-    .mascot-speech-text strong { color: var(--c-yellow-light); }
+    .mascot-speech-text { font-size: 13.5px; line-height: 1.55; color: var(--text); }
+    .mascot-speech-text strong { color: var(--gold); font-weight: 600; }
 
     .hero h1 {
-      font-size: clamp(2.6rem, 7vw, 5.2rem);
-      font-weight: 900; line-height: 1.08;
-      letter-spacing: -0.035em;
-      margin-bottom: 1.5rem;
-      max-width: 1080px;
+      font-size: clamp(2.5rem, 6vw, 4.4rem);
+      max-width: 900px; margin-bottom: 1.4rem;
     }
-    .hero h1 .text-white { color: #ffffff; }
-    .hero h1 .text-gradient {
-      background: var(--gradient-gold-text);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      text-shadow: 0 0 35px rgba(251, 191, 36, 0.3);
-    }
+    .hero h1 .gold { color: var(--gold); }
     .hero-sub {
-      font-size: clamp(1.15rem, 2.3vw, 1.38rem);
-      color: var(--text-secondary); max-width: 760px;
-      margin: 0 auto 1.6rem;
-      line-height: 1.7;
+      font-size: clamp(1.05rem, 2vw, 1.25rem);
+      color: var(--text-2); max-width: 680px; margin: 0 auto 2.2rem; line-height: 1.7;
     }
-    .hero-tagline {
-      font-size: 1.05rem; color: var(--text-muted);
-      margin-bottom: 2.8rem;
+    .hero-sub strong { color: var(--text); font-weight: 600; }
+    .hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; margin-bottom: 4rem; }
+    .btn-primary, .btn-secondary {
+      display: inline-flex; align-items: center; gap: 8px;
+      text-decoration: none; padding: 13px 28px; border-radius: 10px;
+      font-size: 15px; font-weight: 600; transition: background 0.2s, border-color 0.2s;
     }
-    .hero-tagline strong {
-      color: var(--c-yellow); font-weight: 700;
-      background: rgba(251, 191, 36, 0.1);
-      padding: 3px 10px; border-radius: 6px;
-      border: 1px solid rgba(251, 191, 36, 0.2);
-    }
-    .hero-actions {
-      display: flex; gap: 1.2rem; flex-wrap: wrap; justify-content: center;
-      margin-bottom: 4rem;
-    }
-    .btn-primary {
-      display: inline-flex; align-items: center; gap: 9px;
-      background: var(--gradient-button);
-      color: #0b0c10; text-decoration: none;
-      padding: 15px 32px; border-radius: var(--radius-md);
-      font-size: 15.5px; font-weight: 800;
-      box-shadow: var(--shadow-btn);
-      transition: transform 0.25s, box-shadow 0.25s;
-    }
-    .btn-primary:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 12px 36px rgba(251, 191, 36, 0.5);
-    }
-    .btn-secondary {
-      display: inline-flex; align-items: center; gap: 9px;
-      background: var(--c-bg-card);
-      border: 1px solid var(--c-border-hover);
-      color: var(--c-white); text-decoration: none;
-      padding: 15px 30px; border-radius: var(--radius-md);
-      font-size: 15.5px; font-weight: 700;
-      backdrop-filter: blur(10px);
-      transition: border-color 0.2s, background 0.2s, transform 0.2s;
-    }
-    .btn-secondary:hover {
-      border-color: var(--c-yellow);
-      background: rgba(251, 191, 36, 0.08);
-      transform: translateY(-2px);
-    }
+    .btn-primary { background: var(--gold); color: #0A0B0F; }
+    .btn-primary:hover { background: #fde047; }
+    .btn-secondary { border: 1px solid var(--line); color: var(--text); }
+    .btn-secondary:hover { border-color: var(--gold); }
 
-    /* Hero Stats Strip */
-    .hero-stats {
-      display: flex; gap: 2.5rem; flex-wrap: wrap; justify-content: center;
-      background: var(--c-bg-glass);
-      border: 1px solid var(--c-border);
-      border-radius: var(--radius-xl);
-      padding: 1.25rem 2.5rem;
-      backdrop-filter: blur(16px);
-      box-shadow: 0 8px 30px rgba(0,0,0,0.3);
-    }
-    .hero-stat {
-      display: flex; flex-direction: column; align-items: center;
-    }
-    .hero-stat-value {
-      font-size: 1.85rem; font-weight: 900;
-      color: var(--c-yellow);
-      letter-spacing: -0.02em;
-    }
-    .hero-stat-label { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
-    .hero-stat-sep { width: 1px; background: var(--c-border); align-self: stretch; }
-
-    /* ═══════════════════════════════════════════════
-       HERO CODE PANEL
-    ═══════════════════════════════════════════════ */
-    .hero-code-wrap {
-      width: 100%; max-width: 920px; margin: 3.5rem auto 0;
-      position: relative;
-    }
+    /* Code panel — the second bold moment. */
     .code-panel {
-      background: #0b0d13;
-      border: 1px solid var(--c-border);
-      border-radius: var(--radius-xl);
+      width: 100%; max-width: 860px; text-align: left;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
       overflow: hidden;
-      backdrop-filter: blur(20px);
-      box-shadow: var(--shadow-glow), var(--shadow-card);
-      text-align: left;
     }
     .code-panel-header {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 14px 22px;
-      border-bottom: 1px solid var(--c-border);
-      background: rgba(251, 191, 36, 0.03);
+      padding: 12px 20px; border-bottom: 1px solid var(--line-soft);
     }
-    .code-dots { display: flex; align-items: center; gap: 8px; }
-    .code-dot { width: 12px; height: 12px; border-radius: 50%; }
-    .code-dot-r { background: #ef4444; }
-    .code-dot-y { background: #f59e0b; }
-    .code-dot-g { background: #10b981; }
-    .code-panel-title {
-      font-size: 12.5px; font-family: var(--font-mono);
-      color: var(--c-yellow-light); font-weight: 600;
-    }
+    .code-panel-title { font-size: 12.5px; font-family: var(--font-mono); color: var(--text-2); }
     .copy-btn {
-      background: rgba(251, 191, 36, 0.1);
-      border: 1px solid var(--c-border);
-      color: var(--c-yellow);
-      font-size: 11.5px; font-weight: 700;
-      padding: 5px 12px; border-radius: var(--radius-sm);
-      cursor: pointer; display: flex; align-items: center; gap: 6px;
-      transition: background 0.2s, border-color 0.2s, color 0.2s;
+      background: var(--gold-dim); border: 1px solid var(--line);
+      color: var(--gold); font-size: 11.5px; font-weight: 600;
+      padding: 5px 12px; border-radius: 8px; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 6px;
+      font-family: var(--font-body);
+      transition: background 0.2s, border-color 0.2s;
     }
-    .copy-btn:hover { background: rgba(251, 191, 36, 0.2); border-color: var(--c-yellow); }
-    .copy-btn.copied { background: #10b981; border-color: #10b981; color: #ffffff; }
-
+    .copy-btn:hover { border-color: var(--gold); }
+    .copy-btn.copied { background: var(--gold); border-color: var(--gold); color: #0A0B0F; }
     .code-body {
-      padding: 1.5rem 2rem;
+      padding: 1.4rem 1.8rem;
       font-family: var(--font-mono); font-size: 13.5px; line-height: 1.8;
       overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
     }
-    .kw  { color: #fbbf24; font-weight: 700; } /* Yellow keyword */
-    .cls { color: #ffffff; font-weight: 700; } /* White class */
-    .fn  { color: #fde047; }                   /* Bright yellow method */
-    .str { color: #86efac; }                   /* Mint string */
-    .num { color: #f97316; }                   /* Flame number */
-    .ann { color: #f59e0b; font-weight: 600; } /* Amber annotation */
-    .cmt { color: #64748b; font-style: italic; }
+    .kw  { color: var(--gold); font-weight: 700; }
+    .cls { color: #ffffff; font-weight: 700; }
+    .fn  { color: #fde047; }
+    .str { color: #86efac; }
+    .num { color: #f97316; }
+    .cmt { color: #6b7280; font-style: italic; }
+
+    @media (max-width: 768px) {
+      .mascot-avatar-wrap { width: 140px; height: 140px; }
+      .mascot-avatar-wrap img { width: 140px; height: 140px; }
+      .mascot-speech-bubble::before { display: none; }
+      .code-body { font-size: 12px; padding: 1rem; }
+    }
 
     /* ═══════════════════════════════════════════════
-       INTERACTIVE QUERY PLAYGROUND SECTION (NEW)
+       PLAYGROUND
     ═══════════════════════════════════════════════ */
-    .playground-section {
-      padding: 90px 2rem;
-      position: relative; z-index: 1;
-    }
     .playground-box {
-      max-width: 980px; margin: 3rem auto 0;
-      background: var(--c-bg-card);
-      border: 1px solid var(--c-border-hover);
-      border-radius: var(--radius-xl);
-      overflow: hidden;
-      box-shadow: var(--shadow-glow), var(--shadow-card);
+      max-width: 900px; margin: 2.5rem auto 0;
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: var(--radius); overflow: hidden;
     }
     .playground-nav {
       display: flex; align-items: center; justify-content: space-between;
-      border-bottom: 1px solid var(--c-border);
-      background: rgba(251, 191, 36, 0.04);
-      padding: 0 1rem;
+      padding: 10px 14px; border-bottom: 1px solid var(--line-soft);
     }
-    .playground-tabs { display: flex; gap: 0.5rem; }
-    .pg-tab {
-      padding: 14px 20px; font-size: 13.5px; font-weight: 700;
-      color: var(--text-muted); cursor: pointer; border: none; background: none;
-      border-bottom: 2px solid transparent; transition: all 0.2s;
-    }
-    .pg-tab.active {
-      color: var(--c-yellow); border-bottom-color: var(--c-yellow);
-    }
+    .pg-title { padding: 0 8px; font-size: 13.5px; font-weight: 600; color: var(--gold); }
     .pg-run-btn {
-      background: var(--gradient-button);
-      color: #0c0d12; border: none;
-      padding: 8px 20px; border-radius: var(--radius-sm);
-      font-size: 13px; font-weight: 800; cursor: pointer;
-      display: flex; align-items: center; gap: 7px;
-      box-shadow: 0 4px 14px rgba(251, 191, 36, 0.35);
-      transition: transform 0.2s, box-shadow 0.2s;
+      background: var(--gold); color: #0A0B0F; border: none;
+      padding: 8px 18px; border-radius: 8px;
+      font-size: 13px; font-weight: 700; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 7px; font-family: var(--font-body);
+      transition: background 0.2s;
     }
-    .pg-run-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(251, 191, 36, 0.5); }
-
-    .playground-grid {
-      display: grid; grid-template-columns: 1.15fr 0.85fr;
-      min-height: 280px;
-    }
+    .pg-run-btn:hover { background: #fde047; }
+    .playground-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; min-height: 260px; }
+    .playground-grid > * { min-width: 0; }
     .pg-editor-panel {
-      padding: 1.5rem; border-right: 1px solid var(--c-border);
-      background: #090b10;
-      font-family: var(--font-mono); font-size: 13px;
+      padding: 1.4rem; border-right: 1px solid var(--line-soft);
+      background: #0C0E14; font-family: var(--font-mono); font-size: 13px; line-height: 1.9;
+      overflow-x: auto;
     }
-    .pg-result-panel {
-      padding: 1.5rem; background: #0c0e15;
-      font-family: var(--font-mono); font-size: 12.5px;
-      display: flex; flex-direction: column;
-    }
+    .pg-result-panel { padding: 1.4rem; background: var(--card); font-family: var(--font-mono); font-size: 12.5px; }
     .pg-result-header {
       display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 1rem; padding-bottom: 0.5rem;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      font-size: 12px; color: var(--text-muted);
+      margin-bottom: 0.9rem; padding-bottom: 0.6rem;
+      border-bottom: 1px solid var(--line-soft);
+      font-size: 12px; color: var(--text-2);
     }
-    .pg-latency-badge {
-      background: rgba(16, 185, 129, 0.15);
-      color: #34d399; font-weight: 700;
-      padding: 2px 8px; border-radius: 4px;
-    }
-    .pg-output-json {
-      color: #e2e8f0; overflow-y: auto; max-height: 220px; line-height: 1.6;
+    .pg-latency-badge { color: var(--gold); font-weight: 700; }
+    .pg-output-json { color: var(--text); line-height: 1.6; overflow: auto; max-height: 240px; white-space: pre; }
+    @media (max-width: 900px) {
+      .playground-grid { grid-template-columns: 1fr; }
+      .pg-editor-panel { border-right: none; border-bottom: 1px solid var(--line-soft); }
     }
 
     /* ═══════════════════════════════════════════════
-       SECTION COMMON LAYOUT
+       DATA MODELS — one honest table instead of cards.
     ═══════════════════════════════════════════════ */
-    section {
-      padding: 100px 2rem;
-      position: relative; z-index: 1;
+    .models-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .models-table {
+      width: 100%; margin-top: 2.5rem;
+      border-collapse: collapse; text-align: left; font-size: 0.95rem;
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: var(--radius); overflow: hidden;
     }
-    .container { max-width: 1200px; margin: 0 auto; }
-    .section-label {
-      display: inline-block;
-      font-size: 12px; font-weight: 800; letter-spacing: 0.12em;
-      text-transform: uppercase; color: var(--c-yellow);
-      background: rgba(251, 191, 36, 0.12);
-      border: 1px solid rgba(251, 191, 36, 0.25);
-      border-radius: 100px;
-      padding: 5px 16px; margin-bottom: 1rem;
+    .models-table th {
+      font-family: var(--font-body); font-size: 12.5px; font-weight: 600;
+      color: var(--text-2); padding: 12px 18px;
+      border-bottom: 1px solid var(--line);
+      background: var(--card-2);
     }
-    .section-title {
-      font-size: clamp(2rem, 4.5vw, 3.2rem);
-      font-weight: 900; letter-spacing: -0.03em;
-      line-height: 1.15; margin-bottom: 1.2rem;
-      color: #ffffff;
-    }
-    .section-title .text-gradient {
-      background: var(--gradient-gold);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    }
-    .section-desc {
-      font-size: 1.15rem; color: var(--text-secondary);
-      max-width: 680px; line-height: 1.7;
-    }
+    .models-table td { padding: 16px 18px; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+    .models-table tr:last-child td { border-bottom: none; }
+    .models-table td:first-child { font-family: var(--font-display); font-weight: 700; color: var(--text); white-space: nowrap; }
+    .models-table .model-desc { color: var(--text-2); font-size: 0.92rem; }
+    .models-table code { font-size: 0.82rem; color: var(--gold); }
 
-    /* ═══════════════════════════════════════════════
-       PHILOSOPHY PILLARS
-    ═══════════════════════════════════════════════ */
-    .pillars-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 1.5rem; margin-top: 3.5rem;
+    .substrate-note {
+      margin-top: 1.5rem; padding: 16px 20px;
+      border-left: 2px solid var(--gold);
+      background: var(--card); border-radius: 0 var(--radius) var(--radius) 0;
+      color: var(--text-2); font-size: 0.92rem;
+      overflow-wrap: break-word;
     }
-    .pillar-card {
-      background: var(--c-bg-card);
-      border: 1px solid var(--c-border);
-      border-radius: var(--radius-lg);
-      padding: 2.2rem;
-      position: relative; overflow: hidden;
-      transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+    .substrate-note code { overflow-wrap: anywhere; }
+    .substrate-note strong { color: var(--text); font-weight: 600; }
+
+    .frameworks-line {
+      margin-top: 2rem; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+      color: var(--text-2); font-size: 0.95rem;
     }
-    .pillar-card::before {
-      content: ''; position: absolute; inset: 0;
-      background: var(--gradient-card);
-      opacity: 0; transition: opacity 0.3s;
-      pointer-events: none;
-    }
-    .pillar-card:hover {
-      border-color: var(--c-border-hover);
-      transform: translateY(-4px);
-      box-shadow: 0 12px 36px rgba(251, 191, 36, 0.12);
-    }
-    .pillar-card:hover::before { opacity: 1; }
-    .pillar-icon-box {
-      width: 52px; height: 52px; border-radius: 14px;
-      background: rgba(251, 191, 36, 0.1);
-      border: 1px solid rgba(251, 191, 36, 0.25);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 24px; margin-bottom: 1.4rem;
-      color: var(--c-yellow);
-    }
-    .pillar-title {
-      font-size: 1.25rem; font-weight: 800; margin-bottom: 0.75rem;
-      color: #ffffff;
-    }
-    .pillar-desc {
-      color: var(--text-secondary); font-size: 0.95rem; line-height: 1.7;
-    }
-    .pillar-code {
-      margin-top: 1.2rem; padding: 8px 14px;
-      background: rgba(0, 0, 0, 0.5);
-      border-left: 2px solid var(--c-yellow);
-      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-      font-family: var(--font-mono); font-size: 12px;
-      color: var(--c-yellow-light);
+    .fw-badge {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: 8px; padding: 7px 14px;
+      font-size: 13.5px; font-weight: 600; color: var(--text);
     }
 
     /* ═══════════════════════════════════════════════
        POSITIONING QUADRANT
     ═══════════════════════════════════════════════ */
-    .positioning-wrap {
-      display: grid; grid-template-columns: 1fr 1fr;
-      gap: 3rem; align-items: center; margin-top: 3.5rem;
+    .positioning-band {
+      border-top: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft);
+      background: rgba(18, 20, 28, 0.5);
     }
-    .quadrant-grid {
-      display: grid; grid-template-columns: 1fr 1fr;
-      gap: 1rem; position: relative;
-    }
+    .positioning-wrap { display: grid; grid-template-columns: 1fr 1.1fr; gap: 3rem; align-items: center; }
+    @media (max-width: 900px) { .positioning-wrap { grid-template-columns: 1fr; } }
+    .quadrant-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .quad-cell {
-      border: 1px solid var(--c-border);
-      border-radius: var(--radius-md);
-      padding: 1.75rem;
-      background: var(--c-bg-card);
-      position: relative;
+      border: 1px solid var(--line-soft); border-radius: var(--radius);
+      padding: 1.4rem; background: var(--card);
     }
-    .quad-cell.highlight {
-      border-color: var(--c-yellow);
-      background: linear-gradient(135deg, rgba(251, 191, 36, 0.12) 0%, rgba(245, 158, 11, 0.04) 100%);
-      box-shadow: 0 0 35px rgba(251, 191, 36, 0.2);
-    }
-    .quad-cell-label {
-      font-size: 11px; font-weight: 800; text-transform: uppercase;
-      letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 0.5rem;
-    }
-    .quad-cell.highlight .quad-cell-label { color: var(--c-yellow); }
-    .quad-cell-name {
-      font-size: 1.15rem; font-weight: 800; margin-bottom: 0.5rem;
-      color: #ffffff;
-    }
-    .quad-cell-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+    .quad-cell.highlight { border-color: var(--gold); }
+    .quad-cell-label { font-size: 12px; font-weight: 600; color: var(--text-2); margin-bottom: 0.4rem; }
+    .quad-cell.highlight .quad-cell-label { color: var(--gold); }
+    .quad-cell-name { font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; margin-bottom: 0.4rem; }
+    .quad-cell-desc { font-size: 12.5px; color: var(--text-2); line-height: 1.55; }
     .quad-badge {
-      display: inline-block; margin-top: 0.75rem;
-      font-size: 11px; font-weight: 700; padding: 3px 10px;
-      border-radius: 100px;
+      display: inline-block; margin-top: 0.7rem;
+      font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 100px;
     }
-    .quad-badge.dim { background: rgba(255, 255, 255, 0.06); color: var(--text-muted); }
-    .quad-badge.gold {
-      background: var(--c-yellow); color: #0b0c10;
-      font-weight: 800;
-    }
+    .quad-badge.dim  { background: rgba(255, 255, 255, 0.06); color: var(--text-2); }
+    .quad-badge.gold { background: var(--gold); color: #0A0B0F; }
 
     /* ═══════════════════════════════════════════════
-       TRI-STANDARD ANNOTATIONS
+       INSTALL
     ═══════════════════════════════════════════════ */
-    .annotation-strip {
-      background: var(--c-bg-card);
-      border: 1px solid var(--c-border);
-      border-radius: var(--radius-xl);
-      padding: 2.5rem; margin-top: 3rem;
+    .maven-note {
+      max-width: 860px; margin: 1.8rem auto 0; padding: 14px 18px;
+      border-radius: var(--radius);
+      background: #FFF8E1; border: 1px solid #E8B923;
+      font-size: 14px; line-height: 1.6; text-align: left; color: #1A1A1A;
     }
-    .annotation-badges {
-      display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 2rem;
-    }
-    .ann-badge {
-      display: flex; align-items: center; gap: 12px;
-      background: #11141e;
-      border: 1px solid var(--c-border);
-      border-radius: var(--radius-md);
-      padding: 14px 20px;
-      transition: border-color 0.25s, transform 0.25s;
-    }
-    .ann-badge:hover { border-color: var(--c-yellow); transform: translateY(-2px); }
-    .ann-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c-yellow); flex-shrink: 0; box-shadow: 0 0 8px var(--c-yellow); }
-    .ann-name { font-size: 14px; font-weight: 700; color: #ffffff; }
-    .ann-pkg { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); }
-
-    /* ═══════════════════════════════════════════════
-       STORAGE ENGINES
-    ═══════════════════════════════════════════════ */
-    .engines-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 1.5rem; margin-top: 3.5rem;
-    }
-    .engine-card {
-      background: var(--c-bg-card);
-      border: 1px solid var(--c-border);
-      border-radius: var(--radius-lg);
-      padding: 1.75rem;
-      transition: all 0.3s;
-    }
-    .engine-card:hover {
-      border-color: var(--c-border-hover);
-      transform: translateY(-4px);
-      box-shadow: 0 8px 30px rgba(251, 191, 36, 0.1);
-    }
-    .engine-badge {
-      display: inline-block; font-size: 11px; font-weight: 800;
-      padding: 3px 10px; border-radius: 100px; margin-bottom: 1rem;
-      text-transform: uppercase; letter-spacing: 0.05em;
-    }
-    .engine-badge.gold { background: rgba(251, 191, 36, 0.15); color: var(--c-yellow); }
-    .engine-badge.white { background: rgba(255, 255, 255, 0.1); color: #ffffff; }
-    .engine-badge.amber { background: rgba(245, 158, 11, 0.15); color: var(--c-amber); }
-    .engine-badge.bronze { background: rgba(217, 119, 6, 0.15); color: var(--c-amber-dark); }
-    .engine-name { font-size: 1.15rem; font-weight: 800; margin-bottom: 0.5rem; color: #ffffff; }
-    .engine-desc { font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6; }
-    .engine-use { font-size: 0.82rem; color: var(--text-muted); margin-top: 1rem; }
-    .engine-use strong { color: var(--c-yellow); }
-
-    /* ═══════════════════════════════════════════════
-       FRAMEWORKS
-    ═══════════════════════════════════════════════ */
-    .frameworks-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 1.5rem; margin-top: 3.5rem;
-    }
-    .fw-card {
-      background: var(--c-bg-card);
-      border: 1px solid var(--c-border);
-      border-radius: var(--radius-lg);
-      padding: 2rem;
-      transition: all 0.3s;
-    }
-    .fw-card:hover {
-      border-color: var(--c-border-hover);
-      transform: translateY(-4px);
-      box-shadow: 0 10px 32px rgba(251, 191, 36, 0.12);
-    }
-    .fw-header { display: flex; align-items: center; gap: 14px; margin-bottom: 1rem; }
-    .fw-icon {
-      width: 48px; height: 48px; border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 22px; font-weight: 900;
-      background: rgba(251, 191, 36, 0.12); color: var(--c-yellow);
-      border: 1px solid rgba(251, 191, 36, 0.25);
-    }
-    .fw-name { font-size: 1.25rem; font-weight: 800; color: #ffffff; }
-    .fw-pkg  { font-size: 11.5px; color: var(--c-yellow); font-family: var(--font-mono); }
-    .fw-desc { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.2rem; }
-
-    /* ═══════════════════════════════════════════════
-       BENCHMARKS & PERFORMANCE
-    ═══════════════════════════════════════════════ */
-    .benchmarks-wrap {
-      background: var(--c-bg-card);
-      border: 1px solid var(--c-border);
-      border-radius: var(--radius-xl);
-      padding: 2.5rem; margin-top: 3.5rem;
-    }
-    .bm-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 1.5rem; margin-bottom: 2.5rem;
-    }
-    .bm-card {
-      background: #0d1017;
-      border: 1px solid var(--c-border);
-      border-radius: var(--radius-md);
-      padding: 1.5rem; text-align: center;
-    }
-    .bm-number {
-      font-size: 2.2rem; font-weight: 900;
-      color: var(--c-yellow);
-      letter-spacing: -0.03em;
-    }
-    .bm-unit { font-size: 14px; color: var(--c-yellow-light); font-weight: 700; margin-left: 2px; }
-    .bm-label { font-size: 12.5px; color: var(--text-secondary); font-weight: 600; margin-top: 4px; }
-    .bm-context { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-
-    /* Visual Bar Comparison */
-    .perf-bars-title {
-      font-size: 14px; font-weight: 800; text-transform: uppercase;
-      letter-spacing: 0.08em; color: var(--c-white); margin-bottom: 1.2rem;
-    }
-    .perf-bar-row {
-      margin-bottom: 1rem;
-    }
-    .perf-bar-header {
-      display: flex; justify-content: space-between; font-size: 13px; font-weight: 600;
-      margin-bottom: 5px;
-    }
-    .perf-bar-header span:first-child { color: var(--text-primary); }
-    .perf-bar-header span:last-child { color: var(--c-yellow); font-family: var(--font-mono); }
-    .perf-bar-track {
-      height: 10px; background: rgba(255, 255, 255, 0.06); border-radius: 5px; overflow: hidden;
-    }
-    .perf-bar-fill {
-      height: 100%; border-radius: 5px;
-      background: var(--gradient-button);
-      box-shadow: 0 0 10px rgba(251, 191, 36, 0.4);
-      transition: width 1s ease-out;
-    }
-
-    /* ═══════════════════════════════════════════════
-       INSTALLATION TABS
-    ═══════════════════════════════════════════════ */
+    .maven-note code { color: #7A4E00; background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 4px; font-size: 13px; }
     .install-box {
-      background: var(--c-bg-card);
-      border: 1px solid var(--c-border);
-      border-radius: var(--radius-xl);
-      overflow: hidden; margin-top: 3.5rem;
-      box-shadow: var(--shadow-card);
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: var(--radius); overflow: hidden; margin-top: 1.8rem;
     }
-    .install-tabs {
-      display: flex; border-bottom: 1px solid var(--c-border);
-      background: rgba(251, 191, 36, 0.03); overflow-x: auto;
-    }
+    .install-tabs { display: flex; border-bottom: 1px solid var(--line-soft); overflow-x: auto; }
     .tab-btn {
-      padding: 16px 24px; font-size: 14px; font-weight: 700;
-      color: var(--text-muted); background: none; border: none;
-      cursor: pointer; border-bottom: 2px solid transparent;
-      white-space: nowrap; transition: all 0.2s;
+      padding: 14px 22px; font-size: 14px; font-weight: 600;
+      color: var(--text-2); background: none; border: none; cursor: pointer;
+      border-bottom: 2px solid transparent; white-space: nowrap;
+      font-family: var(--font-body); transition: color 0.2s;
     }
-    .tab-btn:hover { color: var(--text-primary); }
-    .tab-btn.active { color: var(--c-yellow); border-bottom-color: var(--c-yellow); }
-    .tab-panel { display: none; padding: 1.75rem 2rem; }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+    .tab-panel { display: none; padding: 1.4rem; }
     .tab-panel.active { display: block; }
+    .tab-panel .copy-row { display: flex; justify-content: flex-end; margin-bottom: 8px; }
 
     /* ═══════════════════════════════════════════════
-       USE CASES
+       CTA + HONEST BOUNDARIES + FOOTER
     ═══════════════════════════════════════════════ */
-    .use-cases-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 1.5rem; margin-top: 3.5rem;
-    }
-    .uc-card {
-      background: var(--c-bg-card);
-      border: 1px solid var(--c-border);
-      border-radius: var(--radius-lg);
-      padding: 2rem;
-      display: flex; gap: 1.2rem;
-      transition: all 0.3s;
-    }
-    .uc-card:hover {
-      border-color: var(--c-border-hover);
-      transform: translateY(-3px);
-      box-shadow: 0 8px 30px rgba(251, 191, 36, 0.1);
-    }
-    .uc-icon { font-size: 28px; flex-shrink: 0; line-height: 1; }
-    .uc-title { font-size: 1.15rem; font-weight: 800; margin-bottom: 0.4rem; color: #ffffff; }
-    .uc-desc { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; }
-    .uc-highlight {
-      font-size: 11.5px; color: var(--c-yellow); font-weight: 700;
-      margin-top: 0.6rem; font-family: var(--font-mono);
-    }
+    .cta-band { border-top: 1px solid var(--line-soft); padding: 88px 2rem; text-align: center; }
+    .cta-band-mascot { width: 80px; height: 80px; margin: 0 auto 1.4rem; }
+    .cta-band h2 { font-size: clamp(1.8rem, 4vw, 2.6rem); margin-bottom: 0.8rem; }
+    .cta-band p { color: var(--text-2); margin-bottom: 2rem; font-size: 1.05rem; }
+    .cta-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
 
-    /* ═══════════════════════════════════════════════
-       CTA BAND WITH VOLT MASCOT
-    ═══════════════════════════════════════════════ */
-    .cta-band {
-      background: linear-gradient(180deg, var(--c-bg-card) 0%, #11141f 100%);
-      border-top: 1px solid var(--c-border);
-      border-bottom: 1px solid var(--c-border);
-      padding: 90px 2rem;
-      text-align: center; position: relative; overflow: hidden;
+    .boundaries {
+      max-width: 720px; margin: 3.5rem auto 0; text-align: left;
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 1.6rem 1.8rem;
     }
-    .cta-band::before {
-      content: ''; position: absolute; inset: 0;
-      background: radial-gradient(ellipse at center, rgba(251, 191, 36, 0.14) 0%, transparent 70%);
-      pointer-events: none;
-    }
-    .cta-band-mascot {
-      width: 90px; height: 90px; margin: 0 auto 1.5rem;
-      animation: floatMascot 4s ease-in-out infinite;
-    }
-    .cta-band h2 {
-      font-size: clamp(2rem, 4.5vw, 3rem); font-weight: 900;
-      margin-bottom: 1rem; position: relative; color: #ffffff;
-    }
-    .cta-band p {
-      color: var(--text-secondary); margin-bottom: 2.2rem;
-      font-size: 1.15rem; position: relative;
-    }
+    .boundaries h3 { font-size: 1.05rem; margin-bottom: 0.5rem; }
+    .boundaries p { color: var(--text-2); font-size: 0.92rem; line-height: 1.7; }
 
-    /* ═══════════════════════════════════════════════
-       FOOTER
-    ═══════════════════════════════════════════════ */
-    footer {
-      background: #06070a;
-      border-top: 1px solid var(--c-border);
-      padding: 60px 2rem 40px;
-      text-align: center;
-      position: relative; z-index: 1;
-    }
+    footer { border-top: 1px solid var(--line-soft); padding: 48px 2rem 36px; text-align: center; }
     .footer-logo {
-      font-size: 22px; font-weight: 900; margin-bottom: 0.5rem;
-      color: #ffffff; display: inline-flex; align-items: center; gap: 10px;
+      font-family: var(--font-display); font-size: 18px; font-weight: 700;
+      display: inline-flex; align-items: center; gap: 10px; margin-bottom: 0.4rem;
     }
-    .footer-logo span {
-      background: var(--gradient-gold);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    .footer-logo img { width: 30px; height: 30px; border-radius: 8px; }
+    .footer-tagline { color: var(--text-2); font-size: 13px; margin-bottom: 1.6rem; }
+    .footer-links { display: flex; gap: 1.6rem; justify-content: center; flex-wrap: wrap; margin-bottom: 1.6rem; }
+    .footer-links a {
+      color: var(--text-2); text-decoration: none; font-size: 13px; font-weight: 500;
+      padding: 6px 2px; transition: color 0.2s;
     }
-    .footer-tagline { color: var(--text-muted); font-size: 13.5px; margin-bottom: 1.8rem; }
-    .footer-links { display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap; margin-bottom: 2rem; }
-    .footer-links a { color: var(--text-secondary); text-decoration: none; font-size: 13.5px; font-weight: 600; padding: 8px 2px; transition: color 0.2s; }
-    .footer-links a:hover { color: var(--c-yellow); }
-    .footer-bottom { color: var(--text-muted); font-size: 12px; }
-
-    /* ═══════════════════════════════════════════════
-       RESPONSIVE BREAKPOINTS
-    ═══════════════════════════════════════════════ */
-    @media (max-width: 900px) {
-      .positioning-wrap { grid-template-columns: 1fr; }
-      .playground-grid { grid-template-columns: 1fr; }
-      .pg-editor-panel { border-right: none; border-bottom: 1px solid var(--c-border); }
-    }
-    @media (max-width: 768px) {
-      .nav-links { display: none; }
-      .mobile-menu-btn { display: block; }
-      .mascot-avatar-wrap { width: 190px; height: 190px; }
-      .hero-mascot-row { flex-direction: column; gap: 1.2rem; }
-      .mascot-speech-bubble::before { display: none; }
-      .hero-stats { gap: 1.5rem; padding: 1rem 1.5rem; }
-      .hero-stat-sep { display: none; }
-      .code-body { font-size: 12px; padding: 1rem; }
-    }
+    .footer-links a:hover { color: var(--gold); }
+    .footer-bottom { color: var(--text-2); font-size: 12px; }
   </style>
 </head>
 <body>
 
-<div class="bg-grid"></div>
-<div class="bg-radial-glow"></div>
-
-<!-- ═══════════════════════════ NAVIGATION ═══════════════════════════ -->
+<!-- ═══════════════════════════ NAV ═══════════════════════════ -->
 <nav>
   <a href="#" class="nav-logo">
-    <div class="nav-logo-icon">
-      <!-- Canonical EmbedJNoSQL logo (2026-09-21, owner-supplied mark) -->
-      <img src="assets/embedjnosql-logo-512-transparent.png" alt="EmbedJNoSQL logo" width="54" height="54" style="border-radius:12px;" />
-    </div>
-    <span class="nav-logo-text">Jembed<span>DB</span></span>
+    <img src="assets/embedjnosql-logo-512-transparent.png" alt="EmbedJNoSQL logo" width="32" height="32" />
+    <span class="nav-logo-text">EmbedJNoSQL</span>
   </a>
-
   <ul class="nav-links">
-    <li><a href="#philosophy">Philosophy</a></li>
     <li><a href="#playground">Playground</a></li>
-    <li><a href="#engines">Storage</a></li>
-    <li><a href="#frameworks">Frameworks</a></li>
-    <li><a href="#benchmarks">Performance</a></li>
+    <li><a href="#models">Data models</a></li>
+    <li><a href="#why">Why embedded</a></li>
     <li><a href="#install">Install</a></li>
     <li><a href="https://github.com/armand-ratombotiana/EmbedJNoSQL" class="nav-cta" target="_blank" rel="noopener">GitHub ↗</a></li>
   </ul>
-
-  <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Toggle menu">
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-      <line x1="3" y1="12" x2="21" y2="12"></line>
-      <line x1="3" y1="6" x2="21" y2="6"></line>
-      <line x1="3" y1="18" x2="21" y2="18"></line>
-    </svg>
-  </button>
 </nav>
 
-<!-- Mobile Navigation Drawer -->
-<div class="mobile-drawer" id="mobileDrawer">
-  <a href="#philosophy" onclick="toggleMobileMenu()">Philosophy</a>
-  <a href="#playground" onclick="toggleMobileMenu()">Query Playground</a>
-  <a href="#engines" onclick="toggleMobileMenu()">Storage Modes</a>
-  <a href="#frameworks" onclick="toggleMobileMenu()">Frameworks</a>
-  <a href="#benchmarks" onclick="toggleMobileMenu()">Performance</a>
-  <a href="#install" onclick="toggleMobileMenu()">Installation</a>
-  <a href="https://github.com/armand-ratombotiana/EmbedJNoSQL" target="_blank" rel="noopener">★ GitHub Repository ↗</a>
-</div>
-
-<!-- ═══════════════════════════ HERO SECTION ═══════════════════════════ -->
+<!-- ═══════════════════════════ HERO ═══════════════════════════ -->
 <section class="hero">
-  <div class="hero-badge">
-    <span class="hero-badge-dot"></span>
-    Java 17+ · Spring Boot · Quarkus · Micronaut · Vert.x
-  </div>
-
-  <!-- Canonical brand row (owner-supplied logo, 2026-09-21) -->
   <div class="hero-mascot-row">
     <div class="mascot-avatar-wrap" title="EmbedJNoSQL — the embedded NoSQL database for Java">
-      <div class="mascot-aura"></div>
-      <img class="mascot-svg" src="assets/embedjnosql-logo-512-transparent.png" alt="EmbedJNoSQL logo" width="252" height="252" />
+      <img src="assets/embedjnosql-logo-512-transparent.png" alt="EmbedJNoSQL logo" width="180" height="180" />
     </div>
-
-    <!-- Brand Dialogue Bubble -->
     <div class="mascot-speech-bubble">
-      <div class="mascot-name-tag">EmbedJNoSQL says</div>
       <div class="mascot-speech-text">
-        "Why wait <strong>8 seconds</strong> for Docker to spin up? I start in <strong>milliseconds</strong> directly inside your JVM!"
+        "Why wait <strong>8 seconds</strong> for Docker to spin up? I start in <strong>milliseconds</strong>, directly inside your JVM."
       </div>
     </div>
   </div>
 
-  <h1>
-    <span class="text-white">One Embedded Engine.</span><br />
-    <span class="text-gradient">Zero Infrastructure.</span>
-  </h1>
+  <h1>The NoSQL database that lives <span class="gold">inside your JVM.</span></h1>
 
   <p class="hero-sub">
-    A <strong>document and key-value NoSQL database</strong> — plus Redis-style structures
-    and wide-column — embedded in your JVM in a single pure-Java JAR.
-    No Docker, no daemon, no infrastructure.
-  </p>
-
-  <p class="hero-tagline">
-    <strong>"EmbedJNoSQL is to Document and Key-Value stores what H2 is to embedded databases."</strong>
+    <strong>EmbedJNoSQL</strong> is a document and key-value database — plus Redis-style
+    structures, wide-column families, and experimental vector search — in a single
+    pure-Java JAR. No Docker. No daemon. No infrastructure.
   </p>
 
   <div class="hero-actions">
-    <a href="#install" class="btn-primary">⚡ Get Started</a>
-    <a href="https://github.com/armand-ratombotiana/EmbedJNoSQL" class="btn-secondary" target="_blank" rel="noopener">★ View on GitHub</a>
-    <a href="#playground" class="btn-secondary">🧪 Live Playground</a>
-    <a href="https://github.com/armand-ratombotiana/EmbedJNoSQL#developer-console" class="btn-secondary">🖥️ Console</a>
+    <a href="#install" class="btn-primary">Get started</a>
+    <a href="https://github.com/armand-ratombotiana/EmbedJNoSQL" class="btn-secondary" target="_blank" rel="noopener">View on GitHub</a>
   </div>
 
-  <div class="hero-stats">
-    <div class="hero-stat">
-      <span class="hero-stat-value">ms-class</span>
-      <span class="hero-stat-label">Cold Start (indicative)</span>
+  <div class="code-panel">
+    <div class="code-panel-header">
+      <span class="code-panel-title">Application.java</span>
+      <button class="copy-btn" onclick="copyCode(this, 'heroCode')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copy
+      </button>
     </div>
-    <div class="hero-stat-sep"></div>
-    <div class="hero-stat">
-      <span class="hero-stat-value">18,000+</span>
-      <span class="hero-stat-label">Ops/Sec — stress demo (indicative)</span>
-    </div>
-    <div class="hero-stat-sep"></div>
-    <div class="hero-stat">
-      <span class="hero-stat-value">50</span>
-      <span class="hero-stat-label">Concurrent Threads — stress demo</span>
-    </div>
-    <div class="hero-stat-sep"></div>
-    <div class="hero-stat">
-      <span class="hero-stat-value">0 MB</span>
-      <span class="hero-stat-label">Docker Memory</span>
-    </div>
-    <div class="hero-stat-sep"></div>
-    <div class="hero-stat">
-      <span class="hero-stat-value">3</span>
-      <span class="hero-stat-label">Annotation Specs</span>
-    </div>
-  </div>
-
-  <!-- Hero Code Panel -->
-  <div class="hero-code-wrap">
-    <div class="code-panel">
-      <div class="code-panel-header">
-        <div class="code-dots">
-          <span class="code-dot code-dot-r"></span>
-          <span class="code-dot code-dot-y"></span>
-          <span class="code-dot code-dot-g"></span>
-        </div>
-        <span class="code-panel-title">Application.java — Zero-Infrastructure Java</span>
-        <button class="copy-btn" onclick="copyCode(this, 'heroCode')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-          Copy
-        </button>
-      </div>
-      <pre class="code-body" id="heroCode"><code><span class="cmt">// 1. Zero config — starts in milliseconds inside your JVM</span>
+    <pre class="code-body" id="heroCode"><code><span class="cmt">// 1. Zero config — starts in milliseconds inside your JVM</span>
 <span class="cls">EmbedJNoSQL</span> db = <span class="cls">EmbedJNoSQL</span>.<span class="fn">inMemory</span>();
 
-<span class="cmt">// 2. Schemaless documents, nested values, native predicates</span>
+<span class="cmt">// 2. Schemaless documents with nested values</span>
 db.<span class="fn">documentCollection</span>(<span class="str">"users"</span>).<span class="fn">insert</span>(
     <span class="cls">Document</span>.<span class="fn">of</span>(<span class="str">"name"</span>, <span class="str">"Judicael"</span>)
-        .<span class="fn">add</span>(<span class="str">"role"</span>, <span class="str">"ADMIN"</span>)
-        .<span class="fn">add</span>(<span class="str">"tags"</span>, <span class="cls">List</span>.<span class="fn">of</span>(<span class="str">"java"</span>, <span class="str">"nosql"</span>))
-);
+        .<span class="fn">add</span>(<span class="str">"address"</span>, <span class="cls">Map</span>.<span class="fn">of</span>(<span class="str">"city"</span>, <span class="str">"Nairobi"</span>))
+        .<span class="fn">add</span>(<span class="str">"role"</span>, <span class="str">"ADMIN"</span>));
 
-<span class="cmt">// 3. In-process Redis-style structures, same lifecycle</span>
-db.<span class="fn">listBucket</span>(<span class="str">"queue"</span>).<span class="fn">rpush</span>(<span class="str">"queue"</span>, <span class="str">"user_login"</span>);
-db.<span class="fn">setBucket</span>(<span class="str">"active_tags"</span>).<span class="fn">sadd</span>(<span class="str">"active_tags"</span>, <span class="str">"embedded"</span>);
+<span class="cmt">// 3. Dotted-path queries reach the nested fields</span>
+<span class="cls">List</span>&lt;<span class="cls">Document</span>&gt; inNairobi = db.<span class="fn">documentCollection</span>(<span class="str">"users"</span>)
+    .<span class="fn">find</span>(<span class="cls">Query</span>.<span class="fn">eq</span>(<span class="str">"address.city"</span>, <span class="str">"Nairobi"</span>)
+        .<span class="fn">and</span>(<span class="cls">Query</span>.<span class="fn">eq</span>(<span class="str">"role"</span>, <span class="str">"ADMIN"</span>)));
 
-<span class="cmt">// 4. Same data, native document query — no SQL, no dialect</span>
-<span class="cls">List</span>&lt;<span class="cls">Document</span>&gt; admins = db.<span class="fn">documentCollection</span>(<span class="str">"users"</span>)
-    .<span class="fn">find</span>(<span class="cls">Query</span>.<span class="fn">eq</span>(<span class="str">"role"</span>, <span class="str">"ADMIN"</span>)
-        .<span class="fn">sortBy</span>(<span class="str">"name"</span>, <span class="cls">Query</span>.<span class="cls">SortOrder</span>.<span class="cls">ASC</span>));</code></pre>
-    </div>
+<span class="cmt">// 4. Redis-style structures on the same engine</span>
+db.<span class="fn">listBucket</span>(<span class="str">"events"</span>).<span class="fn">rpush</span>(<span class="str">"events"</span>, <span class="str">"user_login"</span>);</code></pre>
   </div>
 </section>
 
-<!-- ═══════════════════════════ PLAYGROUND SECTION (NEW) ═══════════════════════════ -->
-<section class="playground-section" id="playground">
+<!-- ═══════════════════════════ PLAYGROUND ═══════════════════════════ -->
+<section id="playground">
   <div class="container">
-    <div style="text-align: center;">        <span class="section-label">Interactive Playground</span>
-      <h2 class="section-title">One Dataset, <span class="text-gradient">One Query API</span></h2>
-      <p class="section-desc" style="margin: 0 auto;">A native document query — predicates, sorting, paging — against the same collection the console edits. The result below is the document engine's own JSON output.</p>
-    </div>
+    <h2 class="section-title">One dataset, one query API</h2>
+    <p class="section-desc">
+      A native document query — predicates, sorting, paging — against the collection the
+      console edits. Dotted paths reach nested fields; every operator honors them.
+    </p>
 
     <div class="playground-box">
       <div class="playground-nav">
-        <div class="playground-tabs">
-          <button class="pg-tab active" onclick="switchPlaygroundTab('nosql', this)">📄 NoSQL Document Query</button>
-        </div>
+        <span class="pg-title">📄 Document query</span>
         <button class="pg-run-btn" onclick="executePlaygroundQuery()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           Run in JVM
         </button>
       </div>
-
       <div class="playground-grid">
-        <div class="pg-editor-panel" id="pgEditor">
-          <div style="color: #64748b; margin-bottom: 8px;">// Native document query — the real API</div>
-          <div style="color: #fbbf24;">db.<span style="color: #fbbf24;">documentCollection</span>(<span style="color: #86efac;">"orders"</span>)</div>
-          <div style="padding-left: 20px; color: #ffffff;">.find(<span style="color: #fbbf24;">Query</span>.eq(<span style="color: #86efac;">"status"</span>, <span style="color: #86efac;">"SHIPPED"</span>)</div>
-          <div style="padding-left: 60px; color: #ffffff;">.and(<span style="color: #fbbf24;">Query</span>.gte(<span style="color: #86efac;">"total"</span>, <span style="color: #f97316;">150.0</span>))</div>
-          <div style="padding-left: 20px; color: #ffffff;">.sortBy(<span style="color: #86efac;">"createdAt"</span>, <span style="color: #fbbf24;">Query</span>.<span style="color: #fbbf24;">SortOrder</span>.DESC)</div>
+        <div class="pg-editor-panel">
+          <div style="color: #6b7280;">// Native query — dotted paths go deep</div>
+          <div style="color: var(--gold);">db.documentCollection(<span style="color: #86efac;">"orders"</span>)</div>
+          <div style="padding-left: 20px; color: #ffffff;">.find(<span style="color: var(--gold);">Query</span>.eq(<span style="color: #86efac;">"customer.tier"</span>, <span style="color: #86efac;">"GOLD"</span>)</div>
+          <div style="padding-left: 44px; color: #ffffff;">.and(<span style="color: var(--gold);">Query</span>.gte(<span style="color: #86efac;">"total"</span>, <span style="color: #f97316;">150.0</span>))</div>
+          <div style="padding-left: 20px; color: #ffffff;">.sortBy(<span style="color: #86efac;">"createdAt"</span>, <span style="color: var(--gold);">Query</span>.SortOrder.DESC)</div>
           <div style="padding-left: 20px; color: #ffffff;">.limit(<span style="color: #f97316;">5</span>));</div>
         </div>
-
         <div class="pg-result-panel">
           <div class="pg-result-header">
-            <span>JVM In-Memory Result <em id="pgEngineNote" style="font-style: normal; color: var(--c-yellow); font-size: 11px;">— document engine · native predicates</em></span>
+            <span>In-memory result — document engine</span>
             <span class="pg-latency-badge" id="pgLatency">⚡ in-process</span>
           </div>
           <pre class="pg-output-json" id="pgOutput"><code>[
   {
     "_id": "ord_9842",
-    "customer": "Judicael R.",
+    "customer": { "name": "Judicael R.", "tier": "GOLD" },
     "status": "SHIPPED",
     "total": 349.50,
     "items": ["Laptop Stand", "Mechanical Keyboard"],
@@ -1109,7 +501,7 @@ db.<span class="fn">setBucket</span>(<span class="str">"active_tags"</span>).<sp
   },
   {
     "_id": "ord_9811",
-    "customer": "Sarah Connor",
+    "customer": { "name": "Sarah Connor", "tier": "GOLD" },
     "status": "SHIPPED",
     "total": 182.00,
     "items": ["USB-C Dock"],
@@ -1122,92 +514,86 @@ db.<span class="fn">setBucket</span>(<span class="str">"active_tags"</span>).<sp
   </div>
 </section>
 
-<!-- ═══════════════════════════ PHILOSOPHY PILLARS ═══════════════════════════ -->
-<section id="philosophy">
+<!-- ═══════════════════════════ ONE ENGINE, FOUR DATA MODELS ═══════════════════════════ -->
+<section id="models">
   <div class="container">
-    <span class="section-label">Core Philosophy</span>
-    <h2 class="section-title">Built on <span class="text-gradient">Five Invariant Pillars</span></h2>
-    <p class="section-desc">These are architectural constraints enforced across every storage engine and framework starter. A sixth card states the honest boundaries we do not claim.</p>
+    <h2 class="section-title">One engine, four data models</h2>
+    <p class="section-desc">
+      EmbedJNoSQL has exactly one execution engine. Documents, key-value buckets,
+      Redis-style structures, and wide-column families are data models on top of the same
+      storage substrate — no second engine to configure, no dialect to keep in sync.
+    </p>
 
-    <div class="pillars-grid">
-      <div class="pillar-card">
-        <div class="pillar-icon-box">⚡</div>
-        <div class="pillar-title">Embedded-First, Always</div>
-        <div class="pillar-desc">
-          Starts in a single method call and lives completely within your JVM process. No ports, no sockets, no child processes. The lifecycle of the database is the lifecycle of your application.
-        </div>
-        <div class="pillar-code">EmbedJNoSQL.inMemory() // 0 network hops</div>
-      </div>
-
-      <div class="pillar-card">
-        <div class="pillar-icon-box">⚙️</div>
-        <div class="pillar-title">Zero Configuration</div>
-        <div class="pillar-desc">
-          Fully operational with zero config files, zero environment variables, and zero JVM flags. Every option has a production-safe default. Add durability with one extra method call.
-        </div>
-        <div class="pillar-code">EmbedJNoSQL.embed().dataDir("./data")</div>
-      </div>
-
-      <div class="pillar-card">
-        <div class="pillar-icon-box">🔀</div>
-        <div class="pillar-title">Multi-Model NoSQL</div>
-        <div class="pillar-desc">
-          Documents, key-value buckets with TTL, Redis-style lists / sets / hashes, and wide-column families share one storage substrate and one lifecycle — a single engine with several data models, not two products bolted together.
-        </div>
-        <div class="pillar-code">db.documentCollection("orders").find(Query.eq("status", "SHIPPED"))</div>
-      </div>
-
-      <div class="pillar-card">
-        <div class="pillar-icon-box">🏷️</div>
-        <div class="pillar-title">Tri-Standard Annotations</div>
-        <div class="pillar-desc">
-          EmbedJNoSQL transparently reflects Jakarta Persistence (@Entity), Eclipse JNoSQL (@Entity), and Hibernate annotations without adding unwanted compile-time JARs to your classpath.
-        </div>
-        <div class="pillar-code">AnnotationResolver.resolve(Entity.class)</div>
-      </div>
-
-      <div class="pillar-card">
-        <div class="pillar-icon-box">📊</div>
-        <div class="pillar-title">Observable by Design</div>
-        <div class="pillar-desc">
-          Every mutation emits a lifecycle event. Built-in atomic metrics counters, Change Data Capture (CDC), and a bounded audit trail (in-memory view with a durable JSONL copy) are active out of the box.
-        </div>
-        <div class="pillar-code">db.events().subscribe(EventType.INSERT)</div>
-      </div>
-
-      <div class="pillar-card">
-        <div class="pillar-icon-box">🧾</div>
-        <div class="pillar-title">Honest Capability Boundaries</div>
-        <div class="pillar-desc">
-          EmbedJNoSQL is NoSQL only: there is no SQL engine, no JDBC driver, and no relational schema to migrate. Documents are schemaless unless you register validation rules, and a document reference is an id you resolve yourself — never an enforced foreign key. Vectors and the Kafka CDC connector ship as clearly-labeled experimental features.
-        </div>
-        <div class="pillar-code">Documents · Key-Value · Lists/Sets/Hashes · Wide-Column</div>
-      </div>
-
-      <div class="pillar-card">
-        <div class="pillar-icon-box">🧩</div>
-        <div class="pillar-title">Pluggable Storage SPI</div>
-        <div class="pillar-desc">
-          Decoupled query and collection layers. Seamlessly toggle between Heap RAM, persistent B-Tree, or high-throughput LSM-Tree with zero application code changes.
-        </div>
-        <div class="pillar-code">.withStorageEngine(StorageEngine.LSM)</div>
-      </div>
+    <div class="models-table-scroll">
+    <table class="models-table">
+      <thead>
+        <tr>
+          <th scope="col">Model</th>
+          <th scope="col">What it gives you</th>
+          <th scope="col">Best for</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Document</td>
+          <td class="model-desc">Schemaless documents with native predicates (<code>$eq $gt $regex $exists $and …</code>), sorting, pagination, TTL, runtime secondary indexes, and dotted-path queries into nested values.</td>
+          <td class="model-desc">Flexible schemas, entity mapping, application state, tests</td>
+        </tr>
+        <tr>
+          <td>Key-Value</td>
+          <td class="model-desc">String buckets with per-key TTL, reachable from the same handle as every other model.</td>
+          <td class="model-desc">Caches, session state</td>
+        </tr>
+        <tr>
+          <td>Redis-style</td>
+          <td class="model-desc">Lists, sets, and hashes — queues, counters, and coordination primitives in-process.</td>
+          <td class="model-desc">Queues, counters, coordination</td>
+        </tr>
+        <tr>
+          <td>Wide-Column</td>
+          <td class="model-desc">Column families on the shared substrate, queried and written like every other model.</td>
+          <td class="model-desc">Sparse records, high-cardinality rows</td>
+        </tr>
+      </tbody>
+    </table>
     </div>
+
+    <div class="substrate-note">
+      <strong>Shared by every model:</strong> pick in-memory, file (WAL), B-Tree, or LSM-Tree
+      storage with a single flag — <code>.withStorageEngine(StorageEngine.LSM)</code>. MVCC
+      transactions, WAL recovery, the metrics/event bus, CDC, and the embedded Console work
+      identically across all four. <strong>Experimental (not production features):</strong>
+      HNSW vector search and the Kafka CDC connector — the file CDC connector is fully supported.
+    </div>
+
+    <div class="frameworks-line">
+      <span>Framework starters:</span>
+      <span class="fw-badge">🍃 Spring Boot</span>
+      <span class="fw-badge">⚡ Quarkus</span>
+      <span class="fw-badge">🚀 Micronaut</span>
+    </div>
+    <p class="section-desc" style="margin-top: 1rem;">
+      Each starter auto-configures the engine — <code style="color: var(--gold); font-size: 0.85rem;">@Autowired EmbedJNoSQL db;</code> —
+      with health indicators, property bindings, and Repository support. Existing entities
+      annotated with Jakarta Persistence, Eclipse JNoSQL, or Hibernate annotations are read
+      as mapping hints at runtime: no JPA runtime, no JDBC driver, no rewrite.
+    </p>
   </div>
 </section>
 
 <!-- ═══════════════════════════ POSITIONING QUADRANT ═══════════════════════════ -->
-<section style="background: rgba(14, 16, 23, 0.4); border-top: 1px solid var(--c-border); border-bottom: 1px solid var(--c-border);">
+<section id="why" class="positioning-band">
   <div class="container">
     <div class="positioning-wrap">
       <div>
-        <span class="section-label">Market Positioning</span>
-        <h2 class="section-title">Filling the <span class="text-gradient">Empty Quadrant</span></h2>
-        <p class="section-desc" style="margin-bottom: 1.5rem;">
-          For over two decades, Java developers had only two choices: embed H2/SQLite (relational only) or spin up heavy external Docker containers (MongoDB, Redis, Cassandra).
+        <h2 class="section-title">The empty quadrant</h2>
+        <p class="section-desc">
+          For two decades, Java developers had two choices: embed H2 or SQLite
+          (relational only), or spin up heavy external containers (MongoDB, Redis, Cassandra).
         </p>
         <p class="section-desc">
-          <strong>EmbedJNoSQL fills the missing quadrant:</strong> pure embedded zero-infrastructure convenience with modern multi-model NoSQL flexibility.
+          <strong style="color: var(--text);">EmbedJNoSQL fills the missing quadrant:</strong>
+          pure embedded, zero-infrastructure convenience with modern multi-model NoSQL flexibility.
         </p>
       </div>
 
@@ -1216,11 +602,11 @@ db.<span class="fn">setBucket</span>(<span class="str">"active_tags"</span>).<sp
           <div class="quad-cell-label">Embedded · Relational</div>
           <div class="quad-cell-name">H2 / SQLite / Derby</div>
           <div class="quad-cell-desc">Great for SQL relational tests, but rigid schema migrations and no native JSON/KV.</div>
-          <span class="quad-badge dim">Relational Only</span>
+          <span class="quad-badge dim">Relational only</span>
         </div>
 
         <div class="quad-cell highlight">
-          <div class="quad-cell-label">⚡ Embedded · Multi-Model</div>
+          <div class="quad-cell-label">Embedded · Multi-Model</div>
           <div class="quad-cell-name">EmbedJNoSQL</div>
           <div class="quad-cell-desc">Documents, Key-Value, Redis-style structures, and Wide-Column in one embedded engine — no SQL, no separate server.</div>
           <span class="quad-badge gold">Embedded · NoSQL</span>
@@ -1229,274 +615,45 @@ db.<span class="fn">setBucket</span>(<span class="str">"active_tags"</span>).<sp
         <div class="quad-cell">
           <div class="quad-cell-label">Client/Server · Relational</div>
           <div class="quad-cell-name">PostgreSQL / MySQL</div>
-          <div class="quad-cell-desc">Full enterprise RDBMS, requires Docker or cloud servers.</div>
-          <span class="quad-badge dim">Daemon Required</span>
+          <div class="quad-cell-desc">Full enterprise RDBMS — requires Docker or cloud servers.</div>
+          <span class="quad-badge dim">Daemon required</span>
         </div>
 
         <div class="quad-cell">
           <div class="quad-cell-label">Client/Server · NoSQL</div>
           <div class="quad-cell-name">MongoDB / Redis / Cassandra</div>
           <div class="quad-cell-desc">Fast, but requires Testcontainers, open ports, and memory overhead in CI.</div>
-          <span class="quad-badge dim">Docker Required</span>
+          <span class="quad-badge dim">Docker required</span>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════════════════ TRI-STANDARD ANNOTATIONS ═══════════════════════════ -->
-<section>
-  <div class="container">
-    <span class="section-label">Interoperability</span>
-    <h2 class="section-title">Zero-Rewrite <span class="text-gradient">Annotation Freedom</span></h2>
-    <p class="section-desc">Migrate or share domain models between frameworks without altering a single annotation.</p>
-
-    <div class="annotation-strip">
-      <div style="font-size: 1.15rem; font-weight: 800; color: #ffffff; margin-bottom: 0.5rem;">
-        Drop in your existing entities — EmbedJNoSQL inspects them dynamically
-      </div>
-      <p style="color: var(--text-secondary); font-size: 0.95rem;">
-        Whether your model is annotated with Eclipse JNoSQL, Jakarta Persistence, or Hibernate, EmbedJNoSQL reads those annotations at runtime as mapping hints — id resolution, field mapping, transient fields — with no JPA runtime and no JDBC driver involved.
-      </p>
-
-      <div class="annotation-badges">
-        <div class="ann-badge">
-          <span class="ann-dot"></span>
-          <div>
-            <div class="ann-name">Jakarta Persistence (JPA)</div>
-            <div class="ann-pkg">@Entity, @Id, @Column, @Table</div>
-          </div>
-        </div>
-
-        <div class="ann-badge">
-          <span class="ann-dot"></span>
-          <div>
-            <div class="ann-name">Eclipse JNoSQL</div>
-            <div class="ann-pkg">@Entity, @Id, @Column, @Embeddable</div>
-          </div>
-        </div>
-
-        <div class="ann-badge">
-          <span class="ann-dot"></span>
-          <div>
-            <div class="ann-name">Hibernate Annotations</div>
-            <div class="ann-pkg">org.hibernate.annotations.*</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════ DATA MODELS ═══════════════════════════ -->
-<section id="query-engines">
-  <div class="container">
-    <span class="section-label">One Engine, Several Models</span>
-    <h2 class="section-title">Document and Key-Value, <span class="text-gradient">One NoSQL Core</span></h2>
-    <p class="section-desc">EmbedJNoSQL has exactly one execution engine. Documents, key-value buckets, Redis-style structures, and wide-column families are data models on top of the same storage substrate — no second engine to configure, no dialect to keep in sync.</p>
-
-    <div class="engines-grid">
-      <div class="engine-card">
-        <span class="engine-badge amber">Document</span>
-        <div class="engine-name">Document Collections</div>
-        <div class="engine-desc">
-          Schemaless documents with native predicates (<code>$eq $ne $gt $gte $lt $lte $in $nin $regex $exists $and $or</code>), sorting, pagination, TTL, and secondary field indexes you can create, rebuild, and drop at runtime.
-        </div>
-        <div class="engine-use">Best for: <strong>flexible schemas, entity mapping, application state, tests</strong></div>
-        <div class="engine-use">Optional <strong>validation rules</strong> check documents at insert time. There are no relational constraints: a stored reference is an id you resolve, not a foreign key.</div>
-      </div>
-
-      <div class="engine-card">
-        <span class="engine-badge gold">Key-Value &amp; Redis Structures</span>
-        <div class="engine-name">Key-Value, Lists, Sets, Hashes, Wide-Column</div>
-        <div class="engine-desc">
-          String key-value buckets with per-key TTL, plus Redis-style lists, sets, and hashes and wide-column families — all reachable from the same handle and the same lifecycle.
-        </div>
-        <div class="engine-use">Best for: <strong>caches, queues, counters, session state, coordination primitives</strong></div>
-        <div class="engine-use" style="color: var(--text-muted);">Experimental: <strong>HNSW vector search (dimensionality from the first vector), Kafka CDC connector</strong></div>
-      </div>
-    </div>
-
-    <p class="section-desc" style="margin-top: 1.5rem; font-size: 0.85rem;">
-      <strong>Shared across every model:</strong> the four storage modes below, MVCC transactions, WAL-based recovery, the metrics and event bus, and the embedded Console.
-      <strong>Experimental (not production features):</strong> HNSW vector search and the Kafka CDC connector — the file CDC connector is fully supported.
-    </p>
-  </div>
-</section>
-
-<!-- ═══════════════════════════ STORAGE ENGINES ═══════════════════════════ -->
-<section id="engines" style="background: rgba(14, 16, 23, 0.4); border-top: 1px solid var(--c-border); border-bottom: 1px solid var(--c-border);">
-  <div class="container">
-    <span class="section-label">Pluggable Core</span>
-    <h2 class="section-title">Four Storage Engines, <span class="text-gradient">One Unified API</span></h2>
-    <p class="section-desc">Choose the durability and access-pattern characteristics for your workload with a single configuration flag. The document and key-value APIs stay identical across all four.</p>
-
-    <div class="engines-grid">
-      <div class="engine-card">
-        <span class="engine-badge gold">Sub-Microsecond</span>
-        <div class="engine-name">In-Memory Engine</div>
-        <div class="engine-desc">Non-blocking ConcurrentSkipList & radix maps in heap. Perfect for integration tests and local caches.</div>
-        <div class="engine-use">Best for: <strong>CI unit tests, ephemeral cache</strong></div>
-      </div>
-
-      <div class="engine-card">
-        <span class="engine-badge white">WAL + Checkpoints</span>
-        <div class="engine-name">File-Based Engine</div>
-        <div class="engine-desc">Binary append-only write-ahead log with background checkpointing; writes replay from the WAL after a crash or unclean shutdown.</div>
-        <div class="engine-use">Best for: <strong>Desktop apps, developer tools</strong></div>
-      </div>
-
-      <div class="engine-card">
-        <span class="engine-badge amber">Point & Range</span>
-        <div class="engine-name">B-Tree Engine</div>
-        <div class="engine-desc">Block-paged B+ Tree on disk with LRU page cache. Optimized for large range scans.</div>
-        <div class="engine-use">Best for: <strong>Embedded transactional systems</strong></div>
-      </div>
-
-      <div class="engine-card">
-        <span class="engine-badge bronze">Write-Heavy</span>
-        <div class="engine-name">LSM-Tree Engine</div>
-        <div class="engine-desc">Log-Structured Merge tree with MemTable, SSTables, Bloom filters, and tiered compaction.</div>
-        <div class="engine-use">Best for: <strong>Time-series, telemetry, audit logs</strong></div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════ FRAMEWORKS ═══════════════════════════ -->
-<section id="frameworks">
-  <div class="container">
-    <span class="section-label">Native Starters</span>
-    <h2 class="section-title">First-Class Support for <span class="text-gradient">Modern Frameworks</span></h2>
-    <p class="section-desc">Seamless auto-configuration and native dependency injection across the Java ecosystem.</p>
-
-    <div class="frameworks-grid">
-      <div class="fw-card">
-        <div class="fw-header">
-          <div class="fw-icon">🍃</div>
-          <div>
-            <div class="fw-name">Spring Boot</div>
-            <div class="fw-pkg">embed-jnosql-spring-boot-starter</div>
-          </div>
-        </div>
-        <div class="fw-desc">Auto-configures EmbedJNoSQL beans, health indicators, property bindings in application.yml, and Repository support.</div>
-        <div class="pillar-code">@Autowired EmbedJNoSQL db;</div>
-      </div>
-
-      <div class="fw-card">
-        <div class="fw-header">
-          <div class="fw-icon">⚡</div>
-          <div>
-            <div class="fw-name">Quarkus</div>
-            <div class="fw-pkg">embed-jnosql-quarkus-extension</div>
-          </div>
-        </div>
-        <div class="fw-desc">GraalVM native-image ready with zero reflection bottlenecks and sub-millisecond build-time initialization.</div>
-        <div class="pillar-code">@Inject EmbedJNoSQL db;</div>
-      </div>
-
-      <div class="fw-card">
-        <div class="fw-header">
-          <div class="fw-icon">🚀</div>
-          <div>
-            <div class="fw-name">Micronaut</div>
-            <div class="fw-pkg">embed-jnosql-micronaut-integration</div>
-          </div>
-        </div>
-        <div class="fw-desc">Compile-time AOT injection with complete Micronaut configuration management and lifecycle callbacks.</div>
-        <div class="pillar-code">@Inject EmbedJNoSQL db;</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════ BENCHMARKS ═══════════════════════════ -->
-<section id="benchmarks" style="background: rgba(14, 16, 23, 0.4); border-top: 1px solid var(--c-border); border-bottom: 1px solid var(--c-border);">
-  <div class="container">
-    <span class="section-label">Empirical Benchmarks</span>
-    <h2 class="section-title">Indicative In-Process <span class="text-gradient">Throughput</span></h2>
-    <p class="section-desc">Indicative figures from the in-repo benchmark and stress harnesses — re-run them yourself (mvn -Pbenchmark, demo/load-and-stress) on your hardware.</p>
-
-    <div class="benchmarks-wrap">
-      <div class="bm-grid">
-        <div class="bm-card">
-          <div class="bm-number">10,000+<span class="bm-unit">ops/s</span></div>
-          <div class="bm-label">Key-Value Point Reads</div>
-          <div class="bm-context">In-Memory Engine, multi-threaded — indicative</div>
-        </div>
-
-        <div class="bm-card">
-          <div class="bm-number">10,000+<span class="bm-unit">ops/s</span></div>
-          <div class="bm-label">Document Inserts</div>
-          <div class="bm-context">Document inserts, indexed — indicative</div>
-        </div>
-
-        <div class="bm-card">
-          <div class="bm-number">15,000+<span class="bm-unit">ops/s</span></div>
-          <div class="bm-label">Persistent Writes</div>
-          <div class="bm-context">FILE engine, WAL fsync — indicative</div>
-        </div>
-
-        <div class="bm-card">
-          <div class="bm-number">ms<span class="bm-unit">-class</span></div>
-          <div class="bm-label">Cold Boot Latency</div>
-          <div class="bm-context">From new JVM to operational</div>
-        </div>
-      </div>
-
-      <div class="perf-bars-title">Throughput vs Testcontainers Startup Overhead</div>
-      <div class="perf-bar-row">
-        <div class="perf-bar-header">
-          <span>EmbedJNoSQL Embedded Cold Start</span>
-          <span>11 ms (Instant)</span>
-        </div>
-        <div class="perf-bar-track">
-          <div class="perf-bar-fill" style="width: 4%;"></div>
-        </div>
-      </div>
-      <div class="perf-bar-row">
-        <div class="perf-bar-header">
-          <span>Docker / Testcontainers MongoDB</span>
-          <span>5,800 ms (Overhead)</span>
-        </div>
-        <div class="perf-bar-track">
-          <div class="perf-bar-fill" style="width: 100%; background: #ef4444; box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════ INSTALLATION ═══════════════════════════ -->
+<!-- ═══════════════════════════ INSTALL ═══════════════════════════ -->
 <section id="install">
   <div class="container">
-    <div style="text-align: center;">
-      <span class="section-label">Quick Integration</span>
-      <h2 class="section-title">Ready in <span class="text-gradient">Under 60 Seconds</span></h2>
-      <p class="section-desc" style="margin: 0 auto;">Clone, install, then add a single dependency to your build file.</p>
-      <!-- Explicit dark ink on a light surface: this section sits on the dark hero background,
-           so inherited text colour renders unreadable on a pale notice (caught in browser review). -->
-      <div style="max-width: 860px; margin: 0 auto 18px; padding: 12px 16px; border-radius: 10px; background: #FFF8E1; border: 1px solid #E8B923; font-size: 14px; line-height: 1.6; text-align: left; color: #1A1A1A;">
-        <strong style="color: #1A1A1A;">Not on Maven Central yet.</strong> These coordinates do not
-        resolve from any public repository. Install into your local repository first, then the
-        snippets below work as-is:
-        <br><code style="color: #7A4E00; background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 4px;">git clone &lt;repository-url&gt; &amp;&amp; cd JNoSQL-EMBED &amp;&amp; ./mvnw -DskipTests install</code>
-      </div>
+    <h2 class="section-title">Ready in under 60 seconds</h2>
+    <p class="section-desc">Clone, install, then add a single dependency to your build file.</p>
+
+    <div class="maven-note">
+      <strong>Not on Maven Central yet.</strong> These coordinates do not resolve from any
+      public repository. Install into your local repository first, then the snippets below
+      work as-is:
+      <br><code>git clone &lt;repository-url&gt; &amp;&amp; cd JNoSQL-EMBED &amp;&amp; ./mvnw -DskipTests install</code>
     </div>
 
     <div class="install-box">
-      <div class="install-tabs">
-        <button class="tab-btn active" onclick="switchInstallTab(event, 'tab-maven')">Maven</button>
-        <button class="tab-btn" onclick="switchInstallTab(event, 'tab-gradle')">Gradle</button>
-        <button class="tab-btn" onclick="switchInstallTab(event, 'tab-spring')">Spring Boot</button>
-        <button class="tab-btn" onclick="switchInstallTab(event, 'tab-quarkus')">Quarkus</button>
-        <button class="tab-btn" onclick="switchInstallTab(event, 'tab-micronaut')">Micronaut</button>
+      <div class="install-tabs" role="tablist">
+        <button class="tab-btn active" role="tab" aria-selected="true" onclick="switchInstallTab(event, 'tab-maven')">Maven</button>
+        <button class="tab-btn" role="tab" aria-selected="false" onclick="switchInstallTab(event, 'tab-gradle')">Gradle</button>
+        <button class="tab-btn" role="tab" aria-selected="false" onclick="switchInstallTab(event, 'tab-spring')">Spring Boot</button>
+        <button class="tab-btn" role="tab" aria-selected="false" onclick="switchInstallTab(event, 'tab-quarkus')">Quarkus</button>
+        <button class="tab-btn" role="tab" aria-selected="false" onclick="switchInstallTab(event, 'tab-micronaut')">Micronaut</button>
       </div>
 
-      <div class="tab-panel active" id="tab-maven">
-        <div style="display:flex; justify-content:flex-end; margin-bottom: 8px;">
-          <button class="copy-btn" onclick="copyCode(this, 'mavenCode')">Copy XML</button>
-        </div>
+      <div class="tab-panel active" id="tab-maven" role="tabpanel">
+        <div class="copy-row"><button class="copy-btn" onclick="copyCode(this, 'mavenCode')">Copy XML</button></div>
         <pre class="code-body" id="mavenCode"><code>&lt;<span class="kw">dependency</span>&gt;
     &lt;<span class="kw">groupId</span>&gt;org.embeddedjnosql.db&lt;/<span class="kw">groupId</span>&gt;
     &lt;<span class="kw">artifactId</span>&gt;embed-jnosql-core&lt;/<span class="kw">artifactId</span>&gt;
@@ -1504,17 +661,13 @@ db.<span class="fn">setBucket</span>(<span class="str">"active_tags"</span>).<sp
 &lt;/<span class="kw">dependency</span>&gt;</code></pre>
       </div>
 
-      <div class="tab-panel" id="tab-gradle">
-        <div style="display:flex; justify-content:flex-end; margin-bottom: 8px;">
-          <button class="copy-btn" onclick="copyCode(this, 'gradleCode')">Copy Gradle</button>
-        </div>
+      <div class="tab-panel" id="tab-gradle" role="tabpanel">
+        <div class="copy-row"><button class="copy-btn" onclick="copyCode(this, 'gradleCode')">Copy Gradle</button></div>
         <pre class="code-body" id="gradleCode"><code>implementation(<span class="str">'org.embeddedjnosql.db:embed-jnosql-core:1.0.0'</span>)</code></pre>
       </div>
 
-      <div class="tab-panel" id="tab-spring">
-        <div style="display:flex; justify-content:flex-end; margin-bottom: 8px;">
-          <button class="copy-btn" onclick="copyCode(this, 'springCode')">Copy Spring</button>
-        </div>
+      <div class="tab-panel" id="tab-spring" role="tabpanel">
+        <div class="copy-row"><button class="copy-btn" onclick="copyCode(this, 'springCode')">Copy Spring</button></div>
         <pre class="code-body" id="springCode"><code>&lt;<span class="kw">dependency</span>&gt;
     &lt;<span class="kw">groupId</span>&gt;org.embeddedjnosql.db&lt;/<span class="kw">groupId</span>&gt;
     &lt;<span class="kw">artifactId</span>&gt;embed-jnosql-spring-boot-starter&lt;/<span class="kw">artifactId</span>&gt;
@@ -1522,10 +675,8 @@ db.<span class="fn">setBucket</span>(<span class="str">"active_tags"</span>).<sp
 &lt;/<span class="kw">dependency</span>&gt;</code></pre>
       </div>
 
-      <div class="tab-panel" id="tab-quarkus">
-        <div style="display:flex; justify-content:flex-end; margin-bottom: 8px;">
-          <button class="copy-btn" onclick="copyCode(this, 'quarkusCode')">Copy Quarkus</button>
-        </div>
+      <div class="tab-panel" id="tab-quarkus" role="tabpanel">
+        <div class="copy-row"><button class="copy-btn" onclick="copyCode(this, 'quarkusCode')">Copy Quarkus</button></div>
         <pre class="code-body" id="quarkusCode"><code>&lt;<span class="kw">dependency</span>&gt;
     &lt;<span class="kw">groupId</span>&gt;org.embeddedjnosql.db&lt;/<span class="kw">groupId</span>&gt;
     &lt;<span class="kw">artifactId</span>&gt;embed-jnosql-quarkus-extension&lt;/<span class="kw">artifactId</span>&gt;
@@ -1533,10 +684,8 @@ db.<span class="fn">setBucket</span>(<span class="str">"active_tags"</span>).<sp
 &lt;/<span class="kw">dependency</span>&gt;</code></pre>
       </div>
 
-      <div class="tab-panel" id="tab-micronaut">
-        <div style="display:flex; justify-content:flex-end; margin-bottom: 8px;">
-          <button class="copy-btn" onclick="copyCode(this, 'micronautCode')">Copy Micronaut</button>
-        </div>
+      <div class="tab-panel" id="tab-micronaut" role="tabpanel">
+        <div class="copy-row"><button class="copy-btn" onclick="copyCode(this, 'micronautCode')">Copy Micronaut</button></div>
         <pre class="code-body" id="micronautCode"><code>&lt;<span class="kw">dependency</span>&gt;
     &lt;<span class="kw">groupId</span>&gt;org.embeddedjnosql.db&lt;/<span class="kw">groupId</span>&gt;
     &lt;<span class="kw">artifactId</span>&gt;embed-jnosql-micronaut-integration&lt;/<span class="kw">artifactId</span>&gt;
@@ -1547,92 +696,37 @@ db.<span class="fn">setBucket</span>(<span class="str">"active_tags"</span>).<sp
   </div>
 </section>
 
-<!-- ═══════════════════════════ USE CASES ═══════════════════════════ -->
-<section style="background: rgba(14, 16, 23, 0.4); border-top: 1px solid var(--c-border); border-bottom: 1px solid var(--c-border);">
-  <div class="container">
-    <span class="section-label">Architectural Fit</span>
-    <h2 class="section-title">Where <span class="text-gradient">EmbedJNoSQL Shines</span></h2>
-    <p class="section-desc">Designed specifically for modern developer ergonomics and zero-friction execution.</p>
-
-    <div class="use-cases-grid">
-      <div class="uc-card">
-        <div class="uc-icon">🧪</div>
-        <div>
-          <div class="uc-title">Integration Testing Without Docker</div>
-          <div class="uc-desc">Replace Testcontainers in your CI pipeline. No Docker daemon, no image registry download, no port binding conflicts. Starts in milliseconds.</div>
-          <div class="uc-highlight">⚡ milliseconds vs 5+ seconds for containers</div>
-        </div>
-      </div>
-
-      <div class="uc-card">
-        <div class="uc-icon">📡</div>
-        <div>
-          <div class="uc-title">Edge & Desktop JVM Apps</div>
-          <div class="uc-desc">JavaFX apps, POS systems, IoT gateways. Single JAR, zero native C-libraries, WAL-based recovery, pure Java portability across x86 and ARM.</div>
-          <div class="uc-highlight">⚡ Single JAR, 0 native dependencies</div>
-        </div>
-      </div>
-
-      <div class="uc-card">
-        <div class="uc-icon">⚡</div>
-        <div>
-          <div class="uc-title">In-Process Cache & Session Store</div>
-          <div class="uc-desc">Sub-microsecond local key-value lookups without Redis network latency. Built-in TTL expiration, Redis-style lists, sets, and hashes.</div>
-          <div class="uc-highlight">⚡ Zero network hop, zero sidecar</div>
-        </div>
-      </div>
-
-      <div class="uc-card">
-        <div class="uc-icon">🚀</div>
-        <div>
-          <div class="uc-title">Rapid Prototyping</div>
-          <div class="uc-desc">Add the dependency, invoke one factory method, and immediately write business logic. No database servers to configure across teammates.</div>
-          <div class="uc-highlight">⚡ One Maven dependency, zero setup</div>
-        </div>
-      </div>
-
-      <div class="uc-card">
-        <div class="uc-icon">🔄</div>
-        <div>
-          <div class="uc-title">Microservice State Without Sidecars</div>
-          <div class="uc-desc">Rate limiters, feature flags, task queues, event journals — directly inside your application boundary. Eliminates extra Kubernetes pod costs.</div>
-          <div class="uc-highlight">⚡ Eliminates the sidecar cost entirely</div>
-        </div>
-      </div>
-
-      <div class="uc-card">
-        <div class="uc-icon">🔍</div>
-        <div>
-          <div class="uc-title">In-Process Search</div>
-          <div class="uc-desc">Built-in inverted text indexes for token search, plus an experimental HNSW vector index for k-NN over embeddings of any fixed dimensionality — no external search cluster.</div>
-          <div class="uc-highlight">⚡ In-JVM text search · HNSW vectors (experimental)</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════ CTA BAND ═══════════════════════════ -->
+<!-- ═══════════════════════════ CTA + HONEST BOUNDARIES ═══════════════════════════ -->
 <div class="cta-band">
   <div class="cta-band-mascot">
     <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-      <circle cx="50" cy="50" r="46" fill="#0f1117" stroke="#fbbf24" stroke-width="3"/>
-      <path d="M50 16 L28 48 L46 48 L38 82 L72 44 L54 44 Z" fill="#fbbf24"/>
+      <circle cx="50" cy="50" r="46" fill="#12141C" stroke="#FBBF24" stroke-width="3"/>
+      <path d="M50 16 L28 48 L46 48 L38 82 L72 44 L54 44 Z" fill="#FBBF24"/>
     </svg>
   </div>
-  <h2>Write Code. <span class="text-gradient">Not Infrastructure.</span></h2>
+  <h2>Write code. Not infrastructure.</h2>
   <p>EmbedJNoSQL embeds everything. You focus purely on your domain logic.</p>
-  <div style="display:flex; gap:1.2rem; justify-content:center; flex-wrap:wrap; position: relative; z-index: 1;">
-    <a href="https://github.com/armand-ratombotiana/EmbedJNoSQL" class="btn-primary" target="_blank" rel="noopener">⭐ Star on GitHub</a>
-    <a href="#install" class="btn-secondary">⚡ Quick Start</a>
+  <div class="cta-actions">
+    <a href="https://github.com/armand-ratombotiana/EmbedJNoSQL" class="btn-primary" target="_blank" rel="noopener">Star on GitHub</a>
+    <a href="#install" class="btn-secondary">Quick start</a>
+  </div>
+
+  <div class="boundaries">
+    <h3>Where EmbedJNoSQL stops</h3>
+    <p>
+      This is a NoSQL database: no SQL engine, no JDBC driver, no relational schema to
+      migrate. Documents are schemaless unless you register validation rules, and a stored
+      reference is an id you resolve yourself — never an enforced foreign key. We say so
+      plainly, in the README and in every release note.
+    </p>
   </div>
 </div>
 
 <!-- ═══════════════════════════ FOOTER ═══════════════════════════ -->
 <footer>
   <div class="footer-logo">
-    <img src="assets/embedjnosql-logo-512-transparent.png" alt="EmbedJNoSQL logo" width="44" height="44" style="border-radius:10px;" />
-    Jembed<span>DB</span>
+    <img src="assets/embedjnosql-logo-512-transparent.png" alt="EmbedJNoSQL logo" width="30" height="30" />
+    EmbedJNoSQL
   </div>
   <div class="footer-tagline">The embedded NoSQL database for the JVM — Document and Key-Value, zero infrastructure.</div>
   <div class="footer-links">
@@ -1647,22 +741,26 @@ db.<span class="fn">setBucket</span>(<span class="str">"active_tags"</span>).<sp
 </footer>
 
 <script>
-  /* ── Tab switching for Install Section ── */
+  /* ── Install tabs ── */
   function switchInstallTab(e, tabId) {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      b.classList.remove('active');
+      b.setAttribute('aria-selected', 'false');
+    });
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
     e.currentTarget.classList.add('active');
+    e.currentTarget.setAttribute('aria-selected', 'true');
     document.getElementById(tabId).classList.add('active');
   }
 
-  /* ── Copy Code to Clipboard ── */
+  /* ── Copy to clipboard ── */
   function copyCode(btn, codeId) {
     const el = document.getElementById(codeId);
     if (!el) return;
     navigator.clipboard.writeText(el.innerText).then(() => {
       const orig = btn.innerHTML;
       btn.classList.add('copied');
-      btn.innerHTML = '✓ Copied!';
+      btn.innerHTML = '✓ Copied';
       setTimeout(() => {
         btn.classList.remove('copied');
         btn.innerHTML = orig;
@@ -1670,29 +768,12 @@ db.<span class="fn">setBucket</span>(<span class="str">"active_tags"</span>).<sp
     }).catch(err => console.error('Copy failed', err));
   }
 
-  /* ── Mobile Hamburger Drawer Toggle ── */
-  function toggleMobileMenu() {
-    const drawer = document.getElementById('mobileDrawer');
-    if (drawer) drawer.classList.toggle('open');
-  }
-
-  /* ── Query Playground Controller ── */
-  /* The playground exposes a single data model: the document engine.
-     The tab button stays for layout; there is no engine switching. */
-  function switchPlaygroundTab(tab, btn) {
-    document.querySelectorAll('.pg-tab').forEach(t => t.classList.remove('active'));
-    if (btn) btn.classList.add('active');
-    const note = document.getElementById('pgEngineNote');
-    if (note) note.textContent = '— document engine · native predicates';
-  }
-
+  /* ── Playground controller — the latency figure is illustrative,
+        not a measurement from this browser. ── */
   function executePlaygroundQuery() {
     const lat = document.getElementById('pgLatency');
-    /* Simulated, clearly labeled: the figures shown are illustrative
-       placeholders, not measurements from this browser. */
     const ms = (0.05 + Math.random() * 0.08).toFixed(2);
     lat.innerHTML = `⚡ ~${ms} ms (illustrative)`;
-    lat.style.color = '#fbbf24';
   }
 </script>
 </body>

@@ -38,7 +38,7 @@ It runs directly inside the host JVM process, binding to local network interface
 
 | Layer | Component | Description |
 |---|---|---|
-| **Presentation** | `index.html`, `login.html`, `enhancements.js`, `enhancements.css` | Lightweight single-page application built with zero external runtime dependencies. |
+| **Presentation** | `index.html`, `login.html`, `console.js`, `console.css` | Lightweight single-page application built with zero external runtime dependencies. |
 | **Transport** | `EmbedJNoSQLServer`, `PortManager`, `HttpsServer` | Built on high-performance JDK `com.sun.net.httpserver.HttpServer`. |
 | **Configuration** | `ConsoleConfig`, `SecurityConfig`, `ConfigurationResolver` | Type-safe configuration records with precedence resolution across code, properties, env vars, and defaults. |
 | **Security Guard** | `CsrfTokenManager`, `SecureSessionManager`, RateLimiter, FailedLoginTracker | Defense-in-depth security barrier enforcing authentication, CSRF synchronizer tokens, rate limits, brute-force lockout, and OWASP headers. |
