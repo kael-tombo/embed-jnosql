@@ -8,6 +8,8 @@ import org.embeddedjnosql.db.storage.spi.StorageEngine;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -205,7 +207,7 @@ public class Transaction implements AutoCloseable {
         checkOpen();
         lastActivity = Instant.now();
         touchedCollections.add(name);
-        return new TransactionalCollection(name, engine, operations, eventBus, metrics);
+        return new TransactionalCollection(name, engine, eventBus, metrics);
     }
 
     /**
@@ -368,26 +370,164 @@ public class Transaction implements AutoCloseable {
 
     private class TransactionalCollection extends DocumentCollection {
 
-        private final List<Operation> ops;
-
-        TransactionalCollection(String name, StorageEngine engine, List<Operation> ops, EventBus eventBus, DatabaseMetrics metrics) {
+        TransactionalCollection(String name, StorageEngine engine, EventBus eventBus, DatabaseMetrics metrics) {
             super(name, engine, eventBus, metrics);
-            this.ops = ops;
         }
 
         @Override
         public Document insert(Document doc) {
+            return insert(doc, -1);
+        }
+
+        @Override
+        public Document insert(Document doc, long ttlSeconds) {
+            checkOpen();
             if (doc.id() == null) {
                 doc.id(UUID.randomUUID().toString());
             }
-            ops.add(new Operation(Operation.Type.PUT, name(), doc.id(), doc.toJson()));
+            if (ttlSeconds > 0) {
+                doc.expiresAt(System.currentTimeMillis() + (ttlSeconds * 1000));
+            }
+            Transaction.this.write(name(), doc.id(), doc.toJson());
             return doc;
         }
 
         @Override
+        public List<Document> insertAll(List<Document> docs, boolean atomic) {
+            checkOpen();
+            List<Document> result = new ArrayList<>(docs.size());
+            for (var doc : docs) {
+                result.add(insert(doc));
+            }
+            return result;
+        }
+
+        @Override
+        public Document update(Document doc) {
+            checkOpen();
+            if (doc.id() == null) {
+                throw new IllegalArgumentException("Document must have an id to update");
+            }
+            var existing = findById(doc.id());
+            if (existing == null) {
+                throw new IllegalArgumentException("Document not found: " + doc.id());
+            }
+            Transaction.this.write(name(), doc.id(), doc.toJson());
+            return doc;
+        }
+
+        @Override
+        public Document upsert(Document doc) {
+            checkOpen();
+            if (doc.id() != null && findById(doc.id()) != null) {
+                return update(doc);
+            }
+            return insert(doc);
+        }
+
+        @Override
         public boolean deleteById(String id) {
-            ops.add(new Operation(Operation.Type.DELETE, name(), id, null));
-            return true;
+            checkOpen();
+            var existing = findById(id);
+            if (existing != null) {
+                Transaction.this.delete(name(), id);
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public Document findById(String id) {
+            checkOpen();
+            var json = Transaction.this.read(name(), id);
+            if (json == null) return null;
+            var doc = Document.fromJson(json);
+            if (doc != null && doc.isExpired()) return null;
+            return doc;
+        }
+
+        @Override
+        public List<Document> findByIds(List<String> ids) {
+            checkOpen();
+            var results = new ArrayList<Document>();
+            for (var id : ids) {
+                var doc = findById(id);
+                if (doc != null) {
+                    results.add(doc);
+                }
+            }
+            return results;
+        }
+
+        @Override
+        public List<Document> findAll() {
+            checkOpen();
+            var map = new LinkedHashMap<String, Document>();
+            for (var doc : super.findAll()) {
+                map.put(doc.id(), doc);
+            }
+            for (var op : operations) {
+                if (op.collection().equals(name())) {
+                    if (op.type() == Operation.Type.DELETE) {
+                        map.remove(op.key());
+                    } else if (op.type() == Operation.Type.PUT) {
+                        var doc = Document.fromJson(op.value());
+                        if (doc != null && !doc.isExpired()) {
+                            map.put(op.key(), doc);
+                        } else {
+                            map.remove(op.key());
+                        }
+                    }
+                }
+            }
+            return new ArrayList<>(map.values());
+        }
+
+        @Override
+        @SuppressWarnings({"rawtypes", "unchecked"})
+        public List<Document> find(org.embeddedjnosql.db.nosql.document.Query query) {
+            checkOpen();
+            var results = findAll().stream()
+                    .filter(query.docPredicate())
+                    .collect(java.util.stream.Collectors.toCollection(ArrayList::new));
+
+            if (query.sortOrder() != org.embeddedjnosql.db.nosql.document.Query.SortOrder.NONE && query.sortField() != null) {
+                var sf = query.sortField();
+                Comparator<Document> cmp = (a, b) -> {
+                    var ra = a.resolvePath(sf);
+                    var rb = b.resolvePath(sf);
+                    var va = ra == Document.PATH_MISSING ? null : (Comparable) ra;
+                    var vb = rb == Document.PATH_MISSING ? null : (Comparable) rb;
+                    if (va == null && vb == null) return 0;
+                    if (va == null) return -1;
+                    if (vb == null) return 1;
+                    return va.compareTo(vb);
+                };
+                if (query.sortOrder() == org.embeddedjnosql.db.nosql.document.Query.SortOrder.DESC) {
+                    cmp = cmp.reversed();
+                }
+                results.sort(cmp);
+            }
+
+            int offset = query.offset();
+            int limit = query.limit();
+            if (offset > 0 || limit < Integer.MAX_VALUE) {
+                int from = Math.min(offset, results.size());
+                int to = (limit == Integer.MAX_VALUE) ? results.size() : Math.min(from + limit, results.size());
+                return results.subList(from, to);
+            }
+            return results;
+        }
+
+        @Override
+        public Document findOne(org.embeddedjnosql.db.nosql.document.Query query) {
+            var list = find(query.limit(1));
+            return list.isEmpty() ? null : list.get(0);
+        }
+
+        @Override
+        public long count() {
+            return findAll().size();
         }
     }
 }

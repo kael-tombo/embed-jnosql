@@ -81,4 +81,21 @@ class KeyValueBucketTest {
         bucket.put("key1", "value2");
         assertEquals("value2", bucket.get("key1"));
     }
+
+    @Test
+    void overwriteClearsTtl() throws InterruptedException {
+        // Set short TTL of 100ms
+        bucket.put("key1", "temporary", Duration.ofMillis(100));
+        assertTrue(bucket.exists("key1"));
+
+        // Overwrite without TTL before expiry
+        bucket.put("key1", "permanent");
+
+        // Wait past original 100ms TTL
+        Thread.sleep(150);
+
+        // Value must still exist and not be evicted
+        assertTrue(bucket.exists("key1"), "Key should remain permanent after overwrite without TTL");
+        assertEquals("permanent", bucket.get("key1"));
+    }
 }

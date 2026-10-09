@@ -75,13 +75,17 @@ public class KeyValueBucket {
 
     public void put(String key, String value) {
         engine.put(name, key, value);
+        if (expirations.remove(key) != null) {
+            saveExpirations();
+        }
         metrics.recordInsert();
     }
 
     public void put(String key, String value, Duration ttl) {
-        put(key, value);
+        engine.put(name, key, value);
         expirations.put(key, Instant.now().plus(ttl));
         saveExpirations();
+        metrics.recordInsert();
     }
 
     public String get(String key) {
@@ -169,6 +173,15 @@ public class KeyValueBucket {
 
             // Perform batch write
             engine.putAll(name, entries);
+            boolean expModified = false;
+            for (String key : entries.keySet()) {
+                if (expirations.remove(key) != null) {
+                    expModified = true;
+                }
+            }
+            if (expModified) {
+                saveExpirations();
+            }
             entries.forEach((k, v) -> metrics.recordInsert());
 
             // Commit if transaction was started

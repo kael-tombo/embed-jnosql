@@ -85,10 +85,8 @@ public class WriteAheadLog {
     private FileOutputStream logFileOutputStream;
 
     private void initWriter() throws IOException {
-        var fileWriter = new FileWriter(walFile.toFile(), true);
-        logWriter = new BufferedWriter(fileWriter);
-        // Keep FileOutputStream for fsync
         this.logFileOutputStream = new FileOutputStream(walFile.toFile(), true);
+        this.logWriter = new BufferedWriter(new OutputStreamWriter(logFileOutputStream, StandardCharsets.UTF_8));
     }
 
     /**
@@ -169,9 +167,13 @@ public class WriteAheadLog {
         // Fsync before rotation to ensure all data is persisted
         fsync();
 
-        logWriter.close();
+        if (logWriter != null) {
+            logWriter.close();
+            logWriter = null;
+        }
         if (logFileOutputStream != null) {
             logFileOutputStream.close();
+            logFileOutputStream = null;
         }
 
         var timestamp = System.currentTimeMillis();
@@ -241,6 +243,9 @@ public class WriteAheadLog {
         } catch (IOException e) {
             System.err.println("WAL truncate on checkpoint failed (" + e.getMessage()
                     + "); appending a CHECKPOINT marker instead");
+            if (logWriter == null) {
+                initWriter();
+            }
             logWriter.write("CHECKPOINT:" + logSequence.get());
             logWriter.newLine();
             logWriter.flush();
@@ -385,21 +390,38 @@ public class WriteAheadLog {
         }
         
         if (logWriter != null) {
-            logWriter.close();
+            try {
+                logWriter.close();
+            } catch (IOException ignored) {}
+            logWriter = null;
         }
         if (logFileOutputStream != null) {
-            logFileOutputStream.close();
+            try {
+                logFileOutputStream.close();
+            } catch (IOException ignored) {}
+            logFileOutputStream = null;
         }
     }
 
-    public void truncate() throws IOException {
+    public synchronized void truncate() throws IOException {
         if (logWriter != null) {
-            logWriter.close();
+            try {
+                logWriter.flush();
+            } catch (IOException ignored) {}
+            try {
+                logWriter.close();
+            } catch (IOException ignored) {}
+            logWriter = null;
         }
         if (logFileOutputStream != null) {
-            logFileOutputStream.close();
+            try {
+                logFileOutputStream.close();
+            } catch (IOException ignored) {}
+            logFileOutputStream = null;
         }
-        Files.deleteIfExists(walFile);
+        try (var fos = new FileOutputStream(walFile.toFile(), false)) {
+            // Opening with append=false truncates the file in-place without deleting the filesystem entry
+        }
         logSequence.set(0);
         initWriter();
     }

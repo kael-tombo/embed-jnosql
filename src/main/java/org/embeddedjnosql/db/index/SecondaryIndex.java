@@ -46,18 +46,47 @@ public class SecondaryIndex {
         add(newDoc);
     }
 
-    public Set<String> lookup(Object value) {
-        return index.getOrDefault(value, Collections.emptySet());
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private int compareValues(Object a, Object b) {
+        if (a == b) return 0;
+        if (a == null) return -1;
+        if (b == null) return 1;
+        if (a instanceof Number na && b instanceof Number nb) {
+            return Double.compare(na.doubleValue(), nb.doubleValue());
+        }
+        if (a instanceof Comparable ca && b instanceof Comparable cb) {
+            if (a.getClass().isAssignableFrom(b.getClass()) || b.getClass().isAssignableFrom(a.getClass())) {
+                return ca.compareTo(cb);
+            }
+        }
+        return a.toString().compareTo(b.toString());
     }
 
-    @SuppressWarnings("unchecked")
+    public Set<String> lookup(Object value) {
+        if (value == null) {
+            return index.getOrDefault(null, Collections.emptySet());
+        }
+        Set<String> direct = index.get(value);
+        if (direct != null && !direct.isEmpty()) {
+            return direct;
+        }
+        if (value instanceof Number num) {
+            double target = num.doubleValue();
+            for (var entry : index.entrySet()) {
+                if (entry.getKey() instanceof Number kNum && Double.compare(kNum.doubleValue(), target) == 0) {
+                    return entry.getValue();
+                }
+            }
+        }
+        return Collections.emptySet();
+    }
+
     public Set<String> range(Object lower, Object upper, boolean inclusive) {
         Set<String> result = new HashSet<>();
         for (var entry : index.entrySet()) {
-            var key = (Comparable<Object>) entry.getKey();
-            var keyValue = key;
-            boolean aboveLower = inclusive ? keyValue.compareTo(lower) >= 0 : keyValue.compareTo(lower) > 0;
-            boolean belowUpper = inclusive ? keyValue.compareTo(upper) <= 0 : keyValue.compareTo(upper) < 0;
+            Object key = entry.getKey();
+            boolean aboveLower = inclusive ? compareValues(key, lower) >= 0 : compareValues(key, lower) > 0;
+            boolean belowUpper = inclusive ? compareValues(key, upper) <= 0 : compareValues(key, upper) < 0;
             if (aboveLower && belowUpper) {
                 result.addAll(entry.getValue());
             }
@@ -65,12 +94,11 @@ public class SecondaryIndex {
         return result;
     }
 
-    @SuppressWarnings("unchecked")
     public Set<String> greaterThan(Object value, boolean inclusive) {
         Set<String> result = new HashSet<>();
         for (var entry : index.entrySet()) {
-            var key = (Comparable<Object>) entry.getKey();
-            boolean above = inclusive ? key.compareTo(value) >= 0 : key.compareTo(value) > 0;
+            Object key = entry.getKey();
+            boolean above = inclusive ? compareValues(key, value) >= 0 : compareValues(key, value) > 0;
             if (above) {
                 result.addAll(entry.getValue());
             }
@@ -78,12 +106,11 @@ public class SecondaryIndex {
         return result;
     }
 
-    @SuppressWarnings("unchecked")
     public Set<String> lessThan(Object value, boolean inclusive) {
         Set<String> result = new HashSet<>();
         for (var entry : index.entrySet()) {
-            var key = (Comparable<Object>) entry.getKey();
-            boolean below = inclusive ? key.compareTo(value) <= 0 : key.compareTo(value) < 0;
+            Object key = entry.getKey();
+            boolean below = inclusive ? compareValues(key, value) <= 0 : compareValues(key, value) < 0;
             if (below) {
                 result.addAll(entry.getValue());
             }

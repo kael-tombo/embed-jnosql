@@ -66,6 +66,9 @@ public class Query {
             var v = doc.resolvePath(field);
             if (v == Document.PATH_MISSING) return false;
             if (v == null) return value == null;
+            if (v instanceof Number nv && value instanceof Number nval) {
+                return Double.compare(nv.doubleValue(), nval.doubleValue()) == 0;
+            }
             return v.equals(value);
         });
         // Nested dotted paths are not secondary-indexable — indexing stays a
@@ -159,6 +162,9 @@ public class Query {
             var v = doc.resolvePath(field);
             if (v == Document.PATH_MISSING) return false;
             if (v == null) return value != null;
+            if (v instanceof Number nv && value instanceof Number nval) {
+                return Double.compare(nv.doubleValue(), nval.doubleValue()) != 0;
+            }
             return !v.equals(value);
         });
     }
