@@ -150,10 +150,25 @@ class EmbedJpaPartTreeQueryCreator extends
     private Query contains(String column, Iterator<Object> params, boolean ignoreCase, boolean negated) {
         String needle = (String) params.next();
         if (ignoreCase) {
-            needle = needle.toLowerCase(Locale.ROOT);
+            final String lowerNeedle = needle.toLowerCase(Locale.ROOT);
+            return Query.matching(doc -> {
+                if (!doc.has(column)) return false;
+                Object v = doc.getRaw(column);
+                if (v == null) return false;
+                boolean match = v.toString().toLowerCase(Locale.ROOT).contains(lowerNeedle);
+                return negated ? !match : match;
+            });
+        }
+        if (negated) {
+            return Query.matching(doc -> {
+                if (!doc.has(column)) return false;
+                Object v = doc.getRaw(column);
+                return v == null || !v.toString().contains(needle);
+            });
         }
         return Query.contains(column, needle);
     }
+
 
     private Query notContains(String column, Iterator<Object> params, boolean ignoreCase) {
         Query positive = contains(column, params, ignoreCase, false);
