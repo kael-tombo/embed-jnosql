@@ -81,11 +81,12 @@ All four identified critical/high architectural defects (**F-01**, **F-02**, **F
 -------------------------------------------------------
  T E S T S   S U M M A R Y
 -------------------------------------------------------
-Total Tests Run: 864+
+Total Tests Run: 865
 Failures: 0
 Errors: 0
 Skipped: 0
 Build Status: SUCCESS
+Verified: 2026-10-09 (mvn test, Java 25, Windows Server 2022 amd64)
 ```
 
 | Verification Suite | Target Areas | Result |
