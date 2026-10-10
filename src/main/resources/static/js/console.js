@@ -527,7 +527,7 @@ async function loadCollection() {
   $('#colCount').textContent = `${colDocs.length} docs`;
   setActiveContext(`collection ${name} · ${colDocs.length} doc${colDocs.length === 1 ? '' : 's'}`);
   $('#colTable').innerHTML = tbl(['id', ...fields, 'expires'], colDocs.map((d) =>
-    [`<td><a href="#" class="mono" data-doc="${esc(d.id)}">${esc(d.id)}</a></td>`,
+    [`<td><a href="#" class="mono" data-doc="${esc(d.id)}">${esc(d.id)}</a>${d.fields?._entity ? ` <span class="badge sm" title="Jakarta NoSQL Entity: ${esc(d.fields._entity)}">@${esc(d.fields._entity.split('.').pop())}</span>` : ''}</td>`,
       ...fields.map((f) => { const v = d.fields?.[f]; return `<td>${esc(v == null ? '' : typeof v === 'object' ? JSON.stringify(v) : String(v))}</td>`; }),
       `<td>${d.expiresAt ? new Date(d.expiresAt).toLocaleString() : ''}</td>`]));
   $$('#colTable [data-doc]').forEach((a) => a.onclick = (e) => {
@@ -750,8 +750,11 @@ function qbBuildFilter() {
   if (!conds.length) return {};
   const filter = {};
   for (const c of conds) {
-    if (c.op === '$exists') filter[c.field] = { $exists: c.value === '' ? true : !!c.value };
-    else filter[c.field] = { [c.op]: c.value };
+    const opVal = c.op === '$exists' ? (c.value === '' ? true : !!c.value) : c.value;
+    if (!filter[c.field] || typeof filter[c.field] !== 'object' || Array.isArray(filter[c.field])) {
+      filter[c.field] = {};
+    }
+    filter[c.field][c.op] = opVal;
   }
   return filter;
 }
@@ -843,6 +846,7 @@ const KV_TABS = {
         <div class="spacer"></div>
         <button class="btn sm" id="kvNewKey">+ New key</button>
       </div>
+      <div id="kvBucketPicker" class="chip-row" style="margin-top:8px" aria-label="Known KV buckets"></div>
       <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
         <div><label class="fld" for="kvPrefix">Key prefix filter</label><input type="text" id="kvPrefix" placeholder="e.g. user-" style="width:180px"></div>
         <button class="btn sm" id="kvPrefixGo">Apply</button>
@@ -890,8 +894,29 @@ const KV_TABS = {
 
 let kvTab = 'kv';
 
+/** Discovers and lists known KV buckets as clickable chips. */
+async function loadKvBucketPicker() {
+  const host = $('#kvBucketPicker');
+  if (!host) return;
+  try {
+    const r = await api('/kv-meta/buckets');
+    const buckets = r.buckets ?? [];
+    host.innerHTML = buckets.length
+      ? buckets.map((b) => `<button class="chip" aria-pressed="false" data-kvb="${esc(b)}" title="Browse bucket ${esc(b)}">${esc(b)}</button>`).join('')
+      : '<span class="hint">No existing KV buckets found.</span>';
+    $$('#kvBucketPicker .chip').forEach((b) => b.onclick = () => {
+      $$('#kvBucketPicker .chip.active').forEach((x) => { x.classList.remove('active'); x.setAttribute('aria-pressed', 'false'); });
+      b.classList.add('active');
+      b.setAttribute('aria-pressed', 'true');
+      $('#kvBucket').value = b.dataset.kvb;
+      kvBrowse().catch((e) => toast(e.message, 'err'));
+    });
+  } catch { host.innerHTML = ''; }
+}
+
 /** Renders the bucket browser: every key the engine holds, with value + TTL. */
 async function kvBrowse() {
+  loadKvBucketPicker();
   const bucketName = $('#kvBucket').value.trim();
   const host = $('#kvBrowser');
   if (!bucketName) { toast('Enter a bucket name to browse', 'err'); return; }
@@ -995,6 +1020,7 @@ function bindKvTab() {
     $('#kvPrefix').addEventListener('keydown', (e) => e.key === 'Enter' && kvBrowse().catch((e) => toast(e.message, 'err')));
     $('#kvBucket').addEventListener('keydown', (e) => e.key === 'Enter' && kvBrowse().catch((e) => toast(e.message, 'err')));
     $('#kvNewKey').onclick = () => kvNewKeyForm();
+    loadKvBucketPicker();
   } else if (kvTab === 'list') {
     const vals = () => v('#lsVals').split(',').map((s) => s.trim()).filter(Boolean);
     $('#lsPush').onclick = async () => { show(await api(`/kv/lists/${v('#lsBucket')}/${v('#lsKey')}/rpush`, { method: 'POST', body: { values: vals() } })); flash(); };
@@ -1052,6 +1078,37 @@ async function vecInfo() {
   const r = await api(`/vectors/${encodeURIComponent($('#vecIdx').value.trim())}/_`);
   $('#vecStatus').textContent = `${r.size ?? 0} vecs · ${r.dimensions ?? '?'}d (experimental)`;
 }
+async function vecAdd() {
+  const idx = $('#vecIdx').value.trim();
+  const id = $('#vecAddId')?.value.trim();
+  const rawData = $('#vecAddData')?.value.trim();
+  const status = $('#vecAddStatus');
+  if (!idx) { toast('Index name required', 'err'); return; }
+  if (!id) { toast('Vector ID required', 'err'); return; }
+  if (!rawData) { toast('Vector data required', 'err'); return; }
+  let vector;
+  try { vector = JSON.parse(rawData); }
+  catch { if (status) { status.textContent = 'invalid JSON array'; status.className = 'badge err'; } return; }
+  if (!Array.isArray(vector) || vector.length === 0) {
+    if (status) { status.textContent = 'must be non-empty array'; status.className = 'badge err'; }
+    return;
+  }
+  if (status) { status.textContent = 'saving…'; status.className = 'badge'; }
+  try {
+    await api(`/vectors/${encodeURIComponent(idx)}/${encodeURIComponent(id)}`, {
+      method: 'POST',
+      body: { vector }
+    });
+    if (status) { status.textContent = 'saved'; status.className = 'badge ok'; }
+    toast(`Vector ${id} saved to ${idx}`, 'ok');
+    if ($('#vecAddId')) $('#vecAddId').value = '';
+    if ($('#vecAddData')) $('#vecAddData').value = '';
+    vecInfo();
+  } catch (e) {
+    if (status) { status.textContent = 'failed'; status.className = 'badge err'; }
+    toast(e.message, 'err');
+  }
+}
 async function vecSearch() {
   let vector;
   try { vector = JSON.parse($('#vecQuery').value); }
@@ -1101,14 +1158,29 @@ async function schSave() {
 async function txRefresh() {
   const r = await api('/transactions');
   const ids = r.ids ?? [];
+  const list = r.transactions ?? [];
   $('#txCount').textContent = `${ids.length} active`;
-  $('#txTable').innerHTML = tbl(['Transaction ID', ''],
-    ids.map((id) => [`<td><code>${esc(String(id))}</code></td>`,
-      `<td><button class="btn sm" data-tx="${esc(String(id))}" data-act="commit">Commit</button>
-       <button class="btn sm danger" data-tx="${esc(String(id))}" data-act="rollback">Rollback</button></td>`]));
+  if (list.length > 0) {
+    $('#txTable').innerHTML = tbl(['Handle ID', 'Status', 'Operations', 'Isolation', 'Created', 'Actions'],
+      list.map((tx) => [
+        `<td><code>${esc(String(tx.handleId ?? tx.id))}</code></td>`,
+        `<td><span class="badge ${tx.status === 'ACTIVE' ? 'ok' : 'warn'}">${esc(tx.status ?? '')}</span></td>`,
+        `<td>${tx.operations ?? 0}</td>`,
+        `<td>${esc(tx.isolationLevel ?? 'SNAPSHOT')}</td>`,
+        `<td>${tx.createdAt ? new Date(tx.createdAt).toLocaleTimeString() : '—'}</td>`,
+        `<td><button class="btn sm" data-tx="${esc(String(tx.handleId ?? tx.id))}" data-act="commit">Commit</button>
+         <button class="btn sm danger" data-tx="${esc(String(tx.handleId ?? tx.id))}" data-act="rollback">Rollback</button></td>`
+      ]));
+  } else {
+    $('#txTable').innerHTML = tbl(['Transaction ID', 'Actions'],
+      ids.map((id) => [`<td><code>${esc(String(id))}</code></td>`,
+        `<td><button class="btn sm" data-tx="${esc(String(id))}" data-act="commit">Commit</button>
+         <button class="btn sm danger" data-tx="${esc(String(id))}" data-act="rollback">Rollback</button></td>`]));
+  }
   $$('#txTable [data-tx]').forEach((b) => b.onclick = async () => {
     await api('/transactions', { method: 'POST', body: { action: b.dataset.act, transactionId: Number(b.dataset.tx) } });
-    toast(`Transaction ${b.dataset.act}ted`, 'ok');
+    const actLabel = b.dataset.act === 'rollback' ? 'rolled back' : 'committed';
+    toast(`Transaction ${actLabel}`, 'ok');
     txRefresh();
   });
 }
@@ -1469,6 +1541,7 @@ function bind() {
   // vectors
   $('#vecInfo').onclick = () => vecInfo().catch((e) => toast(e.message, 'err'));
   $('#vecSearch').onclick = () => vecSearch().catch((e) => toast(e.message, 'err'));
+  if ($('#vecAddBtn')) $('#vecAddBtn').onclick = () => vecAdd().catch((e) => toast(e.message, 'err'));
 
   // schema
   $('#schRefresh').onclick = () => schRefresh().catch((e) => toast(e.message, 'err'));

@@ -2490,7 +2490,17 @@ public class EmbedJNoSQLServer {
                     sendJson(exchange, 200, Map.of("transactionId", txId, "status", "started"));
                 }
             } else if ("GET".equals(exchange.getRequestMethod())) {
-                sendJson(exchange, 200, Map.of("activeTransactions", activeTransactions.size(), "ids", activeTransactions.keySet()));
+                var txList = new java.util.ArrayList<Map<String, Object>>();
+                for (var entry : activeTransactions.entrySet()) {
+                    var info = new java.util.LinkedHashMap<>(entry.getValue().info());
+                    info.put("handleId", entry.getKey());
+                    txList.add(info);
+                }
+                sendJson(exchange, 200, Map.of(
+                    "activeTransactions", activeTransactions.size(),
+                    "ids", activeTransactions.keySet(),
+                    "transactions", txList
+                ));
             } else {
                 sendJson(exchange, 405, Map.of("error", "POST or GET only"));
             }

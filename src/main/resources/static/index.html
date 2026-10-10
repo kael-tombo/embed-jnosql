@@ -266,13 +266,23 @@
         </div>
         <div class="grid cols-2">
           <div class="card">
-            <div class="card-head"><h2>Index</h2></div>
+            <div class="card-head"><h2>Index &amp; Vectors</h2></div>
             <div class="card-pad">
               <label class="fld">Index name</label>
               <input type="text" id="vecIdx" value="embeddings">
               <div style="display:flex;gap:8px;margin-top:10px">
                 <button class="btn sm" id="vecInfo">Info</button>
                 <span class="badge" id="vecStatus"></span>
+              </div>
+            </div>
+            <div class="card-pad" style="border-top:1px solid var(--line-0)">
+              <label class="fld">Vector ID</label>
+              <input type="text" id="vecAddId" placeholder="doc-123" style="margin-bottom:8px">
+              <label class="fld">Vector data (JSON array)</label>
+              <input type="text" id="vecAddData" placeholder="[0.1, 0.2, ...]">
+              <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
+                <button class="btn primary sm" id="vecAddBtn">Insert vector</button>
+                <span class="badge" id="vecAddStatus"></span>
               </div>
             </div>
           </div>
