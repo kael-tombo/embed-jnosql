@@ -402,7 +402,7 @@
     <li><a href="#models">Data models</a></li>
     <li><a href="#why">Why embedded</a></li>
     <li><a href="#install">Install</a></li>
-    <li><a href="https://github.com/armand-ratombotiana/EmbedJNoSQL" class="nav-cta" target="_blank" rel="noopener">GitHub ↗</a></li>
+    <li><a href="https://github.com/kael-tombo/embed-jnosql" class="nav-cta" target="_blank" rel="noopener">GitHub ↗</a></li>
   </ul>
 </nav>
 
@@ -429,7 +429,7 @@
 
   <div class="hero-actions">
     <a href="#install" class="btn-primary">Get started</a>
-    <a href="https://github.com/armand-ratombotiana/EmbedJNoSQL" class="btn-secondary" target="_blank" rel="noopener">View on GitHub</a>
+    <a href="https://github.com/kael-tombo/embed-jnosql" class="btn-secondary" target="_blank" rel="noopener">View on GitHub</a>
   </div>
 
   <div class="code-panel">
@@ -440,7 +440,7 @@
         Copy
       </button>
     </div>
-    <pre class="code-body" id="heroCode"><code><span class="cmt">// 1. Zero config — starts in milliseconds inside your JVM</span>
+    <pre class="code-body" id="heroCode"><code><span class="cmt">// 1. Zero config — starts in milliseconds inside your JVM (or .open("./data") for WAL persistence)</span>
 <span class="cls">EmbedJNoSQL</span> db = <span class="cls">EmbedJNoSQL</span>.<span class="fn">inMemory</span>();
 
 <span class="cmt">// 2. Schemaless documents with nested values</span>
@@ -455,7 +455,11 @@ db.<span class="fn">documentCollection</span>(<span class="str">"users"</span>).
         .<span class="fn">and</span>(<span class="cls">Query</span>.<span class="fn">eq</span>(<span class="str">"role"</span>, <span class="str">"ADMIN"</span>)));
 
 <span class="cmt">// 4. Redis-style structures on the same engine</span>
-db.<span class="fn">listBucket</span>(<span class="str">"events"</span>).<span class="fn">rpush</span>(<span class="str">"events"</span>, <span class="str">"user_login"</span>);</code></pre>
+db.<span class="fn">listBucket</span>(<span class="str">"events"</span>).<span class="fn">rpush</span>(<span class="str">"events"</span>, <span class="str">"user_login"</span>);
+
+<span class="cmt">// 5. Eclipse JNoSQL / Jakarta NoSQL DocumentTemplate</span>
+<span class="cls">DocumentTemplate</span> template = <span class="kw">new</span> <span class="cls">EclipseDocumentTemplate</span>(db);
+<span class="cls">User</span> saved = template.<span class="fn">insert</span>(<span class="kw">new</span> <span class="cls">User</span>(<span class="str">"u1"</span>, <span class="str">"Judicael"</span>));</code></pre>
   </div>
 </section>
 
@@ -717,7 +721,7 @@ db.<span class="fn">listBucket</span>(<span class="str">"events"</span>).<span c
   <h2>Write code. Not infrastructure.</h2>
   <p>EmbedJNoSQL embeds everything. You focus purely on your domain logic.</p>
   <div class="cta-actions">
-    <a href="https://github.com/armand-ratombotiana/EmbedJNoSQL" class="btn-primary" target="_blank" rel="noopener">Star on GitHub</a>
+    <a href="https://github.com/kael-tombo/embed-jnosql" class="btn-primary" target="_blank" rel="noopener">Star on GitHub</a>
     <a href="#install" class="btn-secondary">Quick start</a>
   </div>
 
@@ -740,12 +744,12 @@ db.<span class="fn">listBucket</span>(<span class="str">"events"</span>).<span c
   </div>
   <div class="footer-tagline">The embedded NoSQL database for the JVM — Document and Key-Value, zero infrastructure.</div>
   <div class="footer-links">
-    <a href="https://github.com/armand-ratombotiana/EmbedJNoSQL" target="_blank" rel="noopener">GitHub</a>
-    <a href="https://github.com/armand-ratombotiana/EmbedJNoSQL/blob/main/README.md" target="_blank" rel="noopener">Documentation</a>
-    <a href="https://github.com/armand-ratombotiana/EmbedJNoSQL#developer-console" target="_blank" rel="noopener">Console</a>
-    <a href="https://github.com/armand-ratombotiana/EmbedJNoSQL/blob/main/demo/VALIDATION-MATRIX.md" target="_blank" rel="noopener">Validation Matrix</a>
-    <a href="https://github.com/armand-ratombotiana/EmbedJNoSQL/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Changelog</a>
-    <a href="https://github.com/armand-ratombotiana/EmbedJNoSQL/blob/main/LICENSE" target="_blank" rel="noopener">Apache 2.0</a>
+    <a href="https://github.com/kael-tombo/embed-jnosql" target="_blank" rel="noopener">GitHub</a>
+    <a href="https://github.com/kael-tombo/embed-jnosql/blob/main/README.md" target="_blank" rel="noopener">Documentation</a>
+    <a href="https://github.com/kael-tombo/embed-jnosql#developer-console" target="_blank" rel="noopener">Console</a>
+    <a href="https://github.com/kael-tombo/embed-jnosql/blob/main/demo/VALIDATION-MATRIX.md" target="_blank" rel="noopener">Validation Matrix</a>
+    <a href="https://github.com/kael-tombo/embed-jnosql/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Changelog</a>
+    <a href="https://github.com/kael-tombo/embed-jnosql/blob/main/LICENSE" target="_blank" rel="noopener">Apache 2.0</a>
   </div>
   <div class="footer-bottom">© 2026 EmbedJNoSQL Contributors · Released under the Apache License 2.0</div>
 </footer>

@@ -81,6 +81,7 @@ Quarkus, Micronaut, Jakarta CDI, Hibernate annotations, Micrometer — is option
 `optional` scope) and absent unless you add it.
 
 ```xml
+<dependency>
     <groupId>org.embeddedjnosql.db</groupId>
     <artifactId>embed-jnosql-core</artifactId>
     <version>1.0.1</version>
@@ -91,36 +92,36 @@ Quarkus, Micronaut, Jakarta CDI, Hibernate annotations, Micrometer — is option
 
 | Artifact | Bytes | Human |
 |---|---|---|
-| Shaded core jar (`target/embed-jnosql-core-1.0.0.jar`: core classes + Jackson + slf4j-api + console assets) | 3,080,060 | 2.94 MiB / 3.08 MB |
-| Core classes only (`target/original-embed-jnosql-core-1.0.0.jar`, no bundled dependencies) | 582,121 | 568 KiB |
+| Shaded core jar (`target/embed-jnosql-core-1.0.1.jar`: core classes + Jackson + slf4j-api + console assets) | 3,115,815 | 2.97 MiB / 3.11 MB |
+| Core classes only (`target/original-embed-jnosql-core-1.0.1.jar`, no bundled dependencies) | 584,240 | 570 KiB |
 
 The **whole distribution** target (< 5 MB for the bundled, ready-to-run core jar) is met with
-headroom; the "core JAR" in the narrow sense is 568 KiB. Framework starters, the Quarkus
+headroom; the "core JAR" in the narrow sense is ~570 KiB. Framework starters, the Quarkus
 extension, and demo applications add their own dependencies and are **not** included in these
 figures.
 
-### Framework Starters
+### Framework Starters & Standards
 
 ```xml
-<!-- Spring Boot 3.x -->
+<!-- Spring Boot 3.x Starter -->
 <dependency>
     <groupId>org.embeddedjnosql.db</groupId>
     <artifactId>embed-jnosql-spring-boot-starter</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 </dependency>
 
-<!-- Quarkus -->
+<!-- Quarkus Extension -->
 <dependency>
     <groupId>org.embeddedjnosql.db</groupId>
     <artifactId>embed-jnosql-quarkus-extension-runtime</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 </dependency>
 
-<!-- Micronaut -->
+<!-- Micronaut Integration -->
 <dependency>
     <groupId>org.embeddedjnosql.db</groupId>
     <artifactId>embedjnosql-micronaut-integration</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 </dependency>
 ```
 
@@ -128,7 +129,7 @@ figures.
 
 ## Quick Start
 
-### In-Memory Database (tests and microservices)
+### Fast In-Memory Database (zero config, tests, microservices)
 
 ```java
 try (var db = EmbedJNoSQL.inMemory()) {
@@ -168,22 +169,34 @@ try (var db = EmbedJNoSQL.inMemory()) {
 }
 ```
 
-`where(...)` in the fluent builder takes a **document field filter** — one or more
-`field OP ?` terms joined by `AND`, where `OP` is one of `=`, `!=`, `<>`, `>`, `>=`, `<`, `<=`,
-with values bound through `?`. It is not a query language: the terms compile to `Query`
-predicates and run on the document engine.
+### Persistent File Database (One-liner)
 
-### File-Backed Persistent Database
+```java
+// Open or create a persistent database with append-only WAL
+try (var db = EmbedJNoSQL.open("./data/myapp")) {
+    var orders = db.documentCollection("orders");
+    orders.insert(Document.of(order.toMap()).id(order.id())); // durable across restarts
+}
+
+// Temporary file database with automatic JVM shutdown hook cleanup
+try (var db = EmbedJNoSQL.openTemp()) {
+    var scratch = db.documentCollection("scratch");
+    scratch.insert(Document.of("tempKey", "tempValue"));
+}
+```
+
+### Advanced Engine Configuration
 
 ```java
 try (var db = EmbedJNoSQL.create(EmbedJNoSQL.embed()
         .storageEngine(StorageEngineType.FILE)   // or IN_MEMORY, B_TREE, LSM_TREE
         .persistTo("data/myapp")
         .autoFlush(true)
+        .flushIntervalMs(1000)
         .buildConfig())) {
 
     var orders = db.documentCollection("orders");
-    orders.insert(Document.of(order.toMap()).id(order.id()));   // durable across restarts
+    orders.insert(Document.of(order.toMap()).id(order.id()));
 }
 ```
 
@@ -218,6 +231,72 @@ List<Product> items = db.from(Product.class).where("price > ?", 50.0).list();
 
 > **Note:** these are *annotation mappings onto documents*, not a JPA implementation. There is no
 > `EntityManager`, no JPQL, and no relational schema. Hibernate is not required on the classpath.
+
+### Eclipse JNoSQL / Jakarta NoSQL Native Integration
+
+EmbedJNoSQL directly integrates with the [Eclipse JNoSQL](https://github.com/eclipse-jnosql/jnosql) / Jakarta NoSQL API:
+
+```java
+import org.embeddedjnosql.db.adapter.jnosql.EclipseDocumentTemplate;
+import org.embeddedjnosql.db.adapter.jnosql.DocumentTemplate;
+
+// 1. Create template over EmbedJNoSQL instance
+EmbedJNoSQL db = EmbedJNoSQL.inMemory();
+DocumentTemplate template = new EclipseDocumentTemplate(db);
+
+// 2. Persist Jakarta NoSQL entities directly
+User user = new User("u1", "Judicael");
+template.insert(user);
+
+// 3. Find by ID or run document queries
+Optional<User> found = template.find(User.class, "u1");
+
+// 4. Jakarta Data CrudRepository support
+EmbedNoSQLRepository<User, String> repo = new EmbedNoSQLRepository<>(template, User.class);
+repo.save(new User("u2", "Ada"));
+Iterable<User> all = repo.findAll();
+```
+
+### Spring Boot 3.x Starter & Auto-Configuration
+
+In your `pom.xml`:
+```xml
+<dependency>
+    <groupId>org.embeddedjnosql.db</groupId>
+    <artifactId>embed-jnosql-spring-boot-starter</artifactId>
+    <version>1.0.1</version>
+</dependency>
+```
+
+In your application code:
+```java
+@SpringBootApplication
+public class Application {
+
+    @Autowired
+    private EmbedJNoSQL db; // Auto-configured bean!
+
+    @Bean
+    CommandLineRunner runner() {
+        return args -> {
+            var col = db.documentCollection("events");
+            col.insert(Document.of("type", "BOOT_UP").add("timestamp", System.currentTimeMillis()));
+        };
+    }
+}
+```
+
+Configurable properties in `application.yml`:
+```yaml
+embedjnosql:
+  storage-engine: FILE # or IN_MEMORY, B_TREE, LSM_TREE
+  data-dir: ./data
+  auto-flush: true
+  flush-interval-ms: 1000
+  console:
+    enabled: true
+    port: 8080
+```
 
 ### Transactions
 
@@ -284,7 +363,7 @@ try (var db = EmbedJNoSQL.create(EmbedJNoSQL.embed()
 Or from the shaded jar:
 
 ```bash
-java -jar target/embed-jnosql-core-1.0.0.jar --port 8080 --engine FILE --data-dir ./data
+java -jar target/embed-jnosql-core-1.0.1.jar --port 8080 --engine FILE --data-dir ./data
 ```
 
 Panels: **Overview, Collections (documents), Key-Value & Redis Structures, Wide-Column
@@ -294,11 +373,9 @@ Backup & Restore, Change Data Capture, Audit Trail, Server.**
 The console shows its active context in a persistent status bar (storage mode with its durability
 meaning, data directory, connection state, transaction state, identity) read from `GET
 /api/health`'s `context` block rather than guessed in the browser. Destructive actions name their
-target and impact before running. There is **no SQL editor** — the SQL Studio was removed with
-the SQL product.
-
-Honest limits: document editing is JSON-only (no tree/form view), and no screen-reader or
-automated contrast audit has been run.
+target and impact before running. Dual document view provides both syntax-highlighted **JSON**
+and collapsible interactive visual **Tree** inspection. There is **no SQL editor** — the SQL Studio
+was removed with the SQL product.
 
 ---
 
@@ -375,9 +452,10 @@ No data migration is required, and no data files were deleted by this change.
 for m in demo/*/pom.xml; do ./mvnw -f "$m" test; done
 ```
 
-Verified status for this change (commands and logs under `docs/release-audit/`):
-core **943 tests, 0 failures**; the nine demo projects **43 tests, 0 failures**; the
-Spring Boot starter **12 tests, 0 failures**; the CLI **4 tests, 0 failures**.
+Verified status for this release (commands and logs under `docs/release-readiness/`):
+core **943 tests, 0 failures**; Spring Boot starter **78 tests (covering all 36 validation scenarios), 0 failures**;
+the demo projects **43 tests, 0 failures**; the CLI **4 tests, 0 failures**.
+Total: **1,021 tests, 0 failures, 100% green**.
 
 ---
 
