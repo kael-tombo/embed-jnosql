@@ -45,8 +45,8 @@ mvn clean install -DskipTests
 1. **Zero External Daemon Dependencies**: All features and engines must run purely in-process inside the JVM.
 2. **Deterministic Durability**: Any persistent engine change must preserve crash recovery invariants via the Write-Ahead Log (WAL).
 3. **No Regressions**:
-   - Every pull request must pass all **865+ core tests** plus all framework demo suites.
-   - Key suites: `EmbedJNoSQLTest`, `ConsoleFeatureValidationTest`, `ConsoleEngineIntegrationExtensionTest`, `UIReliabilityNetworkIntegrationTest`, `JNoSQLIntegrationTest`.
+   - Every pull request must pass all **943 core tests** plus all framework demo suites.
+   - Key suites: `ConsoleFeatureValidationTest`, `ConsoleEngineIntegrationExtensionTest`, `BrowserConsoleWorkflowVerificationTest`, `EclipseJNoSQLFullIntegrationTest`, `FullIntegrationTest`.
    - Run: `mvn clean test` in root and in `demo/`.
 4. **Clean File Descriptors**: Always ensure file channels and streams are closed in teardown hooks to avoid Windows file locks.
 

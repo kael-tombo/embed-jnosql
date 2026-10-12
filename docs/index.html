@@ -567,10 +567,11 @@ db.<span class="fn">listBucket</span>(<span class="str">"events"</span>).<span c
     </div>
 
     <div class="frameworks-line">
-      <span>Framework starters:</span>
+      <span>Framework starters &amp; standards:</span>
       <span class="fw-badge">🍃 Spring Boot</span>
       <span class="fw-badge">⚡ Quarkus</span>
       <span class="fw-badge">🚀 Micronaut</span>
+      <span class="fw-badge">🪐 Eclipse JNoSQL</span>
     </div>
     <p class="section-desc" style="margin-top: 1rem;">
       Each starter auto-configures the engine — <code style="color: var(--gold); font-size: 0.85rem;">@Autowired EmbedJNoSQL db;</code> —
@@ -648,6 +649,7 @@ db.<span class="fn">listBucket</span>(<span class="str">"events"</span>).<span c
         <button class="tab-btn active" role="tab" aria-selected="true" onclick="switchInstallTab(event, 'tab-maven')">Maven</button>
         <button class="tab-btn" role="tab" aria-selected="false" onclick="switchInstallTab(event, 'tab-gradle')">Gradle</button>
         <button class="tab-btn" role="tab" aria-selected="false" onclick="switchInstallTab(event, 'tab-spring')">Spring Boot</button>
+        <button class="tab-btn" role="tab" aria-selected="false" onclick="switchInstallTab(event, 'tab-jnosql')">Eclipse JNoSQL</button>
         <button class="tab-btn" role="tab" aria-selected="false" onclick="switchInstallTab(event, 'tab-quarkus')">Quarkus</button>
         <button class="tab-btn" role="tab" aria-selected="false" onclick="switchInstallTab(event, 'tab-micronaut')">Micronaut</button>
       </div>
@@ -657,13 +659,13 @@ db.<span class="fn">listBucket</span>(<span class="str">"events"</span>).<span c
         <pre class="code-body" id="mavenCode"><code>&lt;<span class="kw">dependency</span>&gt;
     &lt;<span class="kw">groupId</span>&gt;org.embeddedjnosql.db&lt;/<span class="kw">groupId</span>&gt;
     &lt;<span class="kw">artifactId</span>&gt;embed-jnosql-core&lt;/<span class="kw">artifactId</span>&gt;
-    &lt;<span class="kw">version</span>&gt;1.0.0&lt;/<span class="kw">version</span>&gt;
+    &lt;<span class="kw">version</span>&gt;1.0.1&lt;/<span class="kw">version</span>&gt;
 &lt;/<span class="kw">dependency</span>&gt;</code></pre>
       </div>
 
       <div class="tab-panel" id="tab-gradle" role="tabpanel">
         <div class="copy-row"><button class="copy-btn" onclick="copyCode(this, 'gradleCode')">Copy Gradle</button></div>
-        <pre class="code-body" id="gradleCode"><code>implementation(<span class="str">'org.embeddedjnosql.db:embed-jnosql-core:1.0.0'</span>)</code></pre>
+        <pre class="code-body" id="gradleCode"><code>implementation(<span class="str">'org.embeddedjnosql.db:embed-jnosql-core:1.0.1'</span>)</code></pre>
       </div>
 
       <div class="tab-panel" id="tab-spring" role="tabpanel">
@@ -671,8 +673,16 @@ db.<span class="fn">listBucket</span>(<span class="str">"events"</span>).<span c
         <pre class="code-body" id="springCode"><code>&lt;<span class="kw">dependency</span>&gt;
     &lt;<span class="kw">groupId</span>&gt;org.embeddedjnosql.db&lt;/<span class="kw">groupId</span>&gt;
     &lt;<span class="kw">artifactId</span>&gt;embed-jnosql-spring-boot-starter&lt;/<span class="kw">artifactId</span>&gt;
-    &lt;<span class="kw">version</span>&gt;1.0.0&lt;/<span class="kw">version</span>&gt;
+    &lt;<span class="kw">version</span>&gt;1.0.1&lt;/<span class="kw">version</span>&gt;
 &lt;/<span class="kw">dependency</span>&gt;</code></pre>
+      </div>
+
+      <div class="tab-panel" id="tab-jnosql" role="tabpanel">
+        <div class="copy-row"><button class="copy-btn" onclick="copyCode(this, 'jnosqlCode')">Copy JNoSQL</button></div>
+        <pre class="code-body" id="jnosqlCode"><code><span class="cmt">// Eclipse JNoSQL / Jakarta NoSQL DocumentTemplate with EmbedJNoSQL</span>
+<span class="cls">EmbedJNoSQL</span> db = <span class="cls">EmbedJNoSQL</span>.<span class="fn">inMemory</span>();
+<span class="cls">DocumentTemplate</span> template = <span class="kw">new</span> <span class="cls">EclipseDocumentTemplate</span>(db);
+<span class="cls">User</span> saved = template.<span class="fn">insert</span>(<span class="kw">new</span> <span class="cls">User</span>(<span class="str">"u1"</span>, <span class="str">"Judicael"</span>));</code></pre>
       </div>
 
       <div class="tab-panel" id="tab-quarkus" role="tabpanel">
@@ -680,7 +690,7 @@ db.<span class="fn">listBucket</span>(<span class="str">"events"</span>).<span c
         <pre class="code-body" id="quarkusCode"><code>&lt;<span class="kw">dependency</span>&gt;
     &lt;<span class="kw">groupId</span>&gt;org.embeddedjnosql.db&lt;/<span class="kw">groupId</span>&gt;
     &lt;<span class="kw">artifactId</span>&gt;embed-jnosql-quarkus-extension&lt;/<span class="kw">artifactId</span>&gt;
-    &lt;<span class="kw">version</span>&gt;1.0.0&lt;/<span class="kw">version</span>&gt;
+    &lt;<span class="kw">version</span>&gt;1.0.1&lt;/<span class="kw">version</span>&gt;
 &lt;/<span class="kw">dependency</span>&gt;</code></pre>
       </div>
 
@@ -689,7 +699,7 @@ db.<span class="fn">listBucket</span>(<span class="str">"events"</span>).<span c
         <pre class="code-body" id="micronautCode"><code>&lt;<span class="kw">dependency</span>&gt;
     &lt;<span class="kw">groupId</span>&gt;org.embeddedjnosql.db&lt;/<span class="kw">groupId</span>&gt;
     &lt;<span class="kw">artifactId</span>&gt;embed-jnosql-micronaut-integration&lt;/<span class="kw">artifactId</span>&gt;
-    &lt;<span class="kw">version</span>&gt;1.0.0&lt;/<span class="kw">version</span>&gt;
+    &lt;<span class="kw">version</span>&gt;1.0.1&lt;/<span class="kw">version</span>&gt;
 &lt;/<span class="kw">dependency</span>&gt;</code></pre>
       </div>
     </div>

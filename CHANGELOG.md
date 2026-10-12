@@ -89,7 +89,7 @@ surfaces). Removed in this change:
   (`<dataDir>/backups`, `<dataDir>/vectors`) so clean builds do not silently remove them.
 
 ### Added
-- **36-scenario executable demo suite** (`ConsoleEngineIntegrationExtensionTest`, `UIReliabilityNetworkIntegrationTest`) covering normal use, edge cases, failure paths, persistence, and integration boundaries across all UI panels.
+- **36-scenario executable demo suite** (`ConsoleEngineIntegrationExtensionTest`, `DemoValidationSuiteTest`, `BrowserConsoleWorkflowVerificationTest`) covering normal use, edge cases, failure paths, persistence, and integration boundaries across all UI panels.
 - **Eclipse JNoSQL / Jakarta NoSQL integration** (`EmbedJNoSQLDocumentManager`, `EmbedJNoSQLDocumentManagerFactory`, `EmbedJNoSQLTemplate`, `EmbedRepository`) with full `jakarta.nosql.*`, `jakarta.persistence.*`, and `org.hibernate.annotations.*` annotation mapping.
 - **JNoSQL-style repository support**: `EmbedRepository<T,ID>` extends Jakarta Data `CrudRepository`; `findByQuery(Query)`, `findById`, `findAll`, `save`, `delete` fully wired.
 - **Spring Boot auto-configuration**: `EmbedJNoSQLAutoConfiguration`, `EmbedJNoSQLTemplate` bean, and entity-discovery via classpath scanning for `@Entity` / `@jakarta.nosql.Entity`.
