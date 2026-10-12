@@ -2,7 +2,7 @@
 
 **Release Tag**: `v1.0.1`  
 **Release Date**: 2026-10-12  
-**Artifact**: `org.embeddedjnosql.db:embed-jnosql-core:1.0.1`  
+**Artifact**: `io.github.kael-tombo:embed-jnosql-core:1.0.1`  
 **License**: Apache License 2.0  
 
 ---
@@ -44,7 +44,7 @@ EmbedJNoSQL `v1.0.1` delivers a hardened, production-ready embedded NoSQL engine
 ### Maven Coordinates
 ```xml
 <dependency>
-    <groupId>org.embeddedjnosql.db</groupId>
+    <groupId>io.github.kael-tombo</groupId>
     <artifactId>embed-jnosql-core</artifactId>
     <version>1.0.1</version>
 </dependency>
@@ -52,13 +52,13 @@ EmbedJNoSQL `v1.0.1` delivers a hardened, production-ready embedded NoSQL engine
 
 ### Gradle Coordinates
 ```groovy
-implementation 'org.embeddedjnosql.db:embed-jnosql-core:1.0.1'
+implementation 'io.github.kael-tombo:embed-jnosql-core:1.0.1'
 ```
 
 ### Spring Boot Starter
 ```xml
 <dependency>
-    <groupId>org.embeddedjnosql.db</groupId>
+    <groupId>io.github.kael-tombo</groupId>
     <artifactId>embed-jnosql-spring-boot-starter</artifactId>
     <version>1.0.1</version>
 </dependency>

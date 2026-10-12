@@ -193,4 +193,4 @@ surfaces). Removed in this change:
   - Core runtime footprint reduced from 6.9 MB to **2.89 MB** by excluding the unused byte-buddy transitive; a CI size gate enforces the 5 MB limit.
   - Console rebranded to the canonical yellow/amber Volt identity (accessible contrast pairings, shared Volt favicon/logo with the website).
   - The SQL console (`POST /api/sql`) audits mutation statements the same way as REST CRUD (`SqlAuditTrailTest`); reads are not audited.
-  - Public website corrected to claim only reproducible facts (built-in SQL dialect, indicative performance figures, real Maven coordinates `org.embeddedjnosql.db:embed-jnosql-core`).
+  - Public website corrected to claim only reproducible facts (built-in SQL dialect, indicative performance figures, real Maven coordinates `io.github.kael-tombo:embed-jnosql-core`).

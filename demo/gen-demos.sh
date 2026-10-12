@@ -22,7 +22,7 @@ cat <<EOF
     </properties>
     <dependencies>
         <dependency>
-            <groupId>org.embeddedjnosql.db</groupId>
+            <groupId>io.github.kael-tombo</groupId>
             <artifactId>embed-jnosql-core</artifactId>
             <version>1.0.0</version>
         </dependency>

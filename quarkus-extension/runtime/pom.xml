@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.embeddedjnosql.db</groupId>
+        <groupId>io.github.kael-tombo</groupId>
         <artifactId>embed-jnosql-quarkus-extension</artifactId>
         <version>1.0.0</version>
         <relativePath>../pom.xml</relativePath>
@@ -51,7 +51,7 @@
 
         <!-- EmbedJNoSQL core -->
         <dependency>
-            <groupId>org.embeddedjnosql.db</groupId>
+            <groupId>io.github.kael-tombo</groupId>
             <artifactId>embed-jnosql-core</artifactId>
             <version>1.0.0</version>
         </dependency>

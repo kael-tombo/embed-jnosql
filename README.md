@@ -123,7 +123,7 @@ Quarkus, Micronaut, Jakarta CDI, Hibernate annotations, Micrometer — is option
 
 ```xml
 <dependency>
-    <groupId>org.embeddedjnosql.db</groupId>
+    <groupId>io.github.kael-tombo</groupId>
     <artifactId>embed-jnosql-core</artifactId>
     <version>1.0.1</version>
 </dependency>
@@ -156,21 +156,21 @@ EmbedJNoSQL was engineered with a zero-daemon, in-process architecture. That giv
 ```xml
 <!-- Spring Boot 4.x / 3.4+ Starter -->
 <dependency>
-    <groupId>org.embeddedjnosql.db</groupId>
+    <groupId>io.github.kael-tombo</groupId>
     <artifactId>embed-jnosql-spring-boot-starter</artifactId>
     <version>1.0.1</version>
 </dependency>
 
 <!-- Quarkus Extension -->
 <dependency>
-    <groupId>org.embeddedjnosql.db</groupId>
+    <groupId>io.github.kael-tombo</groupId>
     <artifactId>embed-jnosql-quarkus-extension-runtime</artifactId>
     <version>1.0.1</version>
 </dependency>
 
 <!-- Micronaut Integration -->
 <dependency>
-    <groupId>org.embeddedjnosql.db</groupId>
+    <groupId>io.github.kael-tombo</groupId>
     <artifactId>embedjnosql-micronaut-integration</artifactId>
     <version>1.0.1</version>
 </dependency>
@@ -313,7 +313,7 @@ Iterable<User> all = repo.findAll();
 In your `pom.xml`:
 ```xml
 <dependency>
-    <groupId>org.embeddedjnosql.db</groupId>
+    <groupId>io.github.kael-tombo</groupId>
     <artifactId>embed-jnosql-spring-boot-starter</artifactId>
     <version>1.0.1</version>
 </dependency>
@@ -377,7 +377,7 @@ keep all database calls **off the Vert.x event loop** by dispatching them throug
 ```xml
 <!-- embed-jnosql-core is all you need — no separate Vert.x starter -->
 <dependency>
-    <groupId>org.embeddedjnosql.db</groupId>
+    <groupId>io.github.kael-tombo</groupId>
     <artifactId>embed-jnosql-core</artifactId>
     <version>1.0.1</version>
 </dependency>

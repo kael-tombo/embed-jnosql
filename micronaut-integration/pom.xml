@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.embeddedjnosql.db</groupId>
+    <groupId>io.github.kael-tombo</groupId>
     <artifactId>embedjnosql-micronaut-integration</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
@@ -34,7 +34,7 @@
     <dependencies>
         <!-- EmbedJNoSQL core — the only mandatory dependency -->
         <dependency>
-            <groupId>org.embeddedjnosql.db</groupId>
+            <groupId>io.github.kael-tombo</groupId>
             <artifactId>embed-jnosql-core</artifactId>
             <version>1.0.0</version>
         </dependency>

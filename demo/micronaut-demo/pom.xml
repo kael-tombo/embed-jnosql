@@ -31,7 +31,7 @@
     <dependencies>
         <!-- EmbedJNoSQL Micronaut Integration -->
         <dependency>
-            <groupId>org.embeddedjnosql.db</groupId>
+            <groupId>io.github.kael-tombo</groupId>
             <artifactId>embedjnosql-micronaut-integration</artifactId>
             <version>1.0.0</version>
         </dependency>

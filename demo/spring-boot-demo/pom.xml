@@ -23,7 +23,7 @@
     <dependencies>
         <!-- EmbedJNoSQL Spring Boot Starter -->
         <dependency>
-            <groupId>org.embeddedjnosql.db</groupId>
+            <groupId>io.github.kael-tombo</groupId>
             <artifactId>embed-jnosql-spring-boot-starter</artifactId>
             <version>1.0.1</version>
         </dependency>
