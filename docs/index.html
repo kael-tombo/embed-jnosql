@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>EmbedJNoSQL — The Embedded NoSQL Database for Java</title>
   <meta name="description" content="EmbedJNoSQL is the embedded NoSQL database for the JVM: Document and Key-Value models (plus Redis-style structures, wide-column and experimental vector) in a single pure-Java JAR. In-memory for tests, durable file storage for applications. Zero Docker. Zero daemon." />
-  <meta name="keywords" content="EmbedJNoSQL, embedded database, Java, NoSQL, document database, key-value, multi-model, Spring Boot, Quarkus, Micronaut, JNoSQL, JVM" />
+  <meta name="keywords" content="EmbedJNoSQL, embedded database, Java, NoSQL, document database, key-value, multi-model, Spring Boot, Quarkus, Micronaut, Vert.x, Javalin, Helidon, Dropwizard, JNoSQL, JVM" />
   <meta property="og:title" content="EmbedJNoSQL — The Embedded NoSQL Database for Java" />
   <meta property="og:description" content="Document + Key-Value NoSQL in a single JAR. Documents, Key-Value, Redis-style structures, Wide-Column — zero Docker, zero daemon." />
   <meta property="og:type" content="website" />
@@ -326,7 +326,18 @@
     .fw-name { font-family: var(--font-display); font-size: .95rem; font-weight: 700; margin-bottom: .2rem; }
     .fw-desc { font-size: 12.5px; color: var(--text-2); line-height: 1.55; }
 
-    /* ═══════════ POSITIONING QUADRANT ═══════════ */
+    /* ═══════════ FRAMEWORK INTEGRATION TABS ═══════════ */
+    .fw-tab {
+      padding: .45rem 1rem; border-radius: 6px; font-size: .85rem; font-weight: 600;
+      border: 1px solid var(--line); background: var(--bg); color: var(--text-2);
+      cursor: pointer; transition: all .2s var(--ease);
+    }
+    .fw-tab:hover { border-color: var(--gold); color: var(--text); }
+    .fw-tab.active { background: var(--gold-dim); border-color: var(--line-gold); color: var(--gold); }
+    .fw-panel { animation: fadeIn .25s ease; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+
+
     .positioning-band {
       background: var(--bg-1);
       border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
@@ -1098,6 +1109,54 @@ db.<span class="fn">hashBucket</span>(<span class="str">"profiles"</span>).<span
     <div class="section-label">Integrations</div>
     <h2 class="section-title">Works with your stack</h2>
     <p class="section-sub">Auto-configuration, health indicators, and Repository support — drop one dependency, get a fully wired database bean. Existing entities annotated with Jakarta Persistence or Hibernate annotations are read as mapping hints: no JPA runtime, no JDBC driver, no rewrite.</p>
+    <p class="section-sub" style="margin-top:.75rem;">No framework at all? One line of code is all it takes. Vert.x, Javalin, Helidon, Dropwizard — any JVM runtime works out of the box. <a href="#fw-guide" style="color:var(--gold);text-decoration:none;">See integration patterns ↓</a></p>
+
+    <p class="section-sub" style="margin-top:1.25rem;color:var(--text);font-weight:500;">EmbedJNoSQL was engineered with a zero-daemon, in-process architecture. That gives it a distinct advantage across modern Java web frameworks:</p>
+
+    <div style="overflow-x:auto;margin:1.5rem 0 2.5rem;border-radius:var(--radius);border:1px solid var(--line);box-shadow:0 8px 30px rgba(0,0,0,0.35);">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;text-align:left;background:var(--bg-card);">
+        <thead>
+          <tr style="background:rgba(255,255,255,0.03);border-bottom:1px solid var(--line);color:var(--text);">
+            <th style="padding:12px 18px;font-family:var(--font-display);font-weight:700;">Framework</th>
+            <th style="padding:12px 18px;font-family:var(--font-display);font-weight:700;">Integration Style</th>
+            <th style="padding:12px 18px;font-family:var(--font-display);font-weight:700;">Maturity in EmbedJNoSQL</th>
+            <th style="padding:12px 18px;font-family:var(--font-display);font-weight:700;">Code Pattern</th>
+          </tr>
+        </thead>
+        <tbody style="color:var(--text-2);line-height:1.55;">
+          <tr style="border-bottom:1px solid var(--line);">
+            <td style="padding:12px 18px;font-weight:600;color:var(--text);">Spring Boot 4 / 3.4+</td>
+            <td style="padding:12px 18px;"><code style="color:var(--gold);">@AutoConfiguration</code>, Spring Data Repositories, <code style="color:var(--gold);">@Transactional</code></td>
+            <td style="padding:12px 18px;"><span style="color:#10b981;font-weight:600;">First-Class Starter</span> (<code style="font-size:12px;">embed-jnosql-spring-boot-starter</code>)</td>
+            <td style="padding:12px 18px;"><code style="color:var(--gold);background:rgba(251,191,36,0.08);padding:2px 6px;border-radius:4px;">@Autowired EmbedJNoSQL db;</code></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--line);">
+            <td style="padding:12px 18px;font-weight:600;color:var(--text);">Quarkus 3.x</td>
+            <td style="padding:12px 18px;">CDI Extension (<code style="color:var(--gold);">@ApplicationScoped</code>), DevServices</td>
+            <td style="padding:12px 18px;"><span style="color:#10b981;font-weight:600;">Dedicated Extension</span> (<code style="font-size:12px;">quarkus-extension/</code>)</td>
+            <td style="padding:12px 18px;"><code style="color:var(--gold);background:rgba(251,191,36,0.08);padding:2px 6px;border-radius:4px;">@Inject EmbedJNoSQL db;</code></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--line);">
+            <td style="padding:12px 18px;font-weight:600;color:var(--text);">Micronaut 4.x</td>
+            <td style="padding:12px 18px;">Compile-Time DI (<code style="color:var(--gold);">@Factory</code>, <code style="color:var(--gold);">@Singleton</code>)</td>
+            <td style="padding:12px 18px;"><span style="color:#10b981;font-weight:600;">Dedicated Integration</span> (<code style="font-size:12px;">micronaut-integration/</code>)</td>
+            <td style="padding:12px 18px;"><code style="color:var(--gold);background:rgba(251,191,36,0.08);padding:2px 6px;border-radius:4px;">@Inject EmbedJNoSQL db;</code></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--line);">
+            <td style="padding:12px 18px;font-weight:600;color:var(--text);">Eclipse Vert.x 4.x</td>
+            <td style="padding:12px 18px;">Non-blocking / Worker dispatch (<code style="color:var(--gold);">executeBlocking</code>)</td>
+            <td style="padding:12px 18px;"><span style="color:#38bdf8;font-weight:600;">Validated Pattern</span> (<code style="font-size:12px;">demo/vertx-demo/</code>)</td>
+            <td style="padding:12px 18px;"><code style="color:var(--gold);background:rgba(251,191,36,0.08);padding:2px 6px;border-radius:4px;">vertx.executeBlocking(...)</code></td>
+          </tr>
+          <tr>
+            <td style="padding:12px 18px;font-weight:600;color:var(--text);">Javalin / Ktor / Helidon</td>
+            <td style="padding:12px 18px;">Lightweight programmatic injection</td>
+            <td style="padding:12px 18px;"><span style="color:#a78bfa;font-weight:600;">Native</span> (Zero Glue Code)</td>
+            <td style="padding:12px 18px;"><code style="color:var(--gold);background:rgba(251,191,36,0.08);padding:2px 6px;border-radius:4px;">EmbedJNoSQL.inMemory()</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
     <div class="fw-grid">
       <div class="fw-card">
@@ -1131,8 +1190,15 @@ db.<span class="fn">hashBucket</span>(<span class="str">"profiles"</span>).<span
       <div class="fw-card">
         <div class="fw-icon vertx" aria-hidden="true">🔷</div>
         <div>
-          <div class="fw-name">Vert.x</div>
-          <div class="fw-desc">Event-bus wiring, async handler patterns, and non-blocking access through Vert.x verticles.</div>
+          <div class="fw-name">Eclipse Vert.x 4.x</div>
+          <div class="fw-desc">No starter needed — use <code style="color:var(--gold);font-size:12px;">embed-jnosql-core</code> directly. Dispatch blocking DB calls via <code style="color:var(--gold);font-size:12px;">vertx.executeBlocking()</code> or deploy a <code style="color:var(--gold);font-size:12px;">Worker Verticle</code> to protect the event loop. ACID transactions work inside <code style="color:var(--gold);font-size:12px;">executeBlocking</code> closures.</div>
+        </div>
+      </div>
+      <div class="fw-card">
+        <div class="fw-icon" aria-hidden="true" style="background:rgba(220,130,50,.12);border-color:rgba(220,130,50,.2);">🌊</div>
+        <div>
+          <div class="fw-name">Javalin / Helidon / Dropwizard</div>
+          <div class="fw-desc">Three-step pattern for any JVM framework: open once at startup, share the instance across threads, close on shutdown. <a href="#fw-guide" style="color:var(--gold);text-decoration:none;font-size:11px;">See examples ↓</a></div>
         </div>
       </div>
       <div class="fw-card" style="border-style:dashed;opacity:.65;">
@@ -1140,6 +1206,187 @@ db.<span class="fn">hashBucket</span>(<span class="str">"profiles"</span>).<span
         <div>
           <div class="fw-name">Plain Java</div>
           <div class="fw-desc">Zero-config. One class: <code style="color:var(--gold);font-size:12px;">EmbedJNoSQL.inMemory()</code>. No framework required. Works in any JVM application.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ FRAMEWORK INTEGRATION GUIDE ═══════════════════════════ -->
+<section id="fw-guide" style="background:var(--bg-2);">
+  <div class="container">
+    <div class="section-label">Integration Guide</div>
+    <h2 class="section-title">Framework integration patterns</h2>
+    <p class="section-sub">EmbedJNoSQL is a plain Java library — no bytecode agent, no annotation processor, no CDI container needed. Every framework integration follows the same lifecycle contract.</p>
+
+    <!-- TAB NAV -->
+    <div id="fw-tabs" style="display:flex;flex-wrap:wrap;gap:.5rem;margin:2rem 0 1.5rem;">
+      <button class="fw-tab active" onclick="showFwTab('vertx', this)">Eclipse Vert.x</button>
+      <button class="fw-tab" onclick="showFwTab('javalin', this)">Javalin</button>
+      <button class="fw-tab" onclick="showFwTab('helidon', this)">Helidon SE</button>
+      <button class="fw-tab" onclick="showFwTab('dropwizard', this)">Dropwizard</button>
+      <button class="fw-tab" onclick="showFwTab('generic', this)">Generic Pattern</button>
+    </div>
+
+    <!-- VERT.X -->
+    <div id="fw-panel-vertx" class="fw-panel">
+      <p style="color:var(--text-2);margin-bottom:1rem;line-height:1.7;">EmbedJNoSQL is <strong style="color:var(--text);">synchronous and in-process</strong>. The single rule for Vert.x: never call it directly from the event loop. Wrap with <code style="color:var(--gold);">executeBlocking()</code> in route handlers, or deploy as a Worker Verticle for batch/event-bus workloads.</p>
+
+      <div style="margin-bottom:1.5rem;">
+        <div style="color:var(--text-2);font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;">Pattern 1 — executeBlocking (route handlers)</div>
+        <pre class="code-block" style="font-size:12px;line-height:1.6;"><code><span style="color:#7fdbff;">public class</span> <span style="color:#ffd700;">ProductVerticle</span> <span style="color:#7fdbff;">extends</span> AbstractVerticle {
+    <span style="color:#7fdbff;">private</span> EmbedJNoSQL db;
+    <span style="color:#7fdbff;">private</span> DocumentCollection products;
+
+    <span style="color:#98c379;">@Override</span>
+    <span style="color:#7fdbff;">public void</span> <span style="color:#ffd700;">start</span>(Promise&lt;Void&gt; startPromise) {
+        <span style="color:#7ec8e3;">// ✅ Safe — called once at startup, not on the hot event loop</span>
+        db = EmbedJNoSQL.create(EmbedJNoSQLConfig.builder()
+            .storageEngine(IN_MEMORY).buildConfig());
+        products = db.documentCollection(<span style="color:#98c379;">&quot;products&quot;</span>);
+
+        Router router = Router.router(vertx);
+        router.get(<span style="color:#98c379;">&quot;/api/products&quot;</span>).handler(<span style="color:#ffd700;">this</span>::getAll);
+        vertx.createHttpServer().requestHandler(router).listen(<span style="color:#d19a66;">8080</span>)
+            .onSuccess(s -&gt; startPromise.complete());
+    }
+
+    <span style="color:#7fdbff;">private void</span> <span style="color:#ffd700;">getAll</span>(RoutingContext ctx) {
+        <span style="color:#7ec8e3;">// ⚠️  executeBlocking keeps the event loop free</span>
+        vertx.&lt;List&lt;Product&gt;&gt;executeBlocking(() -&gt;
+            products.findAll().stream().map(Product::fromDocument).toList()
+        ).onSuccess(list -&gt; ctx.response()
+            .putHeader(<span style="color:#98c379;">&quot;content-type&quot;</span>, <span style="color:#98c379;">&quot;application/json&quot;</span>)
+            .end(Json.encode(list)))
+         .onFailure(ctx::fail);
+    }
+}</code></pre>
+      </div>
+
+      <div>
+        <div style="color:var(--text-2);font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;">Pattern 2 — Worker Verticle (event-bus / batch)</div>
+        <pre class="code-block" style="font-size:12px;line-height:1.6;"><code><span style="color:#7fdbff;">public class</span> <span style="color:#ffd700;">DbWorkerVerticle</span> <span style="color:#7fdbff;">extends</span> AbstractVerticle {
+    <span style="color:#7fdbff;">private</span> EmbedJNoSQL db;
+
+    <span style="color:#98c379;">@Override</span>
+    <span style="color:#7fdbff;">public void</span> <span style="color:#ffd700;">start</span>() {
+        db = EmbedJNoSQL.open(<span style="color:#98c379;">&quot;./data/myapp&quot;</span>);
+        vertx.eventBus().&lt;JsonObject&gt;consumer(<span style="color:#98c379;">&quot;db.products.upsert&quot;</span>, msg -&gt; {
+            <span style="color:#7fdbff;">try</span> {
+                Product p = msg.body().mapTo(Product.<span style="color:#7fdbff;">class</span>);
+                db.documentCollection(<span style="color:#98c379;">&quot;products&quot;</span>).insert(p.toDocument());
+                msg.reply(<span style="color:#7fdbff;">new</span> JsonObject().put(<span style="color:#98c379;">&quot;status&quot;</span>, <span style="color:#98c379;">&quot;ok&quot;</span>));
+            } <span style="color:#7fdbff;">catch</span> (Exception e) { msg.fail(<span style="color:#d19a66;">500</span>, e.getMessage()); }
+        });
+    }
+    <span style="color:#98c379;">@Override</span>
+    <span style="color:#7fdbff;">public void</span> <span style="color:#ffd700;">stop</span>() { <span style="color:#7fdbff;">if</span> (db != <span style="color:#7fdbff;">null</span>) db.close(); }
+}
+
+<span style="color:#7ec8e3;">// Deploy as a worker (thread-pool isolated)</span>
+vertx.deployVerticle(<span style="color:#7fdbff;">new</span> DbWorkerVerticle(),
+    <span style="color:#7fdbff;">new</span> DeploymentOptions().setWorker(<span style="color:#d19a66;">true</span>));</code></pre>
+      </div>
+
+      <div style="margin-top:1.5rem;padding:1rem 1.25rem;background:rgba(143,44,128,.08);border:1px solid rgba(143,44,128,.2);border-radius:8px;">
+        <span style="color:#9b59b6;font-weight:600;">🔷 Vert.x Rule</span>
+        <span style="color:var(--text-2);font-size:.9rem;margin-left:.5rem;">EmbedJNoSQL is synchronous. Always wrap calls in <code style="color:var(--gold);">executeBlocking()</code> inside route handlers, or use a Worker Verticle for event-bus consumers.</span>
+      </div>
+    </div>
+
+    <!-- JAVALIN -->
+    <div id="fw-panel-javalin" class="fw-panel" style="display:none;">
+      <p style="color:var(--text-2);margin-bottom:1rem;line-height:1.7;">Javalin handles requests on virtual threads (Java 21+) or regular threads — both are fine for synchronous EmbedJNoSQL calls. Open once, share, close on shutdown.</p>
+      <pre class="code-block" style="font-size:12px;line-height:1.6;"><code><span style="color:#7fdbff;">public class</span> <span style="color:#ffd700;">Application</span> {
+    <span style="color:#7fdbff;">public static void</span> <span style="color:#ffd700;">main</span>(String[] args) {
+        EmbedJNoSQL db = EmbedJNoSQL.inMemory();
+        DocumentCollection users = db.documentCollection(<span style="color:#98c379;">&quot;users&quot;</span>);
+
+        <span style="color:#7fdbff;">var</span> app = Javalin.create().start(<span style="color:#d19a66;">8080</span>);
+
+        app.get(<span style="color:#98c379;">&quot;/users&quot;</span>, ctx -&gt; ctx.json(users.findAll()));
+        app.post(<span style="color:#98c379;">&quot;/users&quot;</span>, ctx -&gt; {
+            <span style="color:#7fdbff;">var</span> doc = ctx.bodyAsClass(Map.<span style="color:#7fdbff;">class</span>);
+            users.insert(Document.of(doc));
+            ctx.status(<span style="color:#d19a66;">201</span>).json(doc);
+        });
+
+        Runtime.getRuntime().addShutdownHook(
+            <span style="color:#7fdbff;">new</span> Thread(() -&gt; { app.stop(); db.close(); }));
+    }
+}</code></pre>
+    </div>
+
+    <!-- HELIDON -->
+    <div id="fw-panel-helidon" class="fw-panel" style="display:none;">
+      <p style="color:var(--text-2);margin-bottom:1rem;line-height:1.7;">Helidon SE 4 routes run on Java virtual threads — blocking I/O (including EmbedJNoSQL) is perfectly safe without any wrapping.</p>
+      <pre class="code-block" style="font-size:12px;line-height:1.6;"><code>EmbedJNoSQL db = EmbedJNoSQL.open(<span style="color:#98c379;">&quot;./data&quot;</span>);
+DocumentCollection products = db.documentCollection(<span style="color:#98c379;">&quot;products&quot;</span>);
+
+WebServer server = WebServer.builder()
+    .routing(rules -&gt; rules
+        .get(<span style="color:#98c379;">&quot;/products&quot;</span>,
+            (req, res) -&gt; res.send(products.findAll()))
+        .post(<span style="color:#98c379;">&quot;/products&quot;</span>, (req, res) -&gt; {
+            <span style="color:#7ec8e3;">// Virtual thread — blocking is fine</span>
+            <span style="color:#7fdbff;">var</span> doc = req.content().as(Map.<span style="color:#7fdbff;">class</span>);
+            products.insert(Document.of(doc));
+            res.status(<span style="color:#d19a66;">201</span>).send();
+        }))
+    .port(<span style="color:#d19a66;">8080</span>).build().start();
+
+Runtime.getRuntime().addShutdownHook(
+    <span style="color:#7fdbff;">new</span> Thread(() -&gt; { server.stop(); db.close(); }));</code></pre>
+    </div>
+
+    <!-- DROPWIZARD -->
+    <div id="fw-panel-dropwizard" class="fw-panel" style="display:none;">
+      <p style="color:var(--text-2);margin-bottom:1rem;line-height:1.7;">Dropwizard's managed lifecycle makes it easy to open and close EmbedJNoSQL in sync with the application lifecycle.</p>
+      <pre class="code-block" style="font-size:12px;line-height:1.6;"><code><span style="color:#7fdbff;">public class</span> <span style="color:#ffd700;">MyApplication</span> <span style="color:#7fdbff;">extends</span> Application&lt;MyConfiguration&gt; {
+
+    <span style="color:#98c379;">@Override</span>
+    <span style="color:#7fdbff;">public void</span> <span style="color:#ffd700;">run</span>(MyConfiguration cfg, Environment env) {
+        EmbedJNoSQL db = EmbedJNoSQL.open(cfg.getDataDir());
+
+        env.jersey().register(<span style="color:#7fdbff;">new</span> ProductResource(
+            db.documentCollection(<span style="color:#98c379;">&quot;products&quot;</span>)));
+
+        <span style="color:#7ec8e3;">// Managed lifecycle: Dropwizard calls stop() on shutdown</span>
+        env.lifecycle().manage(<span style="color:#7fdbff;">new</span> Managed() {
+            <span style="color:#7fdbff;">public void</span> start() {}
+            <span style="color:#7fdbff;">public void</span> stop() { db.close(); }
+        });
+    }
+}</code></pre>
+    </div>
+
+    <!-- GENERIC -->
+    <div id="fw-panel-generic" class="fw-panel" style="display:none;">
+      <p style="color:var(--text-2);margin-bottom:1rem;line-height:1.7;">The universal pattern for <em>any</em> JVM framework — servlet, reactive, or otherwise.</p>
+      <pre class="code-block" style="font-size:12px;line-height:1.6;"><code><span style="color:#7ec8e3;">// 1. OPEN — once at application startup</span>
+EmbedJNoSQL db = EmbedJNoSQL.open(<span style="color:#98c379;">&quot;./data/myapp&quot;</span>);
+
+<span style="color:#7ec8e3;">// 2. USE — from any thread; the instance is thread-safe</span>
+DocumentCollection col = db.documentCollection(<span style="color:#98c379;">&quot;events&quot;</span>);
+col.insert(Document.of(<span style="color:#98c379;">&quot;type&quot;</span>, <span style="color:#98c379;">&quot;BOOT_UP&quot;</span>)
+    .add(<span style="color:#98c379;">&quot;timestamp&quot;</span>, System.currentTimeMillis()));
+
+<span style="color:#7ec8e3;">// 3. CLOSE — on graceful shutdown</span>
+Runtime.getRuntime().addShutdownHook(
+    <span style="color:#7fdbff;">new</span> Thread(db::close));</code></pre>
+
+      <div style="margin-top:1.5rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;">
+        <div style="padding:1rem;background:var(--bg);border:1px solid var(--line);border-radius:8px;">
+          <div style="color:var(--text);font-weight:600;margin-bottom:.4rem;">✅ Thread-safe</div>
+          <div style="color:var(--text-2);font-size:.85rem;">One instance shared across all threads. No pool, no connection manager.</div>
+        </div>
+        <div style="padding:1rem;background:var(--bg);border:1px solid var(--line);border-radius:8px;">
+          <div style="color:var(--text);font-weight:600;margin-bottom:.4rem;">⚠️ Async / event-loop</div>
+          <div style="color:var(--text-2);font-size:.85rem;">Vert.x / Netty-based frameworks: always dispatch via <code style="color:var(--gold);">executeBlocking()</code> or a Worker thread.</div>
+        </div>
+        <div style="padding:1rem;background:var(--bg);border:1px solid var(--line);border-radius:8px;">
+          <div style="color:var(--text);font-weight:600;margin-bottom:.4rem;">🔒 ACID transactions</div>
+          <div style="color:var(--text-2);font-size:.85rem;">MVCC transactions work inside any thread — including <code style="color:var(--gold);">executeBlocking</code> closures.</div>
         </div>
       </div>
     </div>
@@ -1396,6 +1643,15 @@ db.<span class="fn">hashBucket</span>(<span class="str">"profiles"</span>).<span
       tab.setAttribute('tabindex','0');
       pane.classList.add('active');
     }
+  }
+
+  /* ── Framework integration tabs ── */
+  function showFwTab(name, btn) {
+    document.querySelectorAll('.fw-panel').forEach(p => p.style.display = 'none');
+    document.querySelectorAll('.fw-tab').forEach(t => t.classList.remove('active'));
+    const panel = document.getElementById('fw-panel-' + name);
+    if (panel) panel.style.display = 'block';
+    if (btn) btn.classList.add('active');
   }
 
   /* ── Install tabs ── */

@@ -143,6 +143,16 @@ figures.
 
 ### Framework Starters & Standards
 
+EmbedJNoSQL was engineered with a zero-daemon, in-process architecture. That gives it a distinct advantage across modern Java web frameworks:
+
+| Framework | Integration Style | Maturity in EmbedJNoSQL | Code Pattern |
+|---|---|---|---|
+| **Spring Boot 4 / 3.4+** | `@AutoConfiguration`, Spring Data Repositories, `@Transactional` | First-Class Starter (`embed-jnosql-spring-boot-starter`) | `@Autowired EmbedJNoSQL db;` |
+| **Quarkus 3.x** | CDI Extension (`@ApplicationScoped`), DevServices | Dedicated Extension (`quarkus-extension/`) | `@Inject EmbedJNoSQL db;` |
+| **Micronaut 4.x** | Compile-Time DI (`@Factory`, `@Singleton`) | Dedicated Integration (`micronaut-integration/`) | `@Inject EmbedJNoSQL db;` |
+| **Eclipse Vert.x 4.x** | Non-blocking / Worker dispatch (`executeBlocking`) | Validated Pattern (`demo/vertx-demo/`) | `vertx.executeBlocking(...)` |
+| **Javalin / Ktor / Helidon** | Lightweight programmatic injection | Native (Zero Glue Code) | `EmbedJNoSQL.inMemory()` |
+
 ```xml
 <!-- Spring Boot 4.x / 3.4+ Starter -->
 <dependency>
@@ -352,6 +362,295 @@ try (var tx = db.beginTransaction()) {
 Transactions apply to writes issued on the transaction handle. Each console/REST write is its
 own operation and is **not** governed by a transaction begun elsewhere — the console states this
 boundary in its status bar rather than hiding it.
+
+---
+
+### Eclipse Vert.x Integration
+
+EmbedJNoSQL integrates with [Eclipse Vert.x](https://vertx.io/) 4.x without any dedicated
+extension. Because EmbedJNoSQL is **synchronous and in-process**, the only requirement is to
+keep all database calls **off the Vert.x event loop** by dispatching them through
+`vertx.executeBlocking()`.
+
+#### Dependency
+
+```xml
+<!-- embed-jnosql-core is all you need — no separate Vert.x starter -->
+<dependency>
+    <groupId>org.embeddedjnosql.db</groupId>
+    <artifactId>embed-jnosql-core</artifactId>
+    <version>1.0.1</version>
+</dependency>
+
+<!-- Your Vert.x dependencies -->
+<dependency>
+    <groupId>io.vertx</groupId>
+    <artifactId>vertx-core</artifactId>
+    <version>4.5.10</version>
+</dependency>
+<dependency>
+    <groupId>io.vertx</groupId>
+    <artifactId>vertx-web</artifactId>
+    <version>4.5.10</version>
+</dependency>
+```
+
+#### Pattern 1 — executeBlocking (recommended for route handlers)
+
+```java
+public class ProductVerticle extends AbstractVerticle {
+
+    private EmbedJNoSQL db;
+    private DocumentCollection products;
+
+    @Override
+    public void start(Promise<Void> startPromise) {
+        // Initialize once at verticle startup — safe here (not on the hot event loop)
+        db = EmbedJNoSQL.create(
+            EmbedJNoSQLConfig.builder()
+                .storageEngine(EmbedJNoSQLConfig.StorageEngineType.IN_MEMORY)
+                .buildConfig()
+        );
+        products = db.documentCollection("products");
+
+        Router router = Router.router(vertx);
+        router.route().handler(BodyHandler.create());
+        router.get("/api/products").handler(this::getAll);
+        router.post("/api/products").handler(this::create);
+
+        vertx.createHttpServer()
+            .requestHandler(router)
+            .listen(8080)
+            .onSuccess(s -> startPromise.complete())
+            .onFailure(startPromise::fail);
+    }
+
+    // ⚠️  Always wrap blocking EmbedJNoSQL calls in executeBlocking
+    private void getAll(RoutingContext ctx) {
+        vertx.<List<Product>>executeBlocking(() ->
+            products.findAll().stream().map(Product::fromDocument).toList()
+        ).onSuccess(list ->
+            ctx.response()
+               .putHeader("content-type", "application/json")
+               .end(Json.encode(list))
+        ).onFailure(ctx::fail);
+    }
+
+    private void create(RoutingContext ctx) {
+        Product p = Json.decodeValue(ctx.body().asString(), Product.class);
+        vertx.<Product>executeBlocking(() -> {
+            products.insert(p.toDocument());
+            return p;
+        }).onSuccess(saved ->
+            ctx.response().setStatusCode(201)
+               .putHeader("content-type", "application/json")
+               .end(Json.encode(saved))
+        ).onFailure(ctx::fail);
+    }
+
+    @Override
+    public void stop(Promise<Void> stopPromise) {
+        if (db != null && db.isOpen()) db.close();
+        stopPromise.complete();
+    }
+}
+```
+
+#### Pattern 2 — Worker Verticle (for heavy or long-running operations)
+
+For batch inserts or complex multi-step transactions, deploy EmbedJNoSQL inside a Worker
+Verticle which runs on its own thread pool and is **never** on the event loop:
+
+```java
+public class DatabaseWorkerVerticle extends AbstractVerticle {
+
+    private EmbedJNoSQL db;
+
+    @Override
+    public void start() {
+        db = EmbedJNoSQL.open("./data/myapp"); // file-backed persistence
+
+        // Register an event-bus consumer — all messages arrive on the worker thread
+        vertx.eventBus().<JsonObject>consumer("db.products.upsert", msg -> {
+            try {
+                Product p = msg.body().mapTo(Product.class);
+                db.documentCollection("products").insert(p.toDocument());
+                msg.reply(new JsonObject().put("status", "ok").put("id", p.id()));
+            } catch (Exception e) {
+                msg.fail(500, e.getMessage());
+            }
+        });
+    }
+
+    @Override
+    public void stop() {
+        if (db != null && db.isOpen()) db.close();
+    }
+}
+
+// Deploy as a Worker Verticle (thread-pool isolated, no event loop)
+DeploymentOptions opts = new DeploymentOptions().setWorker(true).setInstances(1);
+vertx.deployVerticle(new DatabaseWorkerVerticle(), opts);
+
+// Call from any other verticle via the event bus
+vertx.eventBus().request("db.products.upsert",
+    JsonObject.mapFrom(new Product("p1", "SKU-01", "Widget", "Hardware", 29.99, List.of(), Map.of())),
+    reply -> System.out.println("Saved: " + reply.result().body())
+);
+```
+
+#### Transactional order placement (ACID inside executeBlocking)
+
+```java
+private void placeOrder(RoutingContext ctx) {
+    Order order = Json.decodeValue(ctx.body().asString(), Order.class);
+    vertx.<Order>executeBlocking(() -> {
+        Transaction tx = db.beginTransaction();
+        try {
+            for (OrderItem item : order.items()) {
+                int stock = ((Number) db.columnFamily("inventory")
+                    .get(item.productId(), "available")).intValue();
+                if (stock < item.quantity()) {
+                    tx.rollback();
+                    throw new IllegalStateException("Insufficient stock: " + item.productId());
+                }
+                db.columnFamily("inventory").put(item.productId(), "available",
+                    stock - item.quantity());
+            }
+            db.documentCollection("orders").insert(order.toDocument());
+            tx.commit();
+            return order;
+        } catch (Exception e) {
+            tx.rollback();
+            throw e;
+        }
+    }).onSuccess(saved ->
+        ctx.response().setStatusCode(201)
+           .putHeader("content-type", "application/json")
+           .end(Json.encode(saved))
+    ).onFailure(err ->
+        ctx.response().setStatusCode(400)
+           .end(new JsonObject().put("error", err.getMessage()).encode())
+    );
+}
+```
+
+> **Key rule**: EmbedJNoSQL is synchronous. Never call it directly from a Vert.x event-loop
+> handler. Always wrap with `vertx.executeBlocking()` (route handlers) or deploy as a
+> Worker Verticle (event-bus consumers / batch jobs).
+
+See [`demo/vertx-demo/`](demo/vertx-demo) for a complete runnable e-commerce verticle with products,
+orders, inventory management, and a key-value price cache.
+
+---
+
+### Other Java Web Frameworks (Plain Java / Javalin / Helidon / Dropwizard)
+
+EmbedJNoSQL works with **any JVM framework** — it is a plain Java library with no framework
+coupling. The integration pattern is always the same three steps:
+
+1. **Open** the database at application startup (once, shared instance).
+2. **Use** it from your route handlers or service methods (synchronously).
+3. **Close** it at application shutdown via `try-with-resources` or a lifecycle hook.
+
+#### Javalin (Kotlin / Java micro-framework)
+
+```java
+import io.javalin.Javalin;
+import org.embeddedjnosql.db.EmbedJNoSQL;
+import org.embeddedjnosql.db.nosql.document.DocumentCollection;
+
+public class Application {
+    public static void main(String[] args) {
+        EmbedJNoSQL db = EmbedJNoSQL.inMemory();
+        DocumentCollection users = db.documentCollection("users");
+
+        var app = Javalin.create().start(8080);
+
+        app.get("/users", ctx -> ctx.json(users.findAll()));
+        app.post("/users", ctx -> {
+            var doc = ctx.bodyAsClass(java.util.Map.class);
+            users.insert(org.embeddedjnosql.db.nosql.document.Document.of(doc));
+            ctx.status(201).json(doc);
+        });
+
+        // Graceful shutdown
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            app.stop();
+            db.close();
+        }));
+    }
+}
+```
+
+#### Helidon SE (reactive pipeline)
+
+```java
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.http.HttpRules;
+
+EmbedJNoSQL db = EmbedJNoSQL.open("./data");
+DocumentCollection products = db.documentCollection("products");
+
+WebServer server = WebServer.builder()
+    .routing(rules -> rules
+        .get("/products", (req, res) -> res.send(products.findAll()))
+        .post("/products", (req, res) -> {
+            // Helidon SE handlers run on a virtual thread (Java 21+) — no blocking concern
+            var doc = req.content().as(java.util.Map.class);
+            products.insert(Document.of(doc));
+            res.status(201).send();
+        })
+    )
+    .port(8080)
+    .build()
+    .start();
+
+Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+    server.stop();
+    db.close();
+}));
+```
+
+#### Dropwizard
+
+```java
+public class MyApplication extends Application<MyConfiguration> {
+
+    private EmbedJNoSQL db;
+
+    @Override
+    public void run(MyConfiguration config, Environment env) {
+        db = EmbedJNoSQL.open(config.getDataDir());
+
+        // Register resource
+        env.jersey().register(new ProductResource(db.documentCollection("products")));
+
+        // Managed lifecycle — close DB when Dropwizard shuts down
+        env.lifecycle().manage(new Managed() {
+            public void start() {}
+            public void stop() { db.close(); }
+        });
+    }
+}
+```
+
+#### Generic lifecycle pattern (any framework)
+
+```java
+// Framework-agnostic lifecycle wiring
+EmbedJNoSQL db = EmbedJNoSQL.open("./data/myapp");
+
+// --- Use db throughout your application ---
+
+// At shutdown (servlet context destroyed, framework stop hook, etc.)
+Runtime.getRuntime().addShutdownHook(new Thread(db::close));
+```
+
+> **Thread safety**: A single `EmbedJNoSQL` instance is safe to share across threads.
+> Synchronous frameworks (Dropwizard, Javalin) use it directly. **Async / event-loop
+> frameworks** (Vert.x, Netty-based) must dispatch database calls onto a worker thread
+> (see the Vert.x section above).
 
 ---
 

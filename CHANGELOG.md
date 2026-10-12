@@ -9,7 +9,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_Nothing yet._
+### Documentation
+
+- Added full **Eclipse Vert.x** integration guide to `README.md` covering:
+  - `executeBlocking()` pattern for route handlers (keeps event loop free)
+  - Worker Verticle pattern for event-bus consumers and batch jobs
+  - ACID transactions inside `executeBlocking` closures
+  - Complete dependency snippet (no dedicated Vert.x starter required)
+  - Reference to `demo/vertx-demo/` e-commerce verticle
+- Added **Other Java Web Frameworks** section to `README.md` with working examples for:
+  - **Javalin** (virtual threads / regular threads, no executeBlocking required)
+  - **Helidon SE 4** (virtual threads, blocking safe)
+  - **Dropwizard** (managed lifecycle via `env.lifecycle().manage(...)`)
+  - Generic three-step lifecycle pattern (open, share, close) applicable to any JVM framework
+- Updated `docs/index.html` (website):
+  - Expanded Vert.x framework card with `executeBlocking` and Worker Verticle detail
+  - Added **Javalin / Helidon / Dropwizard** card to frameworks grid
+  - Added new tabbed **Framework Integration Guide** section (`#fw-guide`) with syntax-highlighted code examples for all five integration modes (Vert.x, Javalin, Helidon SE, Dropwizard, Generic)
+  - Updated SEO meta keywords to include Vert.x, Javalin, Helidon, Dropwizard
+  - Added `showFwTab()` JavaScript tab controller and `.fw-tab`/`.fw-panel` CSS
+
+### CI / CD
+
+- Updated [`.github/workflows/publish-central.yml`](file:///.github/workflows/publish-central.yml):
+  - **Deactivated demo test execution prior to and during publish**: Deployments use fast pre-flight core/starter unit verification and `-DskipTests` to prevent releasing from being stalled or blocked by demo builds.
+  - **Added post-publish validation job (`validate-all-after-publish`)**: Automatically triggers after publishing to Maven Central to validate all test suites end-to-end: Core test suite (943 tests), Spring Boot Starter (78 tests), Quarkus extension, Micronaut integration, CLI, all framework demos (Spring Boot, Quarkus, Micronaut, Vert.x), showcase demos, and all 20 single-feature demos.
 
 ---
 
