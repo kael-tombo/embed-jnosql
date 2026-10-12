@@ -213,12 +213,15 @@ public class ConsoleTaskSuccessTest {
         String js = new String(Files.readAllBytes(
                 Path.of("src/main/resources/static/js/console.js")), StandardCharsets.UTF_8);
 
-        // The status bar must be able to show every required piece of orientation context.
+        // The status bar was removed: no orientation strip may survive in the layout.
         for (String id : new String[]{"sbEngine", "sbStorage", "sbDatabase", "sbConnection",
                 "sbTx", "sbUser", "sbContext", "statusbar"}) {
-            assertTrue(html.contains("id=\"" + id + "\""), "index.html is missing status-bar item: " + id);
+            assertFalse(html.contains("id=\"" + id + "\""),
+                    "status-bar item must be removed from index.html: " + id);
         }
-        assertTrue(html.contains("id=\"statusbar\""), "status bar must be present in the layout");
+        assertFalse(html.contains("class=\"statusbar\""), "status bar must not be present in the layout");
+        assertFalse(js.contains("sbItem"), "console.js must not drive a status bar");
+        assertFalse(js.contains("setActiveContext"), "console.js must not track status-bar context");
 
         // The SQL Studio is gone: no SQL editor, run/export control, or engine selector survives.
         for (String removed : new String[]{"sqlCancel", "sqlRunSel", "sqlExportCsv", "sqlExportJson",
@@ -254,7 +257,7 @@ public class ConsoleTaskSuccessTest {
         assertFalse(js.contains("destructiveReason"),
                 "SQL destructive-statement detection must be removed with the SQL product");
 
-        System.out.println("[TEST EVIDENCE] shipped assets verified: status bar, named confirmation "
+        System.out.println("[TEST EVIDENCE] shipped assets verified: status bar removed, named confirmation "
                 + "dialog, explicit state vocabulary, SQL Studio absent");
     }
 

@@ -553,7 +553,6 @@ async function loadCollection() {
   colDocs = Array.isArray(docs) ? docs : [];
   const fields = collectFields(colDocs);
   $('#colCount').textContent = `${colDocs.length} docs`;
-  setActiveContext(`collection ${name} · ${colDocs.length} doc${colDocs.length === 1 ? '' : 's'}`);
   $('#colTable').innerHTML = tbl(['id', ...fields, 'expires'], colDocs.map((d) =>
     [`<td><a href="#" class="mono" data-doc="${esc(d.id)}">${esc(d.id)}</a>${d.fields?._entity ? ` <span class="badge sm" title="Jakarta NoSQL Entity: ${esc(d.fields._entity)}">@${esc(d.fields._entity.split('.').pop())}</span>` : ''}</td>`,
       ...fields.map((f) => { const v = d.fields?.[f]; return `<td>${esc(v == null ? '' : typeof v === 'object' ? JSON.stringify(v) : String(v))}</td>`; }),
@@ -851,7 +850,6 @@ async function qbRun() {
       ? `${rows.length}+ match${rows.length === 1 ? '' : 'es'} (paged)`
       : `${rows.length} match${rows.length === 1 ? '' : 'es'}`;
     status.className = rows.length ? 'badge ok' : 'badge warn';
-    setActiveContext(`query on ${col} · rows ${offset + 1}–${offset + rows.length}`);
     const fields = collectFields(rows.map((r) => ({ fields: r })));
     $('#qbOut').innerHTML = rows.length
       ? `<div class="tbl-wrap">${tbl(['id', ...fields], rows.map((r) =>
@@ -959,7 +957,6 @@ async function kvBrowse() {
     const r = await api(`/kv-meta/${encodeURIComponent(bucketName)}${qs}`);
     const keys = r.keys ?? [];
     $('#kvBrowseCount').textContent = `${r.count} key${r.count === 1 ? '' : 's'}${prefix ? ` · prefix "${prefix}"` : ''}`;
-    setActiveContext(`KV bucket ${bucketName} · ${r.count} key${r.count === 1 ? '' : 's'}`);
     if (!keys.length) {
       host.innerHTML = '<div class="empty"><svg class="empty-logo" aria-hidden="true"><use href="#brand-mark"/></svg><br>'
         + (prefix ? `No key in "${esc(bucketName)}" starts with "${esc(prefix)}".` : `Bucket "${esc(bucketName)}" is empty.`)
@@ -1340,7 +1337,6 @@ async function txBegin() {
 async function idxList() {
   const r = await api(`/indexes/${encodeURIComponent($('#idxCol').value.trim())}`);
   const entries = Object.entries(r.indexes ?? {});
-  setActiveContext(`indexes on ${$('#idxCol').value.trim()}`);
   $('#idxOut').innerHTML = entries.length
     ? tbl(['Field', 'Type', 'Unique values', 'Entries'],
         entries.map(([f, i]) => [esc(f), esc(i.type ?? 'secondary'), i.uniqueValues ?? 0, i.totalIndexed ?? 0]))
@@ -1520,28 +1516,7 @@ function initTheme() {
   setTheme(t);
 }
 
-/* ---------- status bar: orientation context that is always visible ---------- */
-let activeContextLabel = 'none';
-
-/** Records what the user is currently looking at (collection / schema / index). */
-function setActiveContext(label) {
-  activeContextLabel = label || 'none';
-  const el = $('#sbContext');
-  if (el) el.textContent = 'context: ' + activeContextLabel;
-}
-
-function sbItem(id, label, value, cls = '', title = '') {
-  const el = $('#' + id);
-  if (!el) return;
-  el.className = 'sb-item' + (cls ? ' ' + cls : '');
-  el.innerHTML = `${esc(label)} <b>${esc(value)}</b>`;
-  el.title = title || '';
-}
-
-/**
- * Single reader for /api/health: drives the topbar chips AND the status bar, so the
- * two can never disagree about engine, storage, or connection state.
- */
+/* ---------- server health polling: drives the topbar chips ---------- */
 async function pollStatus() {
   if (authRedirecting) return;
   let h = null;
@@ -1551,9 +1526,6 @@ async function pollStatus() {
     const chip = $('#chipHealth');
     chip.className = 'topbar-chip err';
     $('#chipHealthText').textContent = e?.status === 401 ? 'Sign-in required' : 'Unreachable';
-    sbItem('sbConnection', 'connection', 'unreachable', 'err');
-    sbItem('sbTx', 'tx', 'unknown');
-    sbItem('sbUser', 'user', 'unknown');
     return;
   }
 
@@ -1563,28 +1535,9 @@ async function pollStatus() {
   $('#chipEngine').textContent = h.engine ?? '—';
   // The server states the product identity (NoSQL-only) — the chip labels it
   // explicitly so the console can never be mistaken for a dual-engine UI.
-  if (h.context?.nosqlEngine) $('#chipEngine').textContent += ' · NoSQL';
-  $('#chipUptime').textContent = 'up ' + fmtUptime(h.uptime ?? 0);
+  if (h.context?.nosqlEngine) $('#chipEngine').textContent += ' · NoSQL';  $('#chipUptime').textContent = 'up ' + fmtUptime(h.uptime ?? 0);
   const versionChip = $('#chipVersion');
   if (versionChip) versionChip.textContent = 'v' + (h.version ?? '?');
-
-  const c = h.context || {};
-  sbItem('sbEngine', 'engine', c.engine ?? h.engine ?? '—', 'ok',
-    'NoSQL embedded engine');
-  sbItem('sbStorage', 'storage', `${c.storageMode ?? '—'} · ${c.durability ?? 'durability unknown'}`,
-    c.storageMode === 'in-memory' ? 'warn' : '', c.durability || '');
-  sbItem('sbDatabase', 'database', c.database ?? '—', '',
-    c.dataDir ? 'data dir: ' + c.dataDir : 'in-memory — nothing is written to disk');
-  sbItem('sbConnection', 'connection', h.open ? 'online' : 'offline', h.open ? 'ok' : 'err');
-  const tx = c.activeTransactions ?? 0;
-  sbItem('sbTx', 'tx',
-    tx ? `${tx} active · console writes bypass tx` : 'none active · console writes bypass tx',
-    tx ? 'warn' : '', c.transactionScope || '');
-  sbItem('sbUser', 'user',
-    `${c.user ?? 'anonymous'}${c.authEnabled ? '' : ' (auth disabled)'}`,
-    c.authEnabled ? 'ok' : 'warn',
-    c.authEnabled ? 'Authenticated session' : 'Authentication is disabled on this server');
-  setActiveContext(activeContextLabel);
 }
 
 /* ============================================================
@@ -1826,7 +1779,6 @@ function boot() {
       chip.className = 'topbar-chip err';
       $('#chipHealthText').textContent = 'Offline';
     }
-    sbItem('sbConnection', 'connection', 'offline', 'err');
   });
   pollStatus().catch(() => {});
   pollIntervalId = setInterval(pollStatus, 10000);
