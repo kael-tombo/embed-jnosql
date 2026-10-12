@@ -63,3 +63,9 @@ docs/FINAL-VALIDATION-RESULTS.json
 *.log
 *.exit
 *.pid
+
+# Security & GPG keys
+*.asc
+*.gpg
+*.key
+gpg-secret-key.asc
