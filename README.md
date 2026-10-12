@@ -452,7 +452,7 @@ No data migration is required, and no data files were deleted by this change.
 for m in demo/*/pom.xml; do ./mvnw -f "$m" test; done
 ```
 
-Verified status for this release (commands and logs under `docs/release-readiness/`):
+Verified status for this release:
 core **943 tests, 0 failures**; Spring Boot starter **78 tests (covering all 36 validation scenarios), 0 failures**;
 the demo projects **43 tests, 0 failures**; the CLI **4 tests, 0 failures**.
 Total: **1,021 tests, 0 failures, 100% green**.

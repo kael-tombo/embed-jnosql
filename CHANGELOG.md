@@ -43,7 +43,7 @@ surfaces). Removed in this change:
 
 - `Query.matching(Predicate<Document>)` and `EmbedRepository.findByQuery(Query)` as the
   native extension points for the fluent/entity layers.
-- Migration and removal documentation: `docs/release-audit/refocus/`.
+- Migration and removal documentation: see `CHANGELOG.md` v1.0.1 and earlier entries.
 
 > Historical entries below describe SQL-enabled builds that predate this removal. They are kept
 > for the record and marked obsolete where they reference SQL, JDBC, or JPA.
@@ -51,8 +51,7 @@ surfaces). Removed in this change:
 ### Fixed (historical)
 
 ### Fixed
-- **Console API correctness** (found by probing the running server; defect register R-31…R-52,
-  evidence in `docs/release-audit/`):
+- **Console API correctness** (found by probing the running server; defect register R-31…R-52):
   - Document update-by-id no longer drops fields omitted from the request body.
   - Backups capture real data (all collections) and refuse to report success for an empty
     snapshot; the restore endpoint works and round-trips (R-35/R-36).

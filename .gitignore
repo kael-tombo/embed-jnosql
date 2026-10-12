@@ -1,14 +1,65 @@
+# Build outputs
 target/
 *.class
 *.jar
 *.war
 *.ear
+
+# IDE files
 .idea/
 *.iml
 .vscode/
-/data/
-*.log
+.classpath
+.project
+.settings/
+
+# OS files
 .DS_Store
 Thumbs.db
+
+# Runtime data (generated at startup, not version-controlled)
+/data/
+/null/
+
+# Internal dev / scratch buffers
 .freebuff/
 .audit-baseline/
+
+# Internal release-audit artefacts (kept locally, not for public consumption)
+release-audit/
+release-evidence/
+deep-test.ps1
+
+# Internal docs subdirectories (audit, evidence, traceability, etc.)
+# Public website files (docs/index.html, docs/404.html, docs/assets/) are kept.
+docs/release-audit/
+docs/release-readiness/
+docs/validation/
+docs/traceability/
+docs/vision/
+docs/tests/
+docs/security/
+docs/reliability/
+docs/backend/
+docs/browser-testing/
+docs/demo-validation/
+docs/engines-and-standards/
+docs/execution/
+docs/features/
+docs/frontend/
+docs/integration-review/
+docs/performance/
+docs/plan/
+docs/product/
+docs/admin-console/
+docs/api/
+docs/architecture/
+docs/assessment/
+docs/audit/
+docs/FINAL-ASSESSMENT-REPORT.md
+docs/FINAL-VALIDATION-RESULTS.json
+
+# Log files
+*.log
+*.exit
+*.pid

@@ -6,7 +6,7 @@ SQL dialect, or dual-engine track, and none is planned.
 
 ---
 
-## 1.0.0 — Embedded NoSQL Foundation (this release)
+## 1.0.0 — Embedded NoSQL Foundation
 
 - [x] Multi-model core: Documents, Key-Value (string, list, set, hash), Wide-Column families.
 - [x] Four storage modes: `IN_MEMORY`, `FILE`, `B_TREE`, `LSM_TREE`.
@@ -23,7 +23,7 @@ SQL dialect, or dual-engine track, and none is planned.
 - [x] Crash-safety hardening: WAL replay, snapshot rotation, corrupt-snapshot quarantine,
       MVCC write-write conflict detection.
 - [x] **Relational database product, SQL engine, JDBC driver, and JPA provider removed**
-      (see `docs/release-audit/refocus/SQL-REMOVAL-MANIFEST.md`).
+      (see `CHANGELOG.md` for the full removal manifest).
 - [x] Apache-2.0 license, CONTRIBUTING, SECURITY, CHANGELOG.
 
 ### Known limitations at 1.0.0 (stated, not hidden)
@@ -36,7 +36,7 @@ SQL dialect, or dual-engine track, and none is planned.
 
 ---
 
-## 1.0.1 — Console Reliability & JNoSQL Integration Sprint (this release)
+## 1.0.1 — Console Reliability & JNoSQL Integration Sprint *(current stable)*
 
 - [x] Eclipse JNoSQL / Jakarta NoSQL full integration (`EmbedJNoSQLDocumentManager`, `EmbedJNoSQLTemplate`, `EmbedRepository`).
 - [x] Spring Boot auto-configuration and entity-discovery scanning.
