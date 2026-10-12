@@ -1,0 +1,1837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EmbedJNoSQL — The Embedded NoSQL Database for Java</title>
+  <meta name="description" content="EmbedJNoSQL is the embedded NoSQL database for the JVM: Document and Key-Value models (plus Redis-style structures, wide-column and experimental vector) in a single pure-Java JAR. In-memory for tests, durable file storage for applications. Zero Docker. Zero daemon." />
+  <meta name="keywords" content="EmbedJNoSQL, embedded database, Java, NoSQL, document database, key-value, multi-model, Spring Boot, Quarkus, Micronaut, Vert.x, Javalin, Helidon, Dropwizard, JNoSQL, JVM" />
+  <meta property="og:title" content="EmbedJNoSQL — The Embedded NoSQL Database for Java" />
+  <meta property="og:description" content="Document + Key-Value NoSQL in a single JAR. Documents, Key-Value, Redis-style structures, Wide-Column — zero Docker, zero daemon." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://kael-tombo.github.io/embed-jnosql/" />
+  <meta property="og:image" content="https://kael-tombo.github.io/embed-jnosql/assets/embedjnosql-banner.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="EmbedJNoSQL — The Embedded NoSQL Database for Java" />
+  <meta name="twitter:description" content="Embedded multi-model NoSQL in a single pure-Java JAR. Zero Docker, zero daemon, zero infrastructure." />
+  <meta name="twitter:image" content="https://kael-tombo.github.io/embed-jnosql/assets/embedjnosql-banner.png" />
+
+  <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png" />
+  <link rel="icon" type="image/png" sizes="256x256" href="assets/favicon-256.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ═══════════ TOKENS ═══════════ */
+    :root {
+      --bg:         #080B14;
+      --bg-1:       #0D1120;
+      --bg-2:       #111827;
+      --card:       #0F1628;
+      --card-2:     #141C30;
+      --card-hover: #1A2440;
+
+      --gold:       #FBBF24;
+      --gold-2:     #FDE68A;
+      --gold-dim:   rgba(251,191,36,0.12);
+      --gold-glow:  rgba(251,191,36,0.20);
+      --blue-accent:#3B82F6;
+      --emerald:    #10B981;
+
+      --text:       #F1F5FE;
+      --text-2:     #94A3B8;
+      --text-3:     #64748B;
+      --line:       rgba(255,255,255,0.07);
+      --line-gold:  rgba(251,191,36,0.20);
+
+      --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+      --font-body:    'Inter', system-ui, -apple-system, sans-serif;
+      --font-mono:    'JetBrains Mono', 'Fira Code', monospace;
+
+      --radius-sm: 8px;
+      --radius:    14px;
+      --radius-lg: 20px;
+      --max:       1140px;
+      --ease:      cubic-bezier(.4,0,.2,1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+      html { scroll-behavior: auto; }
+    }
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      font-size: 16px;
+      overflow-x: hidden;
+    }
+    ::selection { background: rgba(251,191,36,0.28); color: #fff; }
+    a { color: inherit; }
+    :focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; border-radius: 4px; }
+    h1,h2,h3,h4 { font-family: var(--font-display); font-weight: 700; letter-spacing: -.02em; line-height: 1.15; }
+    code { font-family: var(--font-mono); }
+    .container { max-width: var(--max); margin: 0 auto; padding: 0 1.5rem; }
+
+    /* ═══════════ NAV ═══════════ */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      background: rgba(8,11,20,0.80);
+      backdrop-filter: blur(20px) saturate(1.5);
+      -webkit-backdrop-filter: blur(20px) saturate(1.5);
+      border-bottom: 1px solid var(--line);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2rem; height: 64px;
+    }
+    .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .nav-logo img { width: 30px; height: 30px; border-radius: 8px; }
+    .nav-logo-text { font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--text); }
+    .nav-logo-version {
+      font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 100px;
+      background: var(--gold-dim); color: var(--gold); border: 1px solid var(--line-gold);
+      font-family: var(--font-mono);
+    }
+    .nav-links { display: flex; align-items: center; gap: 0.4rem; list-style: none; }
+    .nav-links a {
+      color: var(--text-2); text-decoration: none; font-size: 14px; font-weight: 500;
+      padding: 6px 12px; border-radius: var(--radius-sm); transition: color .18s var(--ease), background .18s var(--ease);
+    }
+    .nav-links a:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+    .nav-cta {
+      color: #080B14 !important; background: var(--gold) !important;
+      padding: 7px 18px !important; border-radius: var(--radius-sm); font-weight: 700 !important;
+      transition: background .18s var(--ease), transform .15s var(--ease), box-shadow .18s var(--ease) !important;
+      box-shadow: 0 0 0 0 var(--gold-glow);
+    }
+    .nav-cta:hover { background: var(--gold-2) !important; transform: translateY(-1px); box-shadow: 0 4px 20px var(--gold-glow) !important; }
+    @media (max-width: 720px) {
+      .nav-links li:not(:last-child) { display: none; }
+      nav { padding: 0 1.25rem; }
+    }
+
+    /* ═══════════ BUTTONS ═══════════ */
+    .btn-primary, .btn-secondary, .btn-ghost {
+      display: inline-flex; align-items: center; gap: 8px;
+      text-decoration: none; padding: 13px 28px; border-radius: var(--radius-sm);
+      font-size: 15px; font-weight: 600; border: none; cursor: pointer; font-family: var(--font-body);
+      transition: background .18s var(--ease), border-color .18s var(--ease), transform .15s var(--ease), box-shadow .18s var(--ease);
+    }
+    .btn-primary { background: var(--gold); color: #080B14; box-shadow: 0 4px 24px var(--gold-glow); }
+    .btn-primary:hover { background: var(--gold-2); transform: translateY(-2px); box-shadow: 0 8px 32px var(--gold-glow); }
+    .btn-secondary { border: 1px solid rgba(255,255,255,0.12); color: var(--text); background: rgba(255,255,255,0.03); }
+    .btn-secondary:hover { border-color: var(--gold); background: var(--gold-dim); transform: translateY(-1px); }
+    .btn-ghost { color: var(--text-2); background: transparent; padding: 8px 14px; font-size: 13px; }
+    .btn-ghost:hover { color: var(--gold); }
+
+    /* ═══════════ SECTIONS ═══════════ */
+    section { padding: 96px 0; }
+    .section-label {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+      color: var(--gold); margin-bottom: 1rem;
+      padding: 4px 12px; border-radius: 100px;
+      background: var(--gold-dim); border: 1px solid var(--line-gold);
+    }
+    .section-title { font-size: clamp(1.8rem, 3.5vw, 2.6rem); margin-bottom: 1rem; }
+    .section-sub { color: var(--text-2); max-width: 600px; font-size: 1.05rem; line-height: 1.75; }
+    .section-sub + .section-sub { margin-top: .9rem; }
+
+    /* ═══════════ HERO ═══════════ */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: 140px 1.5rem 80px;
+      position: relative; overflow: hidden;
+    }
+    /* Animated mesh gradient behind hero */
+    .hero::before {
+      content: ''; position: absolute; inset: 0; z-index: 0;
+      background:
+        radial-gradient(ellipse 900px 600px at 50% -10%, rgba(251,191,36,0.08) 0%, transparent 70%),
+        radial-gradient(ellipse 700px 500px at 10% 80%, rgba(59,130,246,0.06) 0%, transparent 60%),
+        radial-gradient(ellipse 500px 400px at 90% 60%, rgba(16,185,129,0.04) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    /* Subtle grid texture */
+    .hero::after {
+      content: ''; position: absolute; inset: 0; z-index: 0;
+      background-image:
+        linear-gradient(var(--line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--line) 1px, transparent 1px);
+      background-size: 40px 40px;
+      mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 0%, transparent 100%);
+      -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 0%, transparent 100%);
+      pointer-events: none;
+    }
+    .hero > * { position: relative; z-index: 1; }
+
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 8px; margin-bottom: 1.8rem;
+      padding: 6px 16px 6px 8px; border-radius: 100px;
+      background: rgba(251,191,36,0.08); border: 1px solid var(--line-gold);
+      font-size: 13px; font-weight: 600; color: var(--gold);
+      animation: fadeSlideDown .6s var(--ease) both;
+    }
+    .hero-eyebrow-dot {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--gold);
+      box-shadow: 0 0 6px var(--gold); animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+    @keyframes fadeSlideDown { from { opacity:0; transform: translateY(-10px); } to { opacity:1; transform: none; } }
+    @keyframes fadeSlideUp { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform: none; } }
+    @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+    .hero h1 {
+      font-size: clamp(2.6rem, 6.5vw, 5rem); max-width: 980px;
+      margin-bottom: 1.4rem; line-height: 1.08;
+      animation: fadeSlideUp .7s .1s var(--ease) both;
+    }
+    .hero h1 .gold { color: var(--gold); }
+    .hero h1 .muted { color: var(--text-2); }
+    .hero-sub {
+      font-size: clamp(1.05rem, 2vw, 1.22rem);
+      color: var(--text-2); max-width: 640px; margin: 0 auto 2.4rem; line-height: 1.75;
+      animation: fadeSlideUp .7s .2s var(--ease) both;
+    }
+    .hero-sub strong { color: var(--text); font-weight: 600; }
+    .hero-actions {
+      display: flex; gap: .85rem; flex-wrap: wrap; justify-content: center; margin-bottom: 3.5rem;
+      animation: fadeSlideUp .7s .3s var(--ease) both;
+    }
+
+    /* ── Stats strip ── */
+    .hero-stats {
+      display: flex; gap: 0; flex-wrap: wrap; justify-content: center;
+      border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+      width: 100%; max-width: 720px; margin-bottom: 3.5rem;
+      animation: fadeIn .9s .5s var(--ease) both;
+    }
+    .stat {
+      flex: 1 1 120px; padding: 20px 24px; position: relative;
+      text-align: center;
+    }
+    .stat:not(:last-child)::after {
+      content: ''; position: absolute; right: 0; top: 20%; height: 60%;
+      width: 1px; background: var(--line);
+    }
+    .stat-value {
+      display: block; font-family: var(--font-display); font-size: 1.6rem; font-weight: 700;
+      color: var(--gold); line-height: 1;
+    }
+    .stat-label { font-size: 12px; color: var(--text-3); margin-top: 4px; font-weight: 500; }
+
+    /* ── Code panel ── */
+    .code-panel {
+      width: 100%; max-width: 820px; text-align: left;
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: var(--radius); overflow: hidden;
+      box-shadow: 0 24px 64px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,0.04);
+      animation: fadeSlideUp .8s .45s var(--ease) both;
+    }
+    .code-panel-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 18px; border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,0.02);
+    }
+    .window-dots { display: flex; gap: 6px; }
+    .window-dots span { width: 11px; height: 11px; border-radius: 50%; }
+    .window-dots span:nth-child(1) { background: #ff5f57; }
+    .window-dots span:nth-child(2) { background: #febc2e; }
+    .window-dots span:nth-child(3) { background: #28c840; }
+    .code-panel-filename { font-size: 12px; font-family: var(--font-mono); color: var(--text-3); }
+    .copy-btn {
+      background: var(--gold-dim); border: 1px solid var(--line-gold);
+      color: var(--gold); font-size: 11.5px; font-weight: 600;
+      padding: 4px 11px; border-radius: 6px; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 5px;
+      font-family: var(--font-body);
+      transition: background .15s, border-color .15s, color .15s;
+    }
+    .copy-btn:hover { border-color: var(--gold); background: rgba(251,191,36,0.2); }
+    .copy-btn.copied { background: var(--gold); border-color: var(--gold); color: #080B14; }
+    .code-body {
+      padding: 1.5rem 1.8rem;
+      font-family: var(--font-mono); font-size: 13.5px; line-height: 1.85;
+      overflow-x: auto; -webkit-overflow-scrolling: touch;
+    }
+    .kw  { color: var(--gold); font-weight: 600; }
+    .cls { color: #93C5FD; font-weight: 600; }
+    .fn  { color: #6EE7B7; }
+    .str { color: #86efac; }
+    .num { color: #FB923C; }
+    .cmt { color: #4B5563; font-style: italic; }
+    .op  { color: var(--text-2); }
+    @media (max-width: 768px) {
+      .code-body { font-size: 12px; padding: 1rem; }
+    }
+
+    /* ═══════════ FEATURE TABS ═══════════ */
+    .features-band { background: var(--bg-1); }
+    .features-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start; }
+    @media (max-width: 900px) { .features-grid { grid-template-columns: 1fr; } }
+
+    .feature-tabs { display: flex; flex-direction: column; gap: .5rem; }
+    .feature-tab {
+      padding: 18px 20px; border-radius: var(--radius-sm); cursor: pointer;
+      border: 1px solid transparent;
+      transition: background .2s var(--ease), border-color .2s var(--ease);
+    }
+    .feature-tab:hover { background: rgba(255,255,255,0.03); }
+    .feature-tab.active {
+      background: var(--card); border-color: var(--line-gold);
+      box-shadow: 0 0 0 1px var(--line-gold) inset;
+    }
+    .feature-tab-icon { font-size: 1.3rem; margin-bottom: .5rem; }
+    .feature-tab-title { font-family: var(--font-display); font-size: 1rem; font-weight: 600; margin-bottom: .25rem; }
+    .feature-tab.active .feature-tab-title { color: var(--gold); }
+    .feature-tab-desc { font-size: 13px; color: var(--text-2); line-height: 1.6; }
+
+    .feature-display {
+      position: sticky; top: 88px;
+      background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+      overflow: hidden; box-shadow: 0 8px 40px rgba(0,0,0,.4);
+      min-height: 320px;
+    }
+    .feature-pane { display: none; }
+    .feature-pane.active { display: block; }
+
+    /* ═══════════ FRAMEWORK BADGES ═══════════ */
+    .frameworks-section { background: var(--bg); }
+    .fw-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;
+      margin-top: 2.5rem;
+    }
+    .fw-card {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 1.5rem;
+      display: flex; align-items: flex-start; gap: 1rem;
+      transition: border-color .2s var(--ease), transform .2s var(--ease), box-shadow .2s var(--ease);
+    }
+    .fw-card:hover { border-color: var(--line-gold); transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,.4); }
+    .fw-icon {
+      width: 44px; height: 44px; border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; flex-shrink: 0;
+      border: 1px solid var(--line);
+    }
+    .fw-icon.spring  { background: rgba(106,176,56,.12); border-color: rgba(106,176,56,.2); }
+    .fw-icon.quarkus { background: rgba(70,0,255,.12); border-color: rgba(70,0,255,.2); }
+    .fw-icon.mn      { background: rgba(22,155,157,.12); border-color: rgba(22,155,157,.2); }
+    .fw-icon.jnosql  { background: rgba(251,191,36,.1); border-color: var(--line-gold); }
+    .fw-icon.vertx   { background: rgba(143,44,128,.12); border-color: rgba(143,44,128,.2); }
+    .fw-name { font-family: var(--font-display); font-size: .95rem; font-weight: 700; margin-bottom: .2rem; }
+    .fw-desc { font-size: 12.5px; color: var(--text-2); line-height: 1.55; }
+
+    /* ═══════════ FRAMEWORK INTEGRATION TABS ═══════════ */
+    .fw-tab {
+      padding: .45rem 1rem; border-radius: 6px; font-size: .85rem; font-weight: 600;
+      border: 1px solid var(--line); background: var(--bg); color: var(--text-2);
+      cursor: pointer; transition: all .2s var(--ease);
+    }
+    .fw-tab:hover { border-color: var(--gold); color: var(--text); }
+    .fw-tab.active { background: var(--gold-dim); border-color: var(--line-gold); color: var(--gold); }
+    .fw-panel { animation: fadeIn .25s ease; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+
+
+    .positioning-band {
+      background: var(--bg-1);
+      border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    }
+    .pos-wrap { display: grid; grid-template-columns: 1fr 1.1fr; gap: 3.5rem; align-items: center; }
+    @media (max-width: 900px) { .pos-wrap { grid-template-columns: 1fr; } }
+    .quad-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+    .quad-cell {
+      border: 1px solid var(--line); border-radius: var(--radius-sm);
+      padding: 1.2rem; background: var(--card);
+      transition: border-color .2s var(--ease);
+    }
+    .quad-cell.hl { border-color: var(--gold); box-shadow: 0 0 20px rgba(251,191,36,0.1); }
+    .quad-lbl { font-size: 11px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: .07em; margin-bottom: .35rem; }
+    .quad-cell.hl .quad-lbl { color: var(--gold); }
+    .quad-name { font-family: var(--font-display); font-size: 1rem; font-weight: 700; margin-bottom: .3rem; }
+    .quad-desc { font-size: 12.5px; color: var(--text-2); line-height: 1.55; }
+    .quad-badge {
+      display: inline-block; margin-top: .6rem;
+      font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 100px;
+    }
+    .quad-badge.dim  { background: rgba(255,255,255,0.05); color: var(--text-2); }
+    .quad-badge.gold { background: var(--gold); color: #080B14; }
+
+    /* ═══════════ INSTALL ═══════════ */
+    .install-note {
+      max-width: 900px; margin: 1.5rem 0; padding: 14px 18px;
+      border-radius: var(--radius-sm); font-size: 13.5px; line-height: 1.65;
+      background: rgba(251,191,36,0.07); border: 1px solid var(--line-gold); color: var(--text-2);
+    }
+    .install-note strong { color: var(--gold); }
+    .install-note code { color: var(--gold); font-size: 12.5px; background: rgba(0,0,0,.2); padding: 1px 5px; border-radius: 4px; }
+    .install-box {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: var(--radius); overflow: hidden; margin-top: 1.5rem;
+      max-width: 900px;
+    }
+    .install-tabs { display: flex; border-bottom: 1px solid var(--line); overflow-x: auto; }
+    .tab-btn {
+      padding: 13px 20px; font-size: 13.5px; font-weight: 600;
+      color: var(--text-2); background: none; border: none; cursor: pointer;
+      border-bottom: 2px solid transparent; white-space: nowrap;
+      font-family: var(--font-body); transition: color .18s var(--ease);
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .tab-panel .copy-row { display: flex; justify-content: flex-end; padding: 10px 14px 0; }
+
+    /* ═══════════ PHILOSOPHY STRIP ═══════════ */
+    .philosophy-band { background: var(--bg); }
+    .principles-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-top: 2.5rem; }
+    .principle {
+      background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 1.6rem; transition: border-color .2s, transform .2s;
+    }
+    .principle:hover { border-color: var(--line-gold); transform: translateY(-2px); }
+    .principle-icon { font-size: 1.6rem; margin-bottom: .8rem; display: block; }
+    .principle-title { font-family: var(--font-display); font-weight: 700; font-size: 1rem; margin-bottom: .4rem; }
+    .principle-desc { font-size: 13.5px; color: var(--text-2); line-height: 1.65; }
+
+    /* ═══════════ CTA BAND ═══════════ */
+    .cta-band {
+      text-align: center; padding: 96px 1.5rem;
+      background: var(--bg-1);
+      border-top: 1px solid var(--line);
+      position: relative; overflow: hidden;
+    }
+    .cta-band::before {
+      content: ''; position: absolute; inset: 0; z-index: 0;
+      background: radial-gradient(ellipse 800px 400px at 50% 100%, rgba(251,191,36,0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .cta-band > * { position: relative; z-index: 1; }
+    .cta-band h2 { font-size: clamp(1.9rem, 4vw, 2.8rem); margin-bottom: .8rem; }
+    .cta-band h2 .gold { color: var(--gold); }
+    .cta-band p { color: var(--text-2); margin-bottom: 2.2rem; font-size: 1.05rem; max-width: 520px; margin-left: auto; margin-right: auto; }
+    .cta-actions { display: flex; gap: .85rem; justify-content: center; flex-wrap: wrap; margin-bottom: 2.5rem; }
+    .honest-box {
+      max-width: 640px; margin: 2rem auto 0; text-align: left;
+      background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 1.4rem 1.6rem;
+    }
+    .honest-box h3 { font-size: .95rem; color: var(--text-2); margin-bottom: .4rem; font-weight: 600; }
+    .honest-box p { color: var(--text-2); font-size: .88rem; line-height: 1.7; }
+
+    /* ═══════════ FOOTER ═══════════ */
+    footer {
+      border-top: 1px solid var(--line); padding: 48px 1.5rem 36px;
+      background: var(--bg);
+    }
+    .footer-inner { max-width: var(--max); margin: 0 auto; }
+    .footer-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 2rem; flex-wrap: wrap; margin-bottom: 2rem; }
+    .footer-brand-col { flex: 1 1 200px; }
+    .footer-logo {
+      font-family: var(--font-display); font-size: 17px; font-weight: 700;
+      display: inline-flex; align-items: center; gap: 9px; margin-bottom: .4rem;
+    }
+    .footer-logo img { width: 28px; height: 28px; border-radius: 7px; }
+    .footer-tagline { color: var(--text-3); font-size: 13px; margin-bottom: 1rem; }
+    .footer-links-col { display: flex; gap: 3rem; flex-wrap: wrap; }
+    .footer-col h4 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--text-2); margin-bottom: .8rem; }
+    .footer-col a { display: block; color: var(--text-3); text-decoration: none; font-size: 13.5px; padding: 3px 0; transition: color .15s; }
+    .footer-col a:hover { color: var(--gold); }
+    .footer-bottom {
+      border-top: 1px solid var(--line); padding-top: 1.4rem;
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .5rem;
+      color: var(--text-3); font-size: 12.5px;
+    }
+    .footer-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: var(--gold-dim); border: 1px solid var(--line-gold);
+      color: var(--gold); font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 100px;
+    }
+
+    /* ═══════════ PLAYGROUND ═══════════ */
+    .playground-band {
+      background: var(--bg-1);
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      position: relative;
+    }
+    .pg-grid {
+      display: grid; grid-template-columns: 1.1fr 1fr; gap: 1.8rem;
+      margin-top: 2rem; align-items: stretch;
+    }
+    @media (max-width: 960px) { .pg-grid { grid-template-columns: 1fr; } }
+    .pg-controls {
+      display: flex; flex-direction: column; gap: 1rem;
+    }
+    .pg-presets {
+      display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: .4rem;
+    }
+    .pg-preset-btn {
+      background: var(--card); border: 1px solid var(--line);
+      color: var(--text-2); font-size: 12.5px; font-weight: 600;
+      padding: 6px 14px; border-radius: 100px; cursor: pointer;
+      font-family: var(--font-body); transition: all .18s var(--ease);
+    }
+    .pg-preset-btn:hover { color: var(--text); border-color: var(--line-gold); background: var(--card-hover); }
+    .pg-preset-btn.active {
+      background: var(--gold-dim); border-color: var(--gold);
+      color: var(--gold); box-shadow: 0 0 12px var(--gold-glow);
+    }
+    .pg-editor-card {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: var(--radius); overflow: hidden;
+      display: flex; flex-direction: column; flex: 1;
+      box-shadow: 0 16px 40px rgba(0,0,0,.35);
+    }
+    .pg-run-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px; border-top: 1px solid var(--line);
+      background: rgba(255,255,255,0.015);
+    }
+    .btn-run {
+      background: var(--gold); color: #080B14; font-weight: 700;
+      font-size: 13.5px; padding: 8px 20px; border-radius: var(--radius-sm);
+      border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 7px;
+      transition: all .18s var(--ease); box-shadow: 0 2px 14px var(--gold-glow);
+    }
+    .btn-run:hover { background: var(--gold-2); transform: translateY(-1px); box-shadow: 0 4px 20px var(--gold-glow); }
+    .pg-result-card {
+      background: #060911; border: 1px solid var(--line);
+      border-radius: var(--radius); overflow: hidden;
+      display: flex; flex-direction: column;
+      box-shadow: 0 16px 40px rgba(0,0,0,.45);
+    }
+    .pg-result-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 16px; border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,0.02); font-size: 12px;
+    }
+    .pg-status-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 2px 8px; border-radius: 999px; font-weight: 700; font-size: 11px;
+      background: rgba(16,185,129,0.12); color: #10B981; border: 1px solid rgba(16,185,129,0.3);
+    }
+    .pg-meta-pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      color: var(--text-2); font-family: var(--font-mono); font-size: 11px;
+    }
+
+    /* ═══════════ CONSOLE SHOWCASE ═══════════ */
+    .console-band {
+      background: var(--bg);
+      position: relative;
+    }
+    .console-window {
+      background: #0B0E17; border: 1px solid rgba(255,255,255,0.1);
+      border-radius: var(--radius-lg); overflow: hidden;
+      margin-top: 2.5rem;
+      box-shadow: 0 30px 80px rgba(0,0,0,.65), 0 0 0 1px rgba(251,191,36,0.15);
+    }
+    .console-chrome {
+      display: flex; align-items: center; gap: 14px;
+      padding: 12px 18px; border-bottom: 1px solid var(--line);
+      background: #090C14;
+    }
+    .console-address {
+      flex: 1; max-width: 480px; margin: 0 auto;
+      background: rgba(255,255,255,0.04); border: 1px solid var(--line);
+      border-radius: 6px; padding: 4px 12px; font-family: var(--font-mono);
+      font-size: 12px; color: var(--text-2); display: flex; align-items: center; gap: 8px;
+    }
+    .console-address .lock { color: var(--emerald); font-size: 11px; }
+    .console-tabs-strip {
+      display: flex; background: #0D121F; border-bottom: 1px solid var(--line);
+      padding: 0 1rem; overflow-x: auto;
+    }
+    .c-tab {
+      padding: 12px 18px; font-size: 13px; font-weight: 600;
+      color: var(--text-2); background: none; border: none; cursor: pointer;
+      border-bottom: 2px solid transparent; font-family: var(--font-body);
+      white-space: nowrap; transition: color .18s var(--ease);
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .c-tab:hover { color: var(--text); }
+    .c-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+    .c-body { padding: 1.6rem; min-height: 380px; }
+    .c-pane { display: none; }
+    .c-pane.active { display: block; }
+
+    /* Console internal widgets */
+    .c-kpi-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem; margin-bottom: 1.4rem;
+    }
+    .c-kpi {
+      background: var(--card); border: 1px solid var(--line);
+      border-top: 2px solid var(--gold); border-radius: var(--radius-sm);
+      padding: 14px 16px;
+    }
+    .c-kpi-lbl { font-size: 11px; text-transform: uppercase; color: var(--text-3); font-weight: 700; letter-spacing: .05em; }
+    .c-kpi-val { font-size: 22px; font-weight: 700; font-family: var(--font-display); color: var(--text); margin-top: 4px; }
+    .c-kpi-val.accent { color: var(--gold); }
+    .c-kpi-val.ok { color: var(--emerald); }
+
+    /* ═══════════ ENGINES MATRIX ═══════════ */
+    .engines-band {
+      background: var(--bg-1);
+      border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    }
+    .engines-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.2rem; margin-top: 2.5rem;
+    }
+    .engine-card {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 1.6rem;
+      display: flex; flex-direction: column;
+      transition: all .2s var(--ease);
+    }
+    .engine-card:hover { border-color: var(--line-gold); transform: translateY(-3px); box-shadow: 0 12px 30px rgba(0,0,0,.4); }
+    .engine-tag {
+      font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 100px;
+      display: inline-block; width: fit-content; margin-bottom: .8rem;
+    }
+    .engine-tag.mem { background: rgba(16,185,129,0.12); color: var(--emerald); border: 1px solid rgba(16,185,129,0.3); }
+    .engine-tag.wal { background: var(--gold-dim); color: var(--gold); border: 1px solid var(--line-gold); }
+    .engine-tag.btree { background: rgba(59,130,246,0.12); color: #60A5FA; border: 1px solid rgba(59,130,246,0.3); }
+    .engine-tag.lsm { background: rgba(168,85,247,0.12); color: #C084FC; border: 1px solid rgba(168,85,247,0.3); }
+    .engine-name { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; margin-bottom: .4rem; }
+    .engine-desc { font-size: 13px; color: var(--text-2); line-height: 1.6; margin-bottom: 1.2rem; flex: 1; }
+    .engine-specs {
+      border-top: 1px solid var(--line); padding-top: 1rem;
+      display: flex; flex-direction: column; gap: .5rem; font-size: 12px;
+    }
+    .engine-spec-row { display: flex; justify-content: space-between; color: var(--text-2); }
+    .engine-spec-row strong { color: var(--text); }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════ NAV ═══════════════════════════ -->
+<nav>
+  <a href="#" class="nav-logo" aria-label="EmbedJNoSQL home">
+    <img src="assets/embedjnosql-logo-512-transparent.png" alt="EmbedJNoSQL" width="30" height="30" />
+    <span class="nav-logo-text">EmbedJNoSQL</span>
+    <span class="nav-logo-version">v1.0.1</span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#playground">Playground</a></li>
+    <li><a href="#console-preview">Console</a></li>
+    <li><a href="#engines">Engines</a></li>
+    <li><a href="#frameworks">Integrations</a></li>
+    <li><a href="#why">Why embedded?</a></li>
+    <li><a href="#install">Install</a></li>
+    <li><a href="https://github.com/kael-tombo/embed-jnosql" class="nav-cta" target="_blank" rel="noopener">GitHub ↗</a></li>
+  </ul>
+</nav>
+
+<!-- ═══════════════════════════ HERO ═══════════════════════════ -->
+<section class="hero">
+  <div class="hero-eyebrow" role="note">
+    <span class="hero-eyebrow-dot" aria-hidden="true"></span>
+    v1.0.1 — 1,021 tests, 0 failures, Apache 2.0
+  </div>
+
+  <h1>The <span class="gold">NoSQL database</span> that<br class="desktop-break" /> lives <span class="muted">inside</span> your JVM.</h1>
+
+  <p class="hero-sub">
+    <strong>EmbedJNoSQL</strong> is a document and key-value database — plus Redis-style structures,
+    wide-column families, and experimental vector search — in a single <strong>pure-Java JAR</strong>.
+    <strong>No Docker. No daemon. No infrastructure.</strong>
+  </p>
+
+  <div class="hero-actions">
+    <a href="#playground" class="btn-primary">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Try live playground
+    </a>
+    <a href="#console-preview" class="btn-secondary">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      Admin console UI
+    </a>
+    <a href="https://github.com/kael-tombo/embed-jnosql" class="btn-secondary" target="_blank" rel="noopener">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
+      GitHub
+    </a>
+  </div>
+
+  <div class="hero-stats" role="list">
+    <div class="stat" role="listitem">
+      <span class="stat-value">3.1 MB</span>
+      <span class="stat-label">Shaded JAR size</span>
+    </div>
+    <div class="stat" role="listitem">
+      <span class="stat-value">Zero</span>
+      <span class="stat-label">External dependencies</span>
+    </div>
+    <div class="stat" role="listitem">
+      <span class="stat-value">1,021</span>
+      <span class="stat-label">Verified tests</span>
+    </div>
+    <div class="stat" role="listitem">
+      <span class="stat-value">Java 17+</span>
+      <span class="stat-label">Runtime requirement</span>
+    </div>
+  </div>
+
+  <div class="code-panel">
+    <div class="code-panel-header">
+      <div class="window-dots" aria-hidden="true">
+        <span></span><span></span><span></span>
+      </div>
+      <span class="code-panel-filename">Application.java</span>
+      <button class="copy-btn" onclick="copyCode(this,'heroCode')" aria-label="Copy code">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copy
+      </button>
+    </div>
+    <pre class="code-body" id="heroCode"><code><span class="cmt">// One line. Zero infrastructure.</span>
+<span class="kw">try</span> (<span class="kw">var</span> db <span class="op">=</span> <span class="cls">EmbedJNoSQL</span>.<span class="fn">inMemory</span>()) {
+
+    <span class="cmt">// ── Documents with nested field queries ─────────────────────</span>
+    db.<span class="fn">documentCollection</span>(<span class="str">"users"</span>)
+      .<span class="fn">insert</span>(<span class="cls">Document</span>.<span class="fn">of</span>(<span class="str">"name"</span>, <span class="str">"Alice"</span>).<span class="fn">add</span>(<span class="str">"city"</span>, <span class="str">"Nairobi"</span>));
+
+    <span class="cls">List</span>&lt;<span class="cls">Document</span>&gt; users <span class="op">=</span> db.<span class="fn">documentCollection</span>(<span class="str">"users"</span>)
+      .<span class="fn">find</span>(<span class="cls">Query</span>.<span class="fn">eq</span>(<span class="str">"city"</span>, <span class="str">"Nairobi"</span>).<span class="fn">and</span>(<span class="cls">Query</span>.<span class="fn">gte</span>(<span class="str">"age"</span>, <span class="num">18</span>)));
+
+    <span class="cmt">// ── Redis-style structures ───────────────────────────────────</span>
+    db.<span class="fn">listBucket</span>(<span class="str">"job-queue"</span>).<span class="fn">rpush</span>(<span class="str">"tasks"</span>, <span class="str">"send-email"</span>, <span class="str">"resize-image"</span>);
+    db.<span class="fn">hashBucket</span>(<span class="str">"profiles"</span>).<span class="fn">hset</span>(<span class="str">"u1"</span>, <span class="str">"tier"</span>, <span class="str">"GOLD"</span>);
+
+    <span class="cmt">// ── Key-Value with TTL ───────────────────────────────────────</span>
+    db.<span class="fn">keyValueBucket</span>(<span class="str">"sessions"</span>).<span class="fn">put</span>(<span class="str">"tok-abc"</span>, <span class="str">"user-1"</span>);
+    db.<span class="fn">keyValueBucket</span>(<span class="str">"sessions"</span>).<span class="fn">expire</span>(<span class="str">"tok-abc"</span>, <span class="cls">Duration</span>.<span class="fn">ofMinutes</span>(<span class="num">30</span>));
+}</code></pre>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ FEATURES ═══════════════════════════ -->
+<section id="features" class="features-band">
+  <div class="container">
+    <div class="section-label">Core Capabilities</div>
+    <h2 class="section-title">One engine, four data models</h2>
+    <p class="section-sub">EmbedJNoSQL has exactly one execution engine. Documents, Key-Value, Redis-style structures, and Wide-Column families are data models on top of the same storage substrate — no second engine to configure.</p>
+
+    <div class="features-grid" style="margin-top: 2.5rem;">
+      <div class="feature-tabs" role="tablist" aria-label="Data model features">
+
+        <div class="feature-tab active" id="tab-doc" role="tab" aria-selected="true" aria-controls="pane-doc" tabindex="0" onclick="switchFeature('doc')" onkeydown="if(event.key==='Enter'||event.key===' ')switchFeature('doc')">
+          <div class="feature-tab-icon">📄</div>
+          <div class="feature-tab-title">Document Collections</div>
+          <div class="feature-tab-desc">Schemaless JSON documents with native predicates ($eq, $gt, $regex, $exists…), sorting, pagination, TTL, runtime secondary indexes, and dotted-path queries into nested values.</div>
+        </div>
+
+        <div class="feature-tab" id="tab-kv" role="tab" aria-selected="false" aria-controls="pane-kv" tabindex="-1" onclick="switchFeature('kv')" onkeydown="if(event.key==='Enter'||event.key===' ')switchFeature('kv')">
+          <div class="feature-tab-icon">🗝️</div>
+          <div class="feature-tab-title">Key-Value &amp; Redis-style Structures</div>
+          <div class="feature-tab-desc">String buckets with per-key TTL. Plus lists, sets, and hashes — in-process queues, counters, and coordination primitives with no Redis round-trip.</div>
+        </div>
+
+        <div class="feature-tab" id="tab-storage" role="tab" aria-selected="false" aria-controls="pane-storage" tabindex="-1" onclick="switchFeature('storage')" onkeydown="if(event.key==='Enter'||event.key===' ')switchFeature('storage')">
+          <div class="feature-tab-icon">💾</div>
+          <div class="feature-tab-title">Four Storage Modes</div>
+          <div class="feature-tab-desc">IN_MEMORY for tests, FILE with WAL recovery for simple persistence, B_TREE for read-heavy apps, LSM_TREE for write-heavy workloads. One flag to switch.</div>
+        </div>
+
+        <div class="feature-tab" id="tab-tx" role="tab" aria-selected="false" aria-controls="pane-tx" tabindex="-1" onclick="switchFeature('tx')" onkeydown="if(event.key==='Enter'||event.key===' ')switchFeature('tx')">
+          <div class="feature-tab-icon">⚡</div>
+          <div class="feature-tab-title">MVCC Transactions &amp; WAL</div>
+          <div class="feature-tab-desc">Multi-version concurrency control with rollback. Write-Ahead Logging with deterministic fsync durability and crash-restart recovery.</div>
+        </div>
+      </div>
+
+      <div class="feature-display" role="tabpanel">
+        <div class="feature-pane active" id="pane-doc">
+          <div class="code-panel-header" style="background:rgba(255,255,255,0.02); border-bottom:1px solid var(--line);">
+            <div class="window-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+            <span class="code-panel-filename">DocumentQuery.java</span>
+            <button class="copy-btn" onclick="copyCode(this,'docCode')">Copy</button>
+          </div>
+          <pre class="code-body" id="docCode"><code><span class="cmt">// Fluent document query — dotted paths, multi-operator</span>
+<span class="cls">List</span>&lt;<span class="cls">Document</span>&gt; orders <span class="op">=</span> db
+  .<span class="fn">documentCollection</span>(<span class="str">"orders"</span>)
+  .<span class="fn">find</span>(<span class="cls">Query</span>.<span class="fn">eq</span>(<span class="str">"customer.tier"</span>, <span class="str">"GOLD"</span>)
+    .<span class="fn">and</span>(<span class="cls">Query</span>.<span class="fn">gte</span>(<span class="str">"total"</span>, <span class="num">150.0</span>))
+    .<span class="fn">sortBy</span>(<span class="str">"createdAt"</span>, <span class="cls">Query</span>.<span class="fn">SortOrder</span>.DESC)
+    .<span class="fn">limit</span>(<span class="num">10</span>));
+
+<span class="cmt">// Entity-mapped fluent query</span>
+<span class="cls">List</span>&lt;<span class="cls">Product</span>&gt; cheap <span class="op">=</span> db
+  .<span class="fn">from</span>(<span class="cls">Product</span>.class)
+  .<span class="fn">where</span>(<span class="str">"category = ? AND price &lt;= ?"</span>, <span class="str">"Peripherals"</span>, <span class="num">100.0</span>)
+  .<span class="fn">orderBy</span>(<span class="str">"price ASC"</span>)
+  .<span class="fn">limit</span>(<span class="num">20</span>)
+  .<span class="fn">list</span>();</code></pre>
+        </div>
+        <div class="feature-pane" id="pane-kv">
+          <div class="code-panel-header" style="background:rgba(255,255,255,0.02); border-bottom:1px solid var(--line);">
+            <div class="window-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+            <span class="code-panel-filename">KVAndStructures.java</span>
+            <button class="copy-btn" onclick="copyCode(this,'kvCode')">Copy</button>
+          </div>
+          <pre class="code-body" id="kvCode"><code><span class="cmt">// Key-value with per-key TTL</span>
+db.<span class="fn">keyValueBucket</span>(<span class="str">"sessions"</span>).<span class="fn">put</span>(<span class="str">"tok-abc"</span>, <span class="str">"user-1"</span>);
+db.<span class="fn">keyValueBucket</span>(<span class="str">"sessions"</span>).<span class="fn">expire</span>(<span class="str">"tok-abc"</span>, <span class="cls">Duration</span>.<span class="fn">ofMinutes</span>(<span class="num">30</span>));
+
+<span class="cmt">// Lists (queues)</span>
+db.<span class="fn">listBucket</span>(<span class="str">"job-queue"</span>).<span class="fn">rpush</span>(<span class="str">"tasks"</span>, <span class="str">"send-email"</span>, <span class="str">"resize-img"</span>);
+<span class="cls">String</span> next <span class="op">=</span> db.<span class="fn">listBucket</span>(<span class="str">"job-queue"</span>).<span class="fn">lpop</span>(<span class="str">"tasks"</span>);
+
+<span class="cmt">// Sets (memberships)</span>
+db.<span class="fn">setBucket</span>(<span class="str">"permissions"</span>).<span class="fn">sadd</span>(<span class="str">"admin"</span>, <span class="str">"write"</span>, <span class="str">"delete"</span>, <span class="str">"export"</span>);
+<span class="kw">boolean</span> can <span class="op">=</span> db.<span class="fn">setBucket</span>(<span class="str">"permissions"</span>).<span class="fn">sismember</span>(<span class="str">"admin"</span>, <span class="str">"delete"</span>);
+
+<span class="cmt">// Hashes (entity fields)</span>
+db.<span class="fn">hashBucket</span>(<span class="str">"profiles"</span>).<span class="fn">hset</span>(<span class="str">"u1"</span>, <span class="str">"tier"</span>, <span class="str">"GOLD"</span>);</code></pre>
+        </div>
+        <div class="feature-pane" id="pane-storage">
+          <div class="code-panel-header" style="background:rgba(255,255,255,0.02); border-bottom:1px solid var(--line);">
+            <div class="window-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+            <span class="code-panel-filename">StorageModes.java</span>
+            <button class="copy-btn" onclick="copyCode(this,'storCode')">Copy</button>
+          </div>
+          <pre class="code-body" id="storCode"><code><span class="cmt">// In-memory — tests, ephemeral state, microservices</span>
+<span class="cls">EmbedJNoSQL</span> db <span class="op">=</span> <span class="cls">EmbedJNoSQL</span>.<span class="fn">inMemory</span>();
+
+<span class="cmt">// File + WAL — simple local persistence (one-liner)</span>
+<span class="cls">EmbedJNoSQL</span> db <span class="op">=</span> <span class="cls">EmbedJNoSQL</span>.<span class="fn">open</span>(<span class="str">"./data/myapp"</span>);
+
+<span class="cmt">// Temporary file DB — auto-cleanup on JVM exit</span>
+<span class="cls">EmbedJNoSQL</span> db <span class="op">=</span> <span class="cls">EmbedJNoSQL</span>.<span class="fn">openTemp</span>();
+
+<span class="cmt">// Advanced: B-Tree or LSM-Tree engine</span>
+<span class="cls">EmbedJNoSQL</span> db <span class="op">=</span> <span class="cls">EmbedJNoSQL</span>.<span class="fn">create</span>(<span class="cls">EmbedJNoSQL</span>.<span class="fn">embed</span>()
+  .<span class="fn">storageEngine</span>(<span class="cls">StorageEngineType</span>.LSM_TREE)
+  .<span class="fn">persistTo</span>(<span class="str">"data/myapp"</span>)
+  .<span class="fn">autoFlush</span>(<span class="kw">true</span>)
+  .<span class="fn">buildConfig</span>());</code></pre>
+        </div>
+        <div class="feature-pane" id="pane-tx">
+          <div class="code-panel-header" style="background:rgba(255,255,255,0.02); border-bottom:1px solid var(--line);">
+            <div class="window-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+            <span class="code-panel-filename">Transactions.java</span>
+            <button class="copy-btn" onclick="copyCode(this,'txCode')">Copy</button>
+          </div>
+          <pre class="code-body" id="txCode"><code><span class="cmt">// MVCC transactions — atomic across collections</span>
+<span class="kw">try</span> (<span class="kw">var</span> tx <span class="op">=</span> db.<span class="fn">beginTransaction</span>()) {
+
+    tx.<span class="fn">documentCollection</span>(<span class="str">"accounts"</span>)
+      .<span class="fn">update</span>(<span class="str">"acc-1"</span>, <span class="str">"balance"</span>, <span class="num">4750.0</span>);
+    tx.<span class="fn">documentCollection</span>(<span class="str">"accounts"</span>)
+      .<span class="fn">update</span>(<span class="str">"acc-2"</span>, <span class="str">"balance"</span>, <span class="num">5250.0</span>);
+
+    tx.<span class="fn">commit</span>(); <span class="cmt">// both commit, or both roll back</span>
+}
+
+<span class="cmt">// WAL-backed persistence — open the same path after a crash</span>
+<span class="kw">try</span> (<span class="kw">var</span> db <span class="op">=</span> <span class="cls">EmbedJNoSQL</span>.<span class="fn">open</span>(<span class="str">"./data"</span>)) {
+    <span class="cmt">// WAL replayed automatically — all prior commits recovered</span>
+}</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- models comparison table -->
+    <div style="overflow-x:auto;margin-top:2.5rem;">
+      <table style="width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;font-size:.92rem;">
+        <thead>
+          <tr style="background:var(--card-2);">
+            <th style="padding:12px 18px;text-align:left;font-size:12px;color:var(--text-2);font-weight:600;border-bottom:1px solid var(--line);">Model</th>
+            <th style="padding:12px 18px;text-align:left;font-size:12px;color:var(--text-2);font-weight:600;border-bottom:1px solid var(--line);">What it gives you</th>
+            <th style="padding:12px 18px;text-align:left;font-size:12px;color:var(--text-2);font-weight:600;border-bottom:1px solid var(--line);">Best for</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td style="padding:14px 18px;font-family:var(--font-display);font-weight:700;border-bottom:1px solid var(--line);white-space:nowrap;">Document</td><td style="padding:14px 18px;color:var(--text-2);border-bottom:1px solid var(--line);">Schemaless JSON with predicates, sorting, paging, TTL, runtime indexes, and dotted-path nested queries.</td><td style="padding:14px 18px;color:var(--text-2);border-bottom:1px solid var(--line);">Flexible schemas, entity mapping, application state</td></tr>
+          <tr><td style="padding:14px 18px;font-family:var(--font-display);font-weight:700;border-bottom:1px solid var(--line);white-space:nowrap;">Key-Value</td><td style="padding:14px 18px;color:var(--text-2);border-bottom:1px solid var(--line);">String buckets with per-key TTL. Same handle as every other model.</td><td style="padding:14px 18px;color:var(--text-2);border-bottom:1px solid var(--line);">Caches, session tokens</td></tr>
+          <tr><td style="padding:14px 18px;font-family:var(--font-display);font-weight:700;border-bottom:1px solid var(--line);white-space:nowrap;">Redis-style</td><td style="padding:14px 18px;color:var(--text-2);border-bottom:1px solid var(--line);">Lists, sets, hashes — queues, counters, and coordination primitives in-process.</td><td style="padding:14px 18px;color:var(--text-2);border-bottom:1px solid var(--line);">Queues, counters, coordination</td></tr>
+          <tr><td style="padding:14px 18px;font-family:var(--font-display);font-weight:700;white-space:nowrap;">Wide-Column</td><td style="padding:14px 18px;color:var(--text-2);">Column families on the shared substrate, same API as every other model.</td><td style="padding:14px 18px;color:var(--text-2);">Sparse records, high-cardinality rows</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ PLAYGROUND ═══════════════════════════ -->
+<section id="playground" class="playground-band">
+  <div class="container">
+    <div class="section-label">Interactive Sandbox</div>
+    <h2 class="section-title">Try EmbedJNoSQL in your browser</h2>
+    <p class="section-sub">Experience embedded multi-model queries in action. Choose a preset or edit the query below, then execute against the simulated JVM in-memory engine.</p>
+
+    <div class="pg-grid">
+      <div class="pg-controls">
+        <div class="pg-presets" role="tablist" aria-label="Query Presets">
+          <button class="pg-preset-btn active" id="btn-pre-doc" onclick="loadPreset('doc')">📄 Document Query</button>
+          <button class="pg-preset-btn" id="btn-pre-kv" onclick="loadPreset('kv')">🗝️ Key-Value &amp; TTL</button>
+          <button class="pg-preset-btn" id="btn-pre-queue" onclick="loadPreset('queue')">⚡ Redis Queue</button>
+          <button class="pg-preset-btn" id="btn-pre-cf" onclick="loadPreset('cf')">📊 Wide-Column</button>
+          <button class="pg-preset-btn" id="btn-pre-vec" onclick="loadPreset('vec')">🧠 Vector Search</button>
+        </div>
+
+        <div class="pg-editor-card">
+          <div class="code-panel-header" style="background:rgba(255,255,255,0.02); border-bottom:1px solid var(--line);">
+            <div class="window-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+            <span class="code-panel-filename" id="pgFilename">QuerySnippet.java</span>
+            <button class="copy-btn" onclick="copyCode(this,'pgEditor')">Copy</button>
+          </div>
+          <pre class="code-body" id="pgEditor" style="min-height:160px;"></pre>
+          <div class="pg-run-bar">
+            <span class="pg-meta-pill">Engine: <strong style="color:var(--gold);">IN_MEMORY</strong></span>
+            <button class="btn-run" id="btnRunQuery" onclick="executePlayground()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Execute in JVM
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="pg-result-card">
+        <div class="pg-result-header">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="pg-status-pill" id="pgStatus">HTTP 200 OK</span>
+            <span class="pg-meta-pill" id="pgLatency">⏱ 0.08 ms</span>
+          </div>
+          <span class="pg-meta-pill" id="pgReturned">2 records</span>
+        </div>
+        <pre class="code-body" id="pgOutput" style="color:#A7F3D0; flex:1; overflow-y:auto; max-height:280px;"></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ CONSOLE SHOWCASE ═══════════════════════════ -->
+<section id="console-preview" class="console-band">
+  <div class="container">
+    <div class="section-label">Developer Console</div>
+    <h2 class="section-title">Embedded Admin UI in your JAR</h2>
+    <p class="section-sub">Zero external servers. A rich, responsive developer console embedded directly into your application process. Inspect collections, execute queries, view WAL telemetry, and monitor health at <code>http://localhost:8080/console</code>.</p>
+
+    <div class="console-window">
+      <div class="console-chrome">
+        <div class="window-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+        <div class="console-address">
+          <span class="lock">🔒</span>
+          <span>http://localhost:8080/console</span>
+        </div>
+        <div style="display:flex; gap:6px;">
+          <span class="topbar-chip" style="font-size:11px; padding:2px 8px; border-radius:999px; background:rgba(16,185,129,0.1); color:#10B981; border:1px solid rgba(16,185,129,0.25);">● Connected</span>
+        </div>
+      </div>
+
+      <div class="console-tabs-strip" role="tablist">
+        <button class="c-tab active" id="ctab-ov" onclick="switchConsoleTab('ov')">📊 Overview</button>
+        <button class="c-tab" id="ctab-docs" onclick="switchConsoleTab('docs')">📄 Documents (JSON &amp; Tree)</button>
+        <button class="c-tab" id="ctab-kv" onclick="switchConsoleTab('kv')">🗝️ Key-Value &amp; Structures</button>
+        <button class="c-tab" id="ctab-wal" onclick="switchConsoleTab('wal')">💾 Storage &amp; WAL</button>
+      </div>
+
+      <div class="c-body">
+        <!-- Overview Pane -->
+        <div class="c-pane active" id="cpane-ov">
+          <div class="c-kpi-grid">
+            <div class="c-kpi">
+              <div class="c-kpi-lbl">Total Documents</div>
+              <div class="c-kpi-val accent">42,890</div>
+            </div>
+            <div class="c-kpi">
+              <div class="c-kpi-lbl">Active Storage Mode</div>
+              <div class="c-kpi-val">FILE + WAL</div>
+            </div>
+            <div class="c-kpi">
+              <div class="c-kpi-lbl">Throughput (Ops/sec)</div>
+              <div class="c-kpi-val ok">184,200</div>
+            </div>
+            <div class="c-kpi">
+              <div class="c-kpi-lbl">WAL Fsync Latency</div>
+              <div class="c-kpi-val">0.14 ms</div>
+            </div>
+          </div>
+          <div style="background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm); padding:1rem;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:.5rem; font-size:12px; color:var(--text-2);">
+              <span>Live Operations Activity</span>
+              <span style="color:var(--emerald);">100% Health</span>
+            </div>
+            <svg viewBox="0 0 500 40" style="width:100%; height:40px; display:block;">
+              <polyline fill="none" stroke="var(--gold)" stroke-width="2" points="0,35 40,32 80,25 120,28 160,18 200,22 240,12 280,16 320,8 360,14 400,10 440,18 480,5 500,12"></polyline>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Documents Pane -->
+        <div class="c-pane" id="cpane-docs">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:.5rem;">
+            <div style="font-size:13px; color:var(--text-2);">Collection: <strong style="color:var(--text);">orders</strong> (14,200 documents)</div>
+            <div style="display:flex; gap:6px;">
+              <span class="badge" style="background:var(--gold-dim); color:var(--gold); font-size:11px; padding:3px 8px; border-radius:4px; font-weight:600;">Mode: JSON / Tree</span>
+            </div>
+          </div>
+          <pre class="code-body" style="background:#060911; border:1px solid var(--line); border-radius:var(--radius-sm); font-size:12px; max-height:220px; overflow-y:auto;"><code>{
+  <span class="kw">"id"</span>: <span class="str">"ord-98241"</span>,
+  <span class="kw">"customer"</span>: {
+    <span class="kw">"name"</span>: <span class="str">"Alice Walker"</span>,
+    <span class="kw">"tier"</span>: <span class="str">"GOLD"</span>
+  },
+  <span class="kw">"items"</span>: [
+    { <span class="kw">"sku"</span>: <span class="str">"KB-RGB-01"</span>, <span class="kw">"qty"</span>: <span class="num">1</span>, <span class="kw">"price"</span>: <span class="num">89.99</span> },
+    { <span class="kw">"sku"</span>: <span class="str">"MS-PRO-02"</span>, <span class="kw">"qty"</span>: <span class="num">1</span>, <span class="kw">"price"</span>: <span class="num">65.00</span> }
+  ],
+  <span class="kw">"total"</span>: <span class="num">154.99</span>,
+  <span class="kw">"status"</span>: <span class="str">"CONFIRMED"</span>
+}</code></pre>
+        </div>
+
+        <!-- KV Pane -->
+        <div class="c-pane" id="cpane-kv">
+          <table style="width:100%; border-collapse:collapse; font-size:12.5px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm); overflow:hidden;">
+            <thead>
+              <tr style="background:var(--card-2); text-align:left; color:var(--text-3); font-size:11px; text-transform:uppercase;">
+                <th style="padding:10px 14px;">Bucket / Key</th>
+                <th style="padding:10px 14px;">Type</th>
+                <th style="padding:10px 14px;">Value</th>
+                <th style="padding:10px 14px;">TTL</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-top:1px solid var(--line);">
+                <td style="padding:10px 14px; font-family:var(--font-mono); color:var(--gold);">sessions:tok-9841</td>
+                <td style="padding:10px 14px;"><span class="badge">STRING</span></td>
+                <td style="padding:10px 14px; font-family:var(--font-mono);">"usr_7701"</td>
+                <td style="padding:10px 14px; color:var(--emerald);">28m 14s</td>
+              </tr>
+              <tr style="border-top:1px solid var(--line);">
+                <td style="padding:10px 14px; font-family:var(--font-mono); color:var(--gold);">job-queue:tasks</td>
+                <td style="padding:10px 14px;"><span class="badge">LIST</span></td>
+                <td style="padding:10px 14px; font-family:var(--font-mono);">["send-email", "generate-pdf"]</td>
+                <td style="padding:10px 14px; color:var(--text-3);">persisted</td>
+              </tr>
+              <tr style="border-top:1px solid var(--line);">
+                <td style="padding:10px 14px; font-family:var(--font-mono); color:var(--gold);">profiles:u1</td>
+                <td style="padding:10px 14px;"><span class="badge">HASH</span></td>
+                <td style="padding:10px 14px; font-family:var(--font-mono);">{tier: "GOLD", locale: "en_US"}</td>
+                <td style="padding:10px 14px; color:var(--text-3);">persisted</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- WAL Pane -->
+        <div class="c-pane" id="cpane-wal">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+            <div style="background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm); padding:1rem;">
+              <div style="font-size:11px; text-transform:uppercase; color:var(--text-3); font-weight:700;">Active WAL Log File</div>
+              <div style="font-family:var(--font-mono); font-size:13px; color:var(--text); margin-top:4px;">./data/wal/segment-0042.log</div>
+              <div style="margin-top:.8rem; font-size:12px; color:var(--text-2);">
+                <div>Committed entries: <strong style="color:var(--text);">14,819</strong></div>
+                <div>Fsync mode: <strong style="color:var(--emerald);">Per-commit atomic</strong></div>
+              </div>
+            </div>
+            <div style="background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm); padding:1rem;">
+              <div style="font-size:11px; text-transform:uppercase; color:var(--text-3); font-weight:700;">Crash Recovery Guarantee</div>
+              <div style="font-size:13px; color:var(--emerald); margin-top:4px;">✓ Deterministic WAL Replay Ready</div>
+              <div style="margin-top:.8rem; font-size:12px; color:var(--text-2);">
+                Upon JVM restart, EmbedJNoSQL inspects the log segment and restores all committed transactions automatically.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ ENGINES MATRIX ═══════════════════════════ -->
+<section id="engines" class="engines-band">
+  <div class="container">
+    <div class="section-label">Pluggable Storage</div>
+    <h2 class="section-title">Four storage modes, one unified API</h2>
+    <p class="section-sub">Switch between ephemeral in-memory tests and durable production storage with a single configuration parameter. The query and collection API remains 100% identical.</p>
+
+    <div class="engines-grid">
+      <div class="engine-card">
+        <span class="engine-tag mem">IN_MEMORY</span>
+        <div class="engine-name">Pure Memory</div>
+        <div class="engine-desc">Backed by ConcurrentHashMap. Zero disk I/O, microsecond latencies. Ideal for lightning-fast test suites and ephemeral microservice state.</div>
+        <div class="engine-specs">
+          <div class="engine-spec-row"><span>Throughput:</span><strong>~3.2M ops/s</strong></div>
+          <div class="engine-spec-row"><span>Durability:</span><strong>Ephemeral</strong></div>
+          <div class="engine-spec-row"><span>Disk footprint:</span><strong>0 MB</strong></div>
+        </div>
+      </div>
+
+      <div class="engine-card">
+        <span class="engine-tag wal">FILE (WAL)</span>
+        <div class="engine-name">Append-Only WAL</div>
+        <div class="engine-desc">Per-collection JSON snapshots with append-only Write-Ahead Logging. Guaranteed crash recovery upon restart with zero external processes.</div>
+        <div class="engine-specs">
+          <div class="engine-spec-row"><span>Throughput:</span><strong>~240K ops/s</strong></div>
+          <div class="engine-spec-row"><span>Durability:</span><strong>Full Crash WAL</strong></div>
+          <div class="engine-spec-row"><span>Recovery:</span><strong>Automatic</strong></div>
+        </div>
+      </div>
+
+      <div class="engine-card">
+        <span class="engine-tag btree">B_TREE</span>
+        <div class="engine-name">B+ Tree Indexed</div>
+        <div class="engine-desc">Paged B+ Tree indices over persistent records with background checkpointing. Optimized for read-intensive embedded applications and edge nodes.</div>
+        <div class="engine-specs">
+          <div class="engine-spec-row"><span>Throughput:</span><strong>~480K ops/s</strong></div>
+          <div class="engine-spec-row"><span>Read latency:</span><strong>&lt; 0.2 ms</strong></div>
+          <div class="engine-spec-row"><span>Workload:</span><strong>Read-heavy</strong></div>
+        </div>
+      </div>
+
+      <div class="engine-card">
+        <span class="engine-tag lsm">LSM_TREE</span>
+        <div class="engine-name">Log-Structured Merge</div>
+        <div class="engine-desc">In-memory Memtables, persistent SSTables, Bloom filters, and background compaction. Engineered for write-heavy telemetry and continuous ingestion.</div>
+        <div class="engine-specs">
+          <div class="engine-spec-row"><span>Throughput:</span><strong>~720K ops/s</strong></div>
+          <div class="engine-spec-row"><span>Compaction:</span><strong>Level-based</strong></div>
+          <div class="engine-spec-row"><span>Workload:</span><strong>Write-heavy</strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ FRAMEWORKS ═══════════════════════════ -->
+<section id="frameworks" class="frameworks-section">
+  <div class="container">
+    <div class="section-label">Integrations</div>
+    <h2 class="section-title">Works with your stack</h2>
+    <p class="section-sub">Auto-configuration, health indicators, and Repository support — drop one dependency, get a fully wired database bean. Existing entities annotated with Jakarta Persistence or Hibernate annotations are read as mapping hints: no JPA runtime, no JDBC driver, no rewrite.</p>
+    <p class="section-sub" style="margin-top:.75rem;">No framework at all? One line of code is all it takes. Vert.x, Javalin, Helidon, Dropwizard — any JVM runtime works out of the box. <a href="#fw-guide" style="color:var(--gold);text-decoration:none;">See integration patterns ↓</a></p>
+
+    <p class="section-sub" style="margin-top:1.25rem;color:var(--text);font-weight:500;">EmbedJNoSQL was engineered with a zero-daemon, in-process architecture. That gives it a distinct advantage across modern Java web frameworks:</p>
+
+    <div style="overflow-x:auto;margin:1.5rem 0 2.5rem;border-radius:var(--radius);border:1px solid var(--line);box-shadow:0 8px 30px rgba(0,0,0,0.35);">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;text-align:left;background:var(--bg-card);">
+        <thead>
+          <tr style="background:rgba(255,255,255,0.03);border-bottom:1px solid var(--line);color:var(--text);">
+            <th style="padding:12px 18px;font-family:var(--font-display);font-weight:700;">Framework</th>
+            <th style="padding:12px 18px;font-family:var(--font-display);font-weight:700;">Integration Style</th>
+            <th style="padding:12px 18px;font-family:var(--font-display);font-weight:700;">Maturity in EmbedJNoSQL</th>
+            <th style="padding:12px 18px;font-family:var(--font-display);font-weight:700;">Code Pattern</th>
+          </tr>
+        </thead>
+        <tbody style="color:var(--text-2);line-height:1.55;">
+          <tr style="border-bottom:1px solid var(--line);">
+            <td style="padding:12px 18px;font-weight:600;color:var(--text);">Spring Boot 4 / 3.4+</td>
+            <td style="padding:12px 18px;"><code style="color:var(--gold);">@AutoConfiguration</code>, Spring Data Repositories, <code style="color:var(--gold);">@Transactional</code></td>
+            <td style="padding:12px 18px;"><span style="color:#10b981;font-weight:600;">First-Class Starter</span> (<code style="font-size:12px;">embed-jnosql-spring-boot-starter</code>)</td>
+            <td style="padding:12px 18px;"><code style="color:var(--gold);background:rgba(251,191,36,0.08);padding:2px 6px;border-radius:4px;">@Autowired EmbedJNoSQL db;</code></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--line);">
+            <td style="padding:12px 18px;font-weight:600;color:var(--text);">Quarkus 3.x</td>
+            <td style="padding:12px 18px;">CDI Extension (<code style="color:var(--gold);">@ApplicationScoped</code>), DevServices</td>
+            <td style="padding:12px 18px;"><span style="color:#10b981;font-weight:600;">Dedicated Extension</span> (<code style="font-size:12px;">quarkus-extension/</code>)</td>
+            <td style="padding:12px 18px;"><code style="color:var(--gold);background:rgba(251,191,36,0.08);padding:2px 6px;border-radius:4px;">@Inject EmbedJNoSQL db;</code></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--line);">
+            <td style="padding:12px 18px;font-weight:600;color:var(--text);">Micronaut 4.x</td>
+            <td style="padding:12px 18px;">Compile-Time DI (<code style="color:var(--gold);">@Factory</code>, <code style="color:var(--gold);">@Singleton</code>)</td>
+            <td style="padding:12px 18px;"><span style="color:#10b981;font-weight:600;">Dedicated Integration</span> (<code style="font-size:12px;">micronaut-integration/</code>)</td>
+            <td style="padding:12px 18px;"><code style="color:var(--gold);background:rgba(251,191,36,0.08);padding:2px 6px;border-radius:4px;">@Inject EmbedJNoSQL db;</code></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--line);">
+            <td style="padding:12px 18px;font-weight:600;color:var(--text);">Eclipse Vert.x 4.x</td>
+            <td style="padding:12px 18px;">Non-blocking / Worker dispatch (<code style="color:var(--gold);">executeBlocking</code>)</td>
+            <td style="padding:12px 18px;"><span style="color:#38bdf8;font-weight:600;">Validated Pattern</span> (<code style="font-size:12px;">demo/vertx-demo/</code>)</td>
+            <td style="padding:12px 18px;"><code style="color:var(--gold);background:rgba(251,191,36,0.08);padding:2px 6px;border-radius:4px;">vertx.executeBlocking(...)</code></td>
+          </tr>
+          <tr>
+            <td style="padding:12px 18px;font-weight:600;color:var(--text);">Javalin / Ktor / Helidon</td>
+            <td style="padding:12px 18px;">Lightweight programmatic injection</td>
+            <td style="padding:12px 18px;"><span style="color:#a78bfa;font-weight:600;">Native</span> (Zero Glue Code)</td>
+            <td style="padding:12px 18px;"><code style="color:var(--gold);background:rgba(251,191,36,0.08);padding:2px 6px;border-radius:4px;">EmbedJNoSQL.inMemory()</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="fw-grid">
+      <div class="fw-card">
+        <div class="fw-icon spring" aria-hidden="true">🍃</div>
+        <div>
+          <div class="fw-name">Spring Boot 4.x / 3.4+</div>
+          <div class="fw-desc">Auto-configured <code style="color:var(--gold);font-size:12px;">@Autowired EmbedJNoSQL db</code> bean, health indicator, property binding via <code style="color:var(--gold);font-size:12px;">embedjnosql.*</code>, and full <code style="color:var(--gold);font-size:12px;">EmbedRepository</code> support.</div>
+        </div>
+      </div>
+      <div class="fw-card">
+        <div class="fw-icon jnosql" aria-hidden="true">🪐</div>
+        <div>
+          <div class="fw-name">Eclipse JNoSQL</div>
+          <div class="fw-desc">Native <code style="color:var(--gold);font-size:12px;">DocumentTemplate</code>, Jakarta NoSQL entities, and <code style="color:var(--gold);font-size:12px;">EmbedNoSQLRepository</code> with <code style="color:var(--gold);font-size:12px;">CrudRepository</code> semantics.</div>
+        </div>
+      </div>
+      <div class="fw-card">
+        <div class="fw-icon quarkus" aria-hidden="true">⚡</div>
+        <div>
+          <div class="fw-name">Quarkus</div>
+          <div class="fw-desc">Quarkus extension with CDI injection, Quarkus-style configuration, and native build compatibility.</div>
+        </div>
+      </div>
+      <div class="fw-card">
+        <div class="fw-icon mn" aria-hidden="true">🚀</div>
+        <div>
+          <div class="fw-name">Micronaut</div>
+          <div class="fw-desc">Micronaut integration with bean factory configuration and Micronaut Data–compatible repository pattern.</div>
+        </div>
+      </div>
+      <div class="fw-card">
+        <div class="fw-icon vertx" aria-hidden="true">🔷</div>
+        <div>
+          <div class="fw-name">Eclipse Vert.x 4.x</div>
+          <div class="fw-desc">No starter needed — use <code style="color:var(--gold);font-size:12px;">embed-jnosql-core</code> directly. Dispatch blocking DB calls via <code style="color:var(--gold);font-size:12px;">vertx.executeBlocking()</code> or deploy a <code style="color:var(--gold);font-size:12px;">Worker Verticle</code> to protect the event loop. ACID transactions work inside <code style="color:var(--gold);font-size:12px;">executeBlocking</code> closures.</div>
+        </div>
+      </div>
+      <div class="fw-card">
+        <div class="fw-icon" aria-hidden="true" style="background:rgba(220,130,50,.12);border-color:rgba(220,130,50,.2);">🌊</div>
+        <div>
+          <div class="fw-name">Javalin / Helidon / Dropwizard</div>
+          <div class="fw-desc">Three-step pattern for any JVM framework: open once at startup, share the instance across threads, close on shutdown. <a href="#fw-guide" style="color:var(--gold);text-decoration:none;font-size:11px;">See examples ↓</a></div>
+        </div>
+      </div>
+      <div class="fw-card" style="border-style:dashed;opacity:.65;">
+        <div class="fw-icon" aria-hidden="true" style="border-color:var(--line);">🔌</div>
+        <div>
+          <div class="fw-name">Plain Java</div>
+          <div class="fw-desc">Zero-config. One class: <code style="color:var(--gold);font-size:12px;">EmbedJNoSQL.inMemory()</code>. No framework required. Works in any JVM application.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ FRAMEWORK INTEGRATION GUIDE ═══════════════════════════ -->
+<section id="fw-guide" style="background:var(--bg-2);">
+  <div class="container">
+    <div class="section-label">Integration Guide</div>
+    <h2 class="section-title">Framework integration patterns</h2>
+    <p class="section-sub">EmbedJNoSQL is a plain Java library — no bytecode agent, no annotation processor, no CDI container needed. Every framework integration follows the same lifecycle contract.</p>
+
+    <!-- TAB NAV -->
+    <div id="fw-tabs" style="display:flex;flex-wrap:wrap;gap:.5rem;margin:2rem 0 1.5rem;">
+      <button class="fw-tab active" onclick="showFwTab('vertx', this)">Eclipse Vert.x</button>
+      <button class="fw-tab" onclick="showFwTab('javalin', this)">Javalin</button>
+      <button class="fw-tab" onclick="showFwTab('helidon', this)">Helidon SE</button>
+      <button class="fw-tab" onclick="showFwTab('dropwizard', this)">Dropwizard</button>
+      <button class="fw-tab" onclick="showFwTab('generic', this)">Generic Pattern</button>
+    </div>
+
+    <!-- VERT.X -->
+    <div id="fw-panel-vertx" class="fw-panel">
+      <p style="color:var(--text-2);margin-bottom:1rem;line-height:1.7;">EmbedJNoSQL is <strong style="color:var(--text);">synchronous and in-process</strong>. The single rule for Vert.x: never call it directly from the event loop. Wrap with <code style="color:var(--gold);">executeBlocking()</code> in route handlers, or deploy as a Worker Verticle for batch/event-bus workloads.</p>
+
+      <div style="margin-bottom:1.5rem;">
+        <div style="color:var(--text-2);font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;">Pattern 1 — executeBlocking (route handlers)</div>
+        <pre class="code-block" style="font-size:12px;line-height:1.6;"><code><span style="color:#7fdbff;">public class</span> <span style="color:#ffd700;">ProductVerticle</span> <span style="color:#7fdbff;">extends</span> AbstractVerticle {
+    <span style="color:#7fdbff;">private</span> EmbedJNoSQL db;
+    <span style="color:#7fdbff;">private</span> DocumentCollection products;
+
+    <span style="color:#98c379;">@Override</span>
+    <span style="color:#7fdbff;">public void</span> <span style="color:#ffd700;">start</span>(Promise&lt;Void&gt; startPromise) {
+        <span style="color:#7ec8e3;">// ✅ Safe — called once at startup, not on the hot event loop</span>
+        db = EmbedJNoSQL.create(EmbedJNoSQLConfig.builder()
+            .storageEngine(IN_MEMORY).buildConfig());
+        products = db.documentCollection(<span style="color:#98c379;">&quot;products&quot;</span>);
+
+        Router router = Router.router(vertx);
+        router.get(<span style="color:#98c379;">&quot;/api/products&quot;</span>).handler(<span style="color:#ffd700;">this</span>::getAll);
+        vertx.createHttpServer().requestHandler(router).listen(<span style="color:#d19a66;">8080</span>)
+            .onSuccess(s -&gt; startPromise.complete());
+    }
+
+    <span style="color:#7fdbff;">private void</span> <span style="color:#ffd700;">getAll</span>(RoutingContext ctx) {
+        <span style="color:#7ec8e3;">// ⚠️  executeBlocking keeps the event loop free</span>
+        vertx.&lt;List&lt;Product&gt;&gt;executeBlocking(() -&gt;
+            products.findAll().stream().map(Product::fromDocument).toList()
+        ).onSuccess(list -&gt; ctx.response()
+            .putHeader(<span style="color:#98c379;">&quot;content-type&quot;</span>, <span style="color:#98c379;">&quot;application/json&quot;</span>)
+            .end(Json.encode(list)))
+         .onFailure(ctx::fail);
+    }
+}</code></pre>
+      </div>
+
+      <div>
+        <div style="color:var(--text-2);font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;">Pattern 2 — Worker Verticle (event-bus / batch)</div>
+        <pre class="code-block" style="font-size:12px;line-height:1.6;"><code><span style="color:#7fdbff;">public class</span> <span style="color:#ffd700;">DbWorkerVerticle</span> <span style="color:#7fdbff;">extends</span> AbstractVerticle {
+    <span style="color:#7fdbff;">private</span> EmbedJNoSQL db;
+
+    <span style="color:#98c379;">@Override</span>
+    <span style="color:#7fdbff;">public void</span> <span style="color:#ffd700;">start</span>() {
+        db = EmbedJNoSQL.open(<span style="color:#98c379;">&quot;./data/myapp&quot;</span>);
+        vertx.eventBus().&lt;JsonObject&gt;consumer(<span style="color:#98c379;">&quot;db.products.upsert&quot;</span>, msg -&gt; {
+            <span style="color:#7fdbff;">try</span> {
+                Product p = msg.body().mapTo(Product.<span style="color:#7fdbff;">class</span>);
+                db.documentCollection(<span style="color:#98c379;">&quot;products&quot;</span>).insert(p.toDocument());
+                msg.reply(<span style="color:#7fdbff;">new</span> JsonObject().put(<span style="color:#98c379;">&quot;status&quot;</span>, <span style="color:#98c379;">&quot;ok&quot;</span>));
+            } <span style="color:#7fdbff;">catch</span> (Exception e) { msg.fail(<span style="color:#d19a66;">500</span>, e.getMessage()); }
+        });
+    }
+    <span style="color:#98c379;">@Override</span>
+    <span style="color:#7fdbff;">public void</span> <span style="color:#ffd700;">stop</span>() { <span style="color:#7fdbff;">if</span> (db != <span style="color:#7fdbff;">null</span>) db.close(); }
+}
+
+<span style="color:#7ec8e3;">// Deploy as a worker (thread-pool isolated)</span>
+vertx.deployVerticle(<span style="color:#7fdbff;">new</span> DbWorkerVerticle(),
+    <span style="color:#7fdbff;">new</span> DeploymentOptions().setWorker(<span style="color:#d19a66;">true</span>));</code></pre>
+      </div>
+
+      <div style="margin-top:1.5rem;padding:1rem 1.25rem;background:rgba(143,44,128,.08);border:1px solid rgba(143,44,128,.2);border-radius:8px;">
+        <span style="color:#9b59b6;font-weight:600;">🔷 Vert.x Rule</span>
+        <span style="color:var(--text-2);font-size:.9rem;margin-left:.5rem;">EmbedJNoSQL is synchronous. Always wrap calls in <code style="color:var(--gold);">executeBlocking()</code> inside route handlers, or use a Worker Verticle for event-bus consumers.</span>
+      </div>
+    </div>
+
+    <!-- JAVALIN -->
+    <div id="fw-panel-javalin" class="fw-panel" style="display:none;">
+      <p style="color:var(--text-2);margin-bottom:1rem;line-height:1.7;">Javalin handles requests on virtual threads (Java 21+) or regular threads — both are fine for synchronous EmbedJNoSQL calls. Open once, share, close on shutdown.</p>
+      <pre class="code-block" style="font-size:12px;line-height:1.6;"><code><span style="color:#7fdbff;">public class</span> <span style="color:#ffd700;">Application</span> {
+    <span style="color:#7fdbff;">public static void</span> <span style="color:#ffd700;">main</span>(String[] args) {
+        EmbedJNoSQL db = EmbedJNoSQL.inMemory();
+        DocumentCollection users = db.documentCollection(<span style="color:#98c379;">&quot;users&quot;</span>);
+
+        <span style="color:#7fdbff;">var</span> app = Javalin.create().start(<span style="color:#d19a66;">8080</span>);
+
+        app.get(<span style="color:#98c379;">&quot;/users&quot;</span>, ctx -&gt; ctx.json(users.findAll()));
+        app.post(<span style="color:#98c379;">&quot;/users&quot;</span>, ctx -&gt; {
+            <span style="color:#7fdbff;">var</span> doc = ctx.bodyAsClass(Map.<span style="color:#7fdbff;">class</span>);
+            users.insert(Document.of(doc));
+            ctx.status(<span style="color:#d19a66;">201</span>).json(doc);
+        });
+
+        Runtime.getRuntime().addShutdownHook(
+            <span style="color:#7fdbff;">new</span> Thread(() -&gt; { app.stop(); db.close(); }));
+    }
+}</code></pre>
+    </div>
+
+    <!-- HELIDON -->
+    <div id="fw-panel-helidon" class="fw-panel" style="display:none;">
+      <p style="color:var(--text-2);margin-bottom:1rem;line-height:1.7;">Helidon SE 4 routes run on Java virtual threads — blocking I/O (including EmbedJNoSQL) is perfectly safe without any wrapping.</p>
+      <pre class="code-block" style="font-size:12px;line-height:1.6;"><code>EmbedJNoSQL db = EmbedJNoSQL.open(<span style="color:#98c379;">&quot;./data&quot;</span>);
+DocumentCollection products = db.documentCollection(<span style="color:#98c379;">&quot;products&quot;</span>);
+
+WebServer server = WebServer.builder()
+    .routing(rules -&gt; rules
+        .get(<span style="color:#98c379;">&quot;/products&quot;</span>,
+            (req, res) -&gt; res.send(products.findAll()))
+        .post(<span style="color:#98c379;">&quot;/products&quot;</span>, (req, res) -&gt; {
+            <span style="color:#7ec8e3;">// Virtual thread — blocking is fine</span>
+            <span style="color:#7fdbff;">var</span> doc = req.content().as(Map.<span style="color:#7fdbff;">class</span>);
+            products.insert(Document.of(doc));
+            res.status(<span style="color:#d19a66;">201</span>).send();
+        }))
+    .port(<span style="color:#d19a66;">8080</span>).build().start();
+
+Runtime.getRuntime().addShutdownHook(
+    <span style="color:#7fdbff;">new</span> Thread(() -&gt; { server.stop(); db.close(); }));</code></pre>
+    </div>
+
+    <!-- DROPWIZARD -->
+    <div id="fw-panel-dropwizard" class="fw-panel" style="display:none;">
+      <p style="color:var(--text-2);margin-bottom:1rem;line-height:1.7;">Dropwizard's managed lifecycle makes it easy to open and close EmbedJNoSQL in sync with the application lifecycle.</p>
+      <pre class="code-block" style="font-size:12px;line-height:1.6;"><code><span style="color:#7fdbff;">public class</span> <span style="color:#ffd700;">MyApplication</span> <span style="color:#7fdbff;">extends</span> Application&lt;MyConfiguration&gt; {
+
+    <span style="color:#98c379;">@Override</span>
+    <span style="color:#7fdbff;">public void</span> <span style="color:#ffd700;">run</span>(MyConfiguration cfg, Environment env) {
+        EmbedJNoSQL db = EmbedJNoSQL.open(cfg.getDataDir());
+
+        env.jersey().register(<span style="color:#7fdbff;">new</span> ProductResource(
+            db.documentCollection(<span style="color:#98c379;">&quot;products&quot;</span>)));
+
+        <span style="color:#7ec8e3;">// Managed lifecycle: Dropwizard calls stop() on shutdown</span>
+        env.lifecycle().manage(<span style="color:#7fdbff;">new</span> Managed() {
+            <span style="color:#7fdbff;">public void</span> start() {}
+            <span style="color:#7fdbff;">public void</span> stop() { db.close(); }
+        });
+    }
+}</code></pre>
+    </div>
+
+    <!-- GENERIC -->
+    <div id="fw-panel-generic" class="fw-panel" style="display:none;">
+      <p style="color:var(--text-2);margin-bottom:1rem;line-height:1.7;">The universal pattern for <em>any</em> JVM framework — servlet, reactive, or otherwise.</p>
+      <pre class="code-block" style="font-size:12px;line-height:1.6;"><code><span style="color:#7ec8e3;">// 1. OPEN — once at application startup</span>
+EmbedJNoSQL db = EmbedJNoSQL.open(<span style="color:#98c379;">&quot;./data/myapp&quot;</span>);
+
+<span style="color:#7ec8e3;">// 2. USE — from any thread; the instance is thread-safe</span>
+DocumentCollection col = db.documentCollection(<span style="color:#98c379;">&quot;events&quot;</span>);
+col.insert(Document.of(<span style="color:#98c379;">&quot;type&quot;</span>, <span style="color:#98c379;">&quot;BOOT_UP&quot;</span>)
+    .add(<span style="color:#98c379;">&quot;timestamp&quot;</span>, System.currentTimeMillis()));
+
+<span style="color:#7ec8e3;">// 3. CLOSE — on graceful shutdown</span>
+Runtime.getRuntime().addShutdownHook(
+    <span style="color:#7fdbff;">new</span> Thread(db::close));</code></pre>
+
+      <div style="margin-top:1.5rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;">
+        <div style="padding:1rem;background:var(--bg);border:1px solid var(--line);border-radius:8px;">
+          <div style="color:var(--text);font-weight:600;margin-bottom:.4rem;">✅ Thread-safe</div>
+          <div style="color:var(--text-2);font-size:.85rem;">One instance shared across all threads. No pool, no connection manager.</div>
+        </div>
+        <div style="padding:1rem;background:var(--bg);border:1px solid var(--line);border-radius:8px;">
+          <div style="color:var(--text);font-weight:600;margin-bottom:.4rem;">⚠️ Async / event-loop</div>
+          <div style="color:var(--text-2);font-size:.85rem;">Vert.x / Netty-based frameworks: always dispatch via <code style="color:var(--gold);">executeBlocking()</code> or a Worker thread.</div>
+        </div>
+        <div style="padding:1rem;background:var(--bg);border:1px solid var(--line);border-radius:8px;">
+          <div style="color:var(--text);font-weight:600;margin-bottom:.4rem;">🔒 ACID transactions</div>
+          <div style="color:var(--text-2);font-size:.85rem;">MVCC transactions work inside any thread — including <code style="color:var(--gold);">executeBlocking</code> closures.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ POSITIONING ═══════════════════════════ -->
+<section id="why" class="positioning-band">
+  <div class="container">
+    <div class="pos-wrap">
+      <div>
+        <div class="section-label">Market Position</div>
+        <h2 class="section-title">The empty quadrant</h2>
+        <p class="section-sub">For two decades, Java developers had two choices: embed H2 or SQLite (relational only), or spin up heavy external containers (MongoDB, Redis, Cassandra).</p>
+        <p class="section-sub" style="margin-top:1rem;">
+          <strong style="color:var(--text);">EmbedJNoSQL fills the missing quadrant:</strong>
+          pure embedded, zero-infrastructure convenience with modern multi-model NoSQL flexibility.
+        </p>
+
+        <div style="margin-top:2rem;display:flex;flex-wrap:wrap;gap:.6rem;">
+          <span style="padding:6px 14px;border-radius:6px;background:var(--gold-dim);border:1px solid var(--line-gold);color:var(--gold);font-size:13px;font-weight:600;">✓ Zero Docker in tests</span>
+          <span style="padding:6px 14px;border-radius:6px;background:var(--gold-dim);border:1px solid var(--line-gold);color:var(--gold);font-size:13px;font-weight:600;">✓ No Testcontainers</span>
+          <span style="padding:6px 14px;border-radius:6px;background:var(--gold-dim);border:1px solid var(--line-gold);color:var(--gold);font-size:13px;font-weight:600;">✓ In-process latency</span>
+          <span style="padding:6px 14px;border-radius:6px;background:var(--gold-dim);border:1px solid var(--line-gold);color:var(--gold);font-size:13px;font-weight:600;">✓ WAL crash recovery</span>
+        </div>
+      </div>
+
+      <div class="quad-grid">
+        <div class="quad-cell">
+          <div class="quad-lbl">Embedded · Relational</div>
+          <div class="quad-name">H2 / SQLite / Derby</div>
+          <div class="quad-desc">Great for SQL relational tests, but rigid schema migrations and no native JSON/Key-Value.</div>
+          <span class="quad-badge dim">Relational only</span>
+        </div>
+        <div class="quad-cell hl">
+          <div class="quad-lbl">Embedded · Multi-Model</div>
+          <div class="quad-name">EmbedJNoSQL ✦</div>
+          <div class="quad-desc">Documents, Key-Value, Redis-style structures, and Wide-Column in one embedded engine. No SQL, no server.</div>
+          <span class="quad-badge gold">You are here</span>
+        </div>
+        <div class="quad-cell">
+          <div class="quad-lbl">Client/Server · Relational</div>
+          <div class="quad-name">PostgreSQL / MySQL</div>
+          <div class="quad-desc">Full enterprise RDBMS — requires Docker or cloud servers for every environment.</div>
+          <span class="quad-badge dim">Daemon required</span>
+        </div>
+        <div class="quad-cell">
+          <div class="quad-lbl">Client/Server · NoSQL</div>
+          <div class="quad-name">MongoDB / Redis / Cassandra</div>
+          <div class="quad-desc">Fast, but requires Testcontainers, open ports, and memory overhead in CI.</div>
+          <span class="quad-badge dim">Docker required</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ PHILOSOPHY ═══════════════════════════ -->
+<section class="philosophy-band">
+  <div class="container">
+    <div class="section-label">Design Philosophy</div>
+    <h2 class="section-title">Principles, not features</h2>
+    <p class="section-sub">EmbedJNoSQL is opinionated about what it refuses to be. Every decision follows from the same constraint: it must run inside your JVM with nothing else running.</p>
+
+    <div class="principles-grid">
+      <div class="principle">
+        <span class="principle-icon">🚫</span>
+        <div class="principle-title">No Infrastructure Tax</div>
+        <div class="principle-desc">No Docker socket, no network port, no daemon, no OS service. The database starts when your JVM starts and stops when your JVM stops.</div>
+      </div>
+      <div class="principle">
+        <span class="principle-icon">🔍</span>
+        <div class="principle-title">Honest Claims Only</div>
+        <div class="principle-desc">Every feature claim has a verified test behind it. Known limitations — power-loss durability, vector search experimental status — are stated plainly, not buried.</div>
+      </div>
+      <div class="principle">
+        <span class="principle-icon">☕</span>
+        <div class="principle-title">Pure JVM</div>
+        <div class="principle-desc">Three mandatory runtime dependencies: Jackson, SLF4J API. Everything else — Spring, Quarkus, Hibernate — is optional scope. No native libraries, no JNI.</div>
+      </div>
+      <div class="principle">
+        <span class="principle-icon">🎯</span>
+        <div class="principle-title">NoSQL Only</div>
+        <div class="principle-desc">No SQL engine, no JDBC driver, no dual-engine selector. The product is one thing: an embedded multi-model NoSQL database. Stated clearly in every release note.</div>
+      </div>
+      <div class="principle">
+        <span class="principle-icon">🧪</span>
+        <div class="principle-title">Test-First Reliability</div>
+        <div class="principle-desc">1,021 tests across the core engine, Spring Boot starter, demo projects, and CLI. The test count and pass rate appear in every release note — no vague "extensively tested" claims.</div>
+      </div>
+      <div class="principle">
+        <span class="principle-icon">🔒</span>
+        <div class="principle-title">Secure by Default</div>
+        <div class="principle-desc">The console HTTP server is opt-in. Authentication, session management, and rate limiting are built in. No console starts unless you explicitly enable it.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ INSTALL ═══════════════════════════ -->
+<section id="install">
+  <div class="container">
+    <div class="section-label">Get Started</div>
+    <h2 class="section-title">Ready in under 60 seconds</h2>
+    <p class="section-sub">Clone, install, then add a single dependency to your build file.</p>
+
+    <div class="install-note" style="margin-top:1.5rem;">
+      <strong>Maven Central Distribution:</strong> Published to Sonatype Central / Maven Central Portal.
+      Coordinates are active below, or install directly into your local repository:<br>
+      <code>git clone https://github.com/kael-tombo/embed-jnosql &amp;&amp; cd embed-jnosql &amp;&amp; mvn -DskipTests install</code>
+    </div>
+
+    <div class="install-box">
+      <div class="install-tabs" role="tablist">
+        <button class="tab-btn active" role="tab" aria-selected="true" onclick="switchInstallTab(event,'tab-maven')">Maven</button>
+        <button class="tab-btn" role="tab" aria-selected="false" onclick="switchInstallTab(event,'tab-gradle')">Gradle</button>
+        <button class="tab-btn" role="tab" aria-selected="false" onclick="switchInstallTab(event,'tab-spring')">Spring Boot</button>
+        <button class="tab-btn" role="tab" aria-selected="false" onclick="switchInstallTab(event,'tab-jnosql')">Eclipse JNoSQL</button>
+        <button class="tab-btn" role="tab" aria-selected="false" onclick="switchInstallTab(event,'tab-quarkus')">Quarkus</button>
+        <button class="tab-btn" role="tab" aria-selected="false" onclick="switchInstallTab(event,'tab-micronaut')">Micronaut</button>
+      </div>
+
+      <div class="tab-panel active" id="tab-maven" role="tabpanel">
+        <div class="copy-row"><button class="copy-btn" onclick="copyCode(this,'mavenCode')">Copy XML</button></div>
+        <pre class="code-body" id="mavenCode"><code>&lt;<span class="kw">dependency</span>&gt;
+    &lt;<span class="kw">groupId</span>&gt;org.embeddedjnosql.db&lt;/<span class="kw">groupId</span>&gt;
+    &lt;<span class="kw">artifactId</span>&gt;embed-jnosql-core&lt;/<span class="kw">artifactId</span>&gt;
+    &lt;<span class="kw">version</span>&gt;1.0.1&lt;/<span class="kw">version</span>&gt;
+&lt;/<span class="kw">dependency</span>&gt;</code></pre>
+      </div>
+      <div class="tab-panel" id="tab-gradle" role="tabpanel">
+        <div class="copy-row"><button class="copy-btn" onclick="copyCode(this,'gradleCode')">Copy Gradle</button></div>
+        <pre class="code-body" id="gradleCode"><code>implementation(<span class="str">'org.embeddedjnosql.db:embed-jnosql-core:1.0.1'</span>)</code></pre>
+      </div>
+      <div class="tab-panel" id="tab-spring" role="tabpanel">
+        <div class="copy-row"><button class="copy-btn" onclick="copyCode(this,'springCode')">Copy XML</button></div>
+        <pre class="code-body" id="springCode"><code>&lt;<span class="kw">dependency</span>&gt;
+    &lt;<span class="kw">groupId</span>&gt;org.embeddedjnosql.db&lt;/<span class="kw">groupId</span>&gt;
+    &lt;<span class="kw">artifactId</span>&gt;embed-jnosql-spring-boot-starter&lt;/<span class="kw">artifactId</span>&gt;
+    &lt;<span class="kw">version</span>&gt;1.0.1&lt;/<span class="kw">version</span>&gt;
+&lt;/<span class="kw">dependency</span>&gt;</code></pre>
+      </div>
+      <div class="tab-panel" id="tab-jnosql" role="tabpanel">
+        <div class="copy-row"><button class="copy-btn" onclick="copyCode(this,'jnosqlCode')">Copy</button></div>
+        <pre class="code-body" id="jnosqlCode"><code><span class="cmt">// Eclipse JNoSQL / Jakarta NoSQL DocumentTemplate</span>
+<span class="cls">EmbedJNoSQL</span> db <span class="op">=</span> <span class="cls">EmbedJNoSQL</span>.<span class="fn">inMemory</span>();
+<span class="cls">DocumentTemplate</span> template <span class="op">=</span> <span class="kw">new</span> <span class="cls">EclipseDocumentTemplate</span>(db);
+
+<span class="cmt">// Persist Jakarta NoSQL entities directly</span>
+<span class="cls">User</span> saved <span class="op">=</span> template.<span class="fn">insert</span>(<span class="kw">new</span> <span class="cls">User</span>(<span class="str">"u1"</span>, <span class="str">"Alice"</span>));
+<span class="cls">Optional</span>&lt;<span class="cls">User</span>&gt; found <span class="op">=</span> template.<span class="fn">find</span>(<span class="cls">User</span>.class, <span class="str">"u1"</span>);</code></pre>
+      </div>
+      <div class="tab-panel" id="tab-quarkus" role="tabpanel">
+        <div class="copy-row"><button class="copy-btn" onclick="copyCode(this,'quarkusCode')">Copy XML</button></div>
+        <pre class="code-body" id="quarkusCode"><code>&lt;<span class="kw">dependency</span>&gt;
+    &lt;<span class="kw">groupId</span>&gt;org.embeddedjnosql.db&lt;/<span class="kw">groupId</span>&gt;
+    &lt;<span class="kw">artifactId</span>&gt;embed-jnosql-quarkus-extension&lt;/<span class="kw">artifactId</span>&gt;
+    &lt;<span class="kw">version</span>&gt;1.0.1&lt;/<span class="kw">version</span>&gt;
+&lt;/<span class="kw">dependency</span>&gt;</code></pre>
+      </div>
+      <div class="tab-panel" id="tab-micronaut" role="tabpanel">
+        <div class="copy-row"><button class="copy-btn" onclick="copyCode(this,'micronautCode')">Copy XML</button></div>
+        <pre class="code-body" id="micronautCode"><code>&lt;<span class="kw">dependency</span>&gt;
+    &lt;<span class="kw">groupId</span>&gt;org.embeddedjnosql.db&lt;/<span class="kw">groupId</span>&gt;
+    &lt;<span class="kw">artifactId</span>&gt;embed-jnosql-micronaut-integration&lt;/<span class="kw">artifactId</span>&gt;
+    &lt;<span class="kw">version</span>&gt;1.0.1&lt;/<span class="kw">version</span>&gt;
+&lt;/<span class="kw">dependency</span>&gt;</code></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ CTA ═══════════════════════════ -->
+<div class="cta-band">
+  <h2>Write code. <span class="gold">Not infrastructure.</span></h2>
+  <p>EmbedJNoSQL embeds everything. You focus purely on your domain logic — documents, keys, and data structures available in one line of Java.</p>
+  <div class="cta-actions">
+    <a href="https://github.com/kael-tombo/embed-jnosql" class="btn-primary" target="_blank" rel="noopener">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
+      Star on GitHub
+    </a>
+    <a href="#install" class="btn-secondary">Quick start →</a>
+    <a href="https://github.com/kael-tombo/embed-jnosql/blob/main/CHANGELOG.md" class="btn-secondary" target="_blank" rel="noopener">Changelog</a>
+  </div>
+
+  <div class="honest-box">
+    <h3>🛑 Where EmbedJNoSQL stops</h3>
+    <p>
+      This is a NoSQL database: no SQL engine, no JDBC driver, no relational schema.
+      Documents are schemaless unless you register validation rules. A stored reference is an id you
+      resolve yourself — never an enforced foreign key. Vector search and Kafka CDC are experimental.
+      We say so plainly, in the README and in every release note.
+    </p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ FOOTER ═══════════════════════════ -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div class="footer-brand-col">
+        <div class="footer-logo">
+          <img src="assets/embedjnosql-logo-512-transparent.png" alt="EmbedJNoSQL" width="28" height="28" />
+          EmbedJNoSQL
+        </div>
+        <div class="footer-tagline">The embedded NoSQL database for the JVM<br>Document · Key-Value · Zero infrastructure</div>
+        <span class="footer-badge">Apache 2.0</span>
+      </div>
+      <div class="footer-links-col">
+        <div class="footer-col">
+          <h4>Product</h4>
+          <a href="#features">Features</a>
+          <a href="#frameworks">Integrations</a>
+          <a href="#install">Get started</a>
+          <a href="#why">Why embedded?</a>
+        </div>
+        <div class="footer-col">
+          <h4>Resources</h4>
+          <a href="https://github.com/kael-tombo/embed-jnosql" target="_blank" rel="noopener">GitHub</a>
+          <a href="https://github.com/kael-tombo/embed-jnosql/blob/main/README.md" target="_blank" rel="noopener">Documentation</a>
+          <a href="https://github.com/kael-tombo/embed-jnosql/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Changelog</a>
+          <a href="https://github.com/kael-tombo/embed-jnosql/blob/main/ROADMAP.md" target="_blank" rel="noopener">Roadmap</a>
+        </div>
+        <div class="footer-col">
+          <h4>Open Source</h4>
+          <a href="https://github.com/kael-tombo/embed-jnosql/blob/main/LICENSE" target="_blank" rel="noopener">License</a>
+          <a href="https://github.com/kael-tombo/embed-jnosql/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">Contributing</a>
+          <a href="https://github.com/kael-tombo/embed-jnosql/blob/main/SECURITY.md" target="_blank" rel="noopener">Security</a>
+          <a href="https://github.com/kael-tombo/embed-jnosql/releases" target="_blank" rel="noopener">Releases</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 EmbedJNoSQL Contributors · Released under the Apache License 2.0</span>
+      <span>Java 17+ · Pure JVM · No native dependencies</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  /* ── Feature tabs ── */
+  function switchFeature(id) {
+    document.querySelectorAll('.feature-tab').forEach(t => {
+      t.classList.remove('active');
+      t.setAttribute('aria-selected','false');
+      t.setAttribute('tabindex','-1');
+    });
+    document.querySelectorAll('.feature-pane').forEach(p => p.classList.remove('active'));
+    const tab = document.getElementById('tab-' + id);
+    const pane = document.getElementById('pane-' + id);
+    if (tab && pane) {
+      tab.classList.add('active');
+      tab.setAttribute('aria-selected','true');
+      tab.setAttribute('tabindex','0');
+      pane.classList.add('active');
+    }
+  }
+
+  /* ── Framework integration tabs ── */
+  function showFwTab(name, btn) {
+    document.querySelectorAll('.fw-panel').forEach(p => p.style.display = 'none');
+    document.querySelectorAll('.fw-tab').forEach(t => t.classList.remove('active'));
+    const panel = document.getElementById('fw-panel-' + name);
+    if (panel) panel.style.display = 'block';
+    if (btn) btn.classList.add('active');
+  }
+
+  /* ── Install tabs ── */
+  function switchInstallTab(e, tabId) {
+    document.querySelectorAll('.install-tabs .tab-btn').forEach(b => {
+      b.classList.remove('active'); b.setAttribute('aria-selected','false');
+    });
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    e.currentTarget.classList.add('active'); e.currentTarget.setAttribute('aria-selected','true');
+    document.getElementById(tabId).classList.add('active');
+  }
+
+  /* ── Copy to clipboard ── */
+  function copyCode(btn, codeId) {
+    const el = document.getElementById(codeId);
+    if (!el) return;
+    navigator.clipboard.writeText(el.innerText).then(() => {
+      const orig = btn.innerHTML;
+      btn.classList.add('copied'); btn.innerHTML = '✓ Copied';
+      setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = orig; }, 2200);
+    }).catch(err => console.error('Copy failed', err));
+  }
+
+  /* ── Animated stat counters ── */
+  function animateCounters() {
+    document.querySelectorAll('.stat-value').forEach(el => {
+      const text = el.textContent.trim();
+      const numMatch = text.match(/^([\d,]+)/);
+      if (!numMatch) return;
+      const target = parseInt(numMatch[1].replace(/,/g,''));
+      const prefix = text.slice(0, text.indexOf(numMatch[1]));
+      const suffix = text.slice(text.indexOf(numMatch[1]) + numMatch[1].length);
+      let start = 0; const duration = 1400; const startTime = performance.now();
+      function step(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const value = Math.round(eased * target);
+        el.textContent = prefix + value.toLocaleString() + suffix;
+        if (progress < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    });
+  }
+  const statsSection = document.querySelector('.hero-stats');
+  if (statsSection && window.IntersectionObserver) {
+    const obs = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) { animateCounters(); obs.disconnect(); }
+    }, { threshold: .5 });
+    obs.observe(statsSection);
+  }
+
+  /* ── Interactive Playground Presets & Execution ── */
+  const PLAYGROUND_PRESETS = {
+    doc: {
+      file: 'DocumentFind.java',
+      code: `// Dotted-path nested query with predicates & sorting
+List<Document> results = db.documentCollection("orders")
+    .find(Query.eq("customer.tier", "GOLD")
+         .and(Query.gte("total", 100.0))
+         .sortBy("createdAt", Query.SortOrder.DESC)
+         .limit(10));`,
+      status: 'HTTP 200 OK',
+      count: '2 documents',
+      result: `[
+  {
+    "id": "ord-88102",
+    "customer": { "name": "Elena Rostova", "tier": "GOLD" },
+    "total": 249.50,
+    "createdAt": "2026-10-12T09:42:18Z",
+    "items": ["Mechanical Keyboard", "USB-C Dock"]
+  },
+  {
+    "id": "ord-88094",
+    "customer": { "name": "Marcus Vance", "tier": "GOLD" },
+    "total": 129.00,
+    "createdAt": "2026-10-12T08:15:02Z",
+    "items": ["Ergonomic Mouse"]
+  }
+]`
+    },
+    kv: {
+      file: 'KeyValueTTL.java',
+      code: `// Key-Value bucket with explicit 30-minute expiration
+var bucket = db.keyValueBucket("auth_sessions");
+bucket.put("session:usr_9912", "tok_live_839a");
+bucket.expire("session:usr_9912", Duration.ofMinutes(30));
+
+String token = bucket.get("session:usr_9912");`,
+      status: 'HTTP 200 OK',
+      count: '1 string key',
+      result: `{\n  "key": "session:usr_9912",\n  "value": "tok_live_839a",\n  "ttlSeconds": 1800,\n  "expiresAt": "2026-10-12T11:34:28Z",\n  "bucket": "auth_sessions"\n}`
+    },
+    queue: {
+      file: 'RedisQueue.java',
+      code: `// Redis-style list operations (FIFO task queue)
+var queue = db.listBucket("async_tasks");
+queue.rpush("notifications", "send_welcome_email", "sms_verify_code");
+
+String task = queue.lpop("notifications");`,
+      status: 'HTTP 200 OK',
+      count: '1 item popped',
+      result: `{\n  "popped": "send_welcome_email",\n  "remainingItems": ["sms_verify_code"],\n  "queueSize": 1,\n  "operation": "LPOP"\n}`
+    },
+    cf: {
+      file: 'WideColumnMetrics.java',
+      code: `// Wide-column family: row -> column matrix with cell TTL
+var metrics = db.columnFamily("cluster_telemetry");
+metrics.put("node-east-01", "cpu_pct", "23.4");
+metrics.put("node-east-01", "mem_mb", "3820");
+
+Map<String, String> row = metrics.getRow("node-east-01");`,
+      status: 'HTTP 200 OK',
+      count: '1 row matrix',
+      result: `{\n  "rowKey": "node-east-01",\n  "columns": {\n    "cpu_pct": "23.4",\n    "mem_mb": "3820",\n    "disk_io": "12.8"\n  },\n  "updatedAt": 1791793200\n}`
+    },
+    vec: {
+      file: 'VectorSearch.java',
+      code: `// In-process HNSW cosine similarity search (Experimental)
+var vIndex = db.vectorIndex("embeddings_128d");
+vIndex.add("doc_semantic_42", new float[]{ 0.12f, 0.94f, -0.45f /* ... */ });
+
+List<SearchResult> nearest = vIndex.search(queryVector, 2);`,
+      status: 'HTTP 200 OK',
+      count: '2 nearest matches',
+      result: `[\n  {\n    "id": "doc_semantic_42",\n    "cosineSimilarity": 0.9841,\n    "distance": 0.0159\n  },\n  {\n    "id": "doc_semantic_19",\n    "cosineSimilarity": 0.9125,\n    "distance": 0.0875\n  }\n]`
+    }
+  };
+
+  let currentPreset = 'doc';
+
+  function loadPreset(key) {
+    currentPreset = key;
+    document.querySelectorAll('.pg-preset-btn').forEach(btn => btn.classList.remove('active'));
+    const btn = document.getElementById('btn-pre-' + key);
+    if (btn) btn.classList.add('active');
+
+    const data = PLAYGROUND_PRESETS[key];
+    if (!data) return;
+
+    document.getElementById('pgFilename').textContent = data.file;
+    document.getElementById('pgEditor').textContent = data.code;
+    document.getElementById('pgOutput').textContent = data.result;
+    document.getElementById('pgStatus').textContent = data.status;
+    document.getElementById('pgReturned').textContent = data.count;
+    document.getElementById('pgLatency').textContent = '⏱ 0.07 ms';
+  }
+
+  function executePlayground() {
+    const btn = document.getElementById('btnRunQuery');
+    const origHtml = btn.innerHTML;
+    btn.innerHTML = '⚡ Running…';
+    btn.disabled = true;
+
+    const data = PLAYGROUND_PRESETS[currentPreset];
+    setTimeout(() => {
+      const lat = (0.05 + Math.random() * 0.08).toFixed(2);
+      document.getElementById('pgLatency').textContent = '⏱ ' + lat + ' ms';
+      document.getElementById('pgOutput').textContent = data ? data.result : '{}';
+      document.getElementById('pgStatus').textContent = 'HTTP 200 OK';
+      btn.innerHTML = '✓ Done!';
+      setTimeout(() => { btn.innerHTML = origHtml; btn.disabled = false; }, 900);
+    }, 180);
+  }
+
+  /* ── Console Showcase Tab Switching ── */
+  function switchConsoleTab(id) {
+    document.querySelectorAll('.c-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.c-pane').forEach(p => p.classList.remove('active'));
+
+    const tab = document.getElementById('ctab-' + id);
+    const pane = document.getElementById('cpane-' + id);
+    if (tab && pane) {
+      tab.classList.add('active');
+      pane.classList.add('active');
+    }
+  }
+
+  // Initialize playground with doc preset on load
+  loadPreset('doc');
+</script>
+</body>
+</html>
