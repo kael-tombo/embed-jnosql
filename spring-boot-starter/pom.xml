@@ -10,17 +10,69 @@
     <packaging>jar</packaging>
 
     <name>EmbedJNoSQL Spring Boot Starter</name>
-    <description>Spring Boot auto-configuration for the embedded EmbedJNoSQL NoSQL database</description>
+    <description>Spring Boot 3.4+ auto-configuration for the embedded EmbedJNoSQL NoSQL database. Zero-server, zero-config document and key-value persistence with Spring Data repository support.</description>
+    <url>https://github.com/armand-ratombotiana/EmbedJNoSQL</url>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>armand-ratombotiana</id>
+            <name>Armand Ratombotiana</name>
+            <email>armand@embedjnosql.io</email>
+            <roles>
+                <role>Lead Developer</role>
+                <role>Architect</role>
+            </roles>
+        </developer>
+    </developers>
+
+    <organization>
+        <name>EmbedJNoSQL</name>
+        <url>https://github.com/armand-ratombotiana/EmbedJNoSQL</url>
+    </organization>
+
+    <scm>
+        <connection>scm:git:git://github.com/armand-ratombotiana/EmbedJNoSQL.git</connection>
+        <developerConnection>scm:git:ssh://github.com/armand-ratombotiana/EmbedJNoSQL.git</developerConnection>
+        <url>https://github.com/armand-ratombotiana/EmbedJNoSQL</url>
+        <tag>HEAD</tag>
+    </scm>
+
+    <issueManagement>
+        <system>GitHub Issues</system>
+        <url>https://github.com/armand-ratombotiana/EmbedJNoSQL/issues</url>
+    </issueManagement>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>central</id>
+            <url>https://central.sonatype.com/</url>
+        </snapshotRepository>
+        <repository>
+            <id>central</id>
+            <url>https://central.sonatype.com/</url>
+        </repository>
+    </distributionManagement>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-dependencies</artifactId>
-        <version>3.2.5</version>
+        <version>3.4.3</version>
         <relativePath/>
     </parent>
 
     <properties>
         <maven.compiler.release>17</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- Reproducible builds -->
+        <project.build.outputTimestamp>2026-10-12T00:00:00Z</project.build.outputTimestamp>
     </properties>
 
     <dependencies>
@@ -40,23 +92,20 @@
         <!-- Optional Spring Data repository support (Spring Data JPA-style developer experience
              over the document engine). Optional + provided-shape: apps that declare
              @EnableEmbedJpaRepositories bring their own spring-data-commons/jpa versions
-             (e.g. via spring-boot-starter-data-jpa); everything else is unaffected. Pinned to
-             3.3.0 because Boot 3.2.5's BOM manages 3.2.5, which predates the v3.3 API used. -->
+             (e.g. via spring-boot-starter-data-jpa); everything else is unaffected. -->
         <dependency>
             <groupId>org.springframework.data</groupId>
             <artifactId>spring-data-commons</artifactId>
-            <version>3.3.0</version>
             <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.springframework.data</groupId>
             <artifactId>spring-data-jpa</artifactId>
-            <version>3.3.0</version>
             <optional>true</optional>
             <exclusions>
                 <!-- JpaRepository is consumed as an interface only; the ORM runtime layer
-                     (spring-orm/Hibernate) is never referenced, and 6.1.6 is unavailable
-                     offline anyway. Apps that use real JPA bring their own spring-orm. -->
+                     (spring-orm/Hibernate) is never referenced, and apps that use real JPA
+                     bring their own spring-orm. -->
                 <exclusion>
                     <groupId>org.springframework</groupId>
                     <artifactId>spring-orm</artifactId>
@@ -109,6 +158,86 @@
                     <release>${maven.compiler.release}</release>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
+            </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <!--
+                maven-central: produces Central-compliant artifacts.
+                Adds source/javadoc jars and GPG signing. Run with:
+                  mvn deploy -P maven-central -DskipTests \
+                    -Dgpg.passphrase=<your-passphrase>
+                Requires ~/.m2/settings.xml <server id="central"> with
+                MAVEN_CENTRAL_TOKEN_USERNAME / MAVEN_CENTRAL_TOKEN_PASSWORD
+                (Sonatype Central Portal user token).
+            -->
+            <id>maven-central</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <version>3.3.1</version>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <goals>
+                                    <goal>jar-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>3.6.3</version>
+                        <configuration>
+                            <doclint>none</doclint>
+                            <failOnError>false</failOnError>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>3.2.4</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>0.7.0</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <publishingServerId>central</publishingServerId>
+                            <autoPublish>true</autoPublish>
+                            <waitUntil>published</waitUntil>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
 </project>
