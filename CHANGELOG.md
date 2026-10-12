@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+_Nothing yet._
+
+---
+
+## [1.0.1] - 2026-10-12
+
 ### Removed — the product is NoSQL only
 
 EmbedJNoSQL no longer ships a relational database, a SQL engine, or a JDBC driver. The product is
@@ -81,6 +87,33 @@ surfaces). Removed in this change:
 ### Changed
 - CDC and backup data directories now live under the configured data directory
   (`<dataDir>/backups`, `<dataDir>/vectors`) so clean builds do not silently remove them.
+
+### Added
+- **36-scenario executable demo suite** (`ConsoleEngineIntegrationExtensionTest`, `UIReliabilityNetworkIntegrationTest`) covering normal use, edge cases, failure paths, persistence, and integration boundaries across all UI panels.
+- **Eclipse JNoSQL / Jakarta NoSQL integration** (`EmbedJNoSQLDocumentManager`, `EmbedJNoSQLDocumentManagerFactory`, `EmbedJNoSQLTemplate`, `EmbedRepository`) with full `jakarta.nosql.*`, `jakarta.persistence.*`, and `org.hibernate.annotations.*` annotation mapping.
+- **JNoSQL-style repository support**: `EmbedRepository<T,ID>` extends Jakarta Data `CrudRepository`; `findByQuery(Query)`, `findById`, `findAll`, `save`, `delete` fully wired.
+- **Spring Boot auto-configuration**: `EmbedJNoSQLAutoConfiguration`, `EmbedJNoSQLTemplate` bean, and entity-discovery via classpath scanning for `@Entity` / `@jakarta.nosql.Entity`.
+- **Transaction metadata pool** (`GET /api/transactions`): each active transaction now exposes `handleId`, `status`, `isolationLevel`, `startedAt`, and `operationCount` — the console Transaction panel renders all five fields.
+- **Query builder hardening**: compound `$gte`/`$lte` range filters on the same field, `$ne`, and `$in` operators with correct set membership matching.
+- **Audit trail filters**: `?operation=`, `?resource=`, `?limit=` query parameters on `GET /api/audit/logs`.
+- **CDC reliability**: `GET /api/cdc` returns structured `enabled`/`connectors`/`subscriberCount` JSON; unknown connector type returns 400 with usage hint; `DELETE` on non-existent connector returns 404.
+- **Backup hardening**: `POST /api/backup/restore` with missing `backupFile` returns 400; non-existent path returns 404 (previously silent drop or 200).
+- **Vector UI**: interactive vector insertion form, bucket discovery, empty-vector 400 rejection, and k-NN result highlighting in the console.
+- **Entity badge annotations** in the document browser: documents from mapped entity collections display an `@EntityClassName` badge.
+- **Storage status card** (`/api/storage/status`): `backupCount`, WAL file count, and `disk.totalBytes` drive the Overview panel's storage card with a warn badge when `backupCount = 0`.
+- **ApiError handling pattern** in `console.js`: every fetch failure surfaces impact-level context (data-loss vs. read-only) rather than a generic toast.
+
+### Fixed
+- All console API endpoints return proper HTTP status codes (400, 404, 405, 422, 503) — previously many returned 200 for error conditions or dropped the connection silently.
+- `contains` / `containsIgnoreCase` query predicates fixed to avoid false positives on unrelated field values.
+- Compound secondary-index queries do true point lookups instead of full-index scans.
+- Concurrent panel load: 8 simultaneous panel-load requests to different endpoints all return 200 (previously some handlers had unprotected shared state).
+
+### Changed
+- `CONTRIBUTING.md` updated to reflect current test counts (865+) and test-class names.
+- `SECURITY.md` notes that the console is disabled unless explicitly enabled (no surprise network listener).
+
+---
 
 ## [1.0.0] - 2026-09-09
 

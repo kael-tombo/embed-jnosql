@@ -36,6 +36,21 @@ SQL dialect, or dual-engine track, and none is planned.
 
 ---
 
+## 1.0.1 — Console Reliability & JNoSQL Integration Sprint (this release)
+
+- [x] Eclipse JNoSQL / Jakarta NoSQL full integration (`EmbedJNoSQLDocumentManager`, `EmbedJNoSQLTemplate`, `EmbedRepository`).
+- [x] Spring Boot auto-configuration and entity-discovery scanning.
+- [x] 36 executable UI-to-engine integration scenarios covering every admin console panel.
+- [x] Structured HTTP error codes (400/404/405/422/503) on all console API endpoints.
+- [x] Transaction pool API: `handleId`, `status`, `isolationLevel`, `startedAt`, `operationCount`.
+- [x] Query builder: compound `$gte/$lte`, `$ne`, `$in` operators.
+- [x] Audit trail server-side filters (`?operation=`, `?resource=`, `?limit=`).
+- [x] CDC: structured GET response, 400 on unknown connector type, 404 on delete of non-existent connector.
+- [x] Backup: 400 when `backupFile` missing in restore body; 404 when file not found.
+- [x] Console UI: entity badge annotations in document browser; storage-status card; `ApiError` impact context.
+
+---
+
 ## 1.1.0 — Storage & Indexing Hardening
 
 - [ ] Paged B-Tree engine: on-disk page splitting instead of whole-index rewrites on flush.

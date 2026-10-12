@@ -482,6 +482,11 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
   background: var(--bg-3);
   color: var(--text-1);
 }
+.badge.sm {
+  font-size: 10px;
+  padding: 1px 6px;
+  line-height: 1.2;
+}
 .badge.ok { background: var(--ok-dim); color: var(--ok); }
 .badge.warn { background: var(--warn-dim); color: var(--warn); }
 .badge.err { background: var(--err-dim); color: var(--err); }

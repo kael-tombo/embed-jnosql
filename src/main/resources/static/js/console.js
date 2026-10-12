@@ -12,6 +12,8 @@ const esc = (v) => String(v ?? '').replace(/[&<>"']/g,
   (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 let authRedirecting = false;
+let pollIntervalId = null;
+let overviewIntervalId = null;
 
 /* ============================================================
    Explicit action states
@@ -105,11 +107,21 @@ async function api(path, opts = {}) {
     ? setTimeout(() => { timedOut = true; ctrl.abort(); }, timeoutMs)
     : null;
 
+  const reqHeaders = { 'Content-Type': 'application/json', ...(rest.headers || {}) };
+  try {
+    const csrf = sessionStorage.getItem('csrfToken');
+    if (csrf && !reqHeaders['X-CSRF-Token']) reqHeaders['X-CSRF-Token'] = csrf;
+    const apiKey = localStorage.getItem('apiKey');
+    if (apiKey && !reqHeaders['X-API-Key']) reqHeaders['X-API-Key'] = apiKey;
+    const sessionToken = sessionStorage.getItem('session');
+    if (sessionToken && !reqHeaders['Authorization']) reqHeaders['Authorization'] = 'Bearer ' + sessionToken;
+  } catch { /* storage restricted */ }
+
   let res;
   try {
     res = await fetch('/api' + path, {
-      headers: { 'Content-Type': 'application/json' },
       ...rest,
+      headers: reqHeaders,
       signal: ctrl.signal,
       body: rest.body != null ? JSON.stringify(rest.body) : undefined,
     });
@@ -128,6 +140,11 @@ async function api(path, opts = {}) {
   } finally {
     if (timer) clearTimeout(timer);
     if (signal) signal.removeEventListener('abort', relayAbort);
+  }
+
+  const newCsrf = res.headers.get('X-CSRF-Token');
+  if (newCsrf) {
+    try { sessionStorage.setItem('csrfToken', newCsrf); } catch { /* ignore */ }
   }
 
   const correlationId = res.headers.get('X-Correlation-Id');
@@ -149,6 +166,8 @@ async function api(path, opts = {}) {
     // once, instead of spraying "Unauthorized" toasts on every poll.
     if (res.status === 401 && !path.startsWith('/auth') && !authRedirecting) {
       authRedirecting = true;
+      if (pollIntervalId) { clearInterval(pollIntervalId); pollIntervalId = null; }
+      if (overviewIntervalId) { clearInterval(overviewIntervalId); overviewIntervalId = null; }
       toast('Session expired — redirecting to sign-in…', 'err', 5000);
       setTimeout(() => {
         const next = encodeURIComponent(location.pathname + location.hash);
@@ -447,9 +466,18 @@ function setKpi(label, value, cls = '') {
 }
 
 async function refreshOverview() {
-  const [health, metrics, cols] = await Promise.all([
-    api('/health'), api('/metrics'), api('/collections').catch(() => ({ collections: [] })),
-  ]);
+  let health, metrics, cols;
+  try {
+    [health, metrics, cols] = await Promise.all([
+      api('/health'),
+      api('/metrics').catch(() => ({})),
+      api('/collections').catch(() => ({ collections: [] })),
+    ]);
+  } catch (e) {
+    $('#kpiRow').innerHTML = errorBanner(e, { title: 'Overview unavailable' });
+    $('#engineInfo').innerHTML = `<div class="empty">${esc(e.message)}</div>`;
+    throw e;
+  }
 
   const totalOps = metrics.totalOperations ?? 0;
   const ops = Math.round(metrics.opsPerSecond ?? 0);
@@ -632,22 +660,26 @@ function setDocView(mode) {
 async function insertDoc() {
   const col = $('#insCol').value.trim();
   const status = $('#insStatus');
+  const btn = $('#insSubmit');
   if (!col) { toast('Collection name required', 'err'); return; }
   let body;
   try { body = JSON.parse($('#insJson').value); }
   catch { status.textContent = 'invalid JSON'; status.className = 'badge err'; return; }
+  if (btn) btn.disabled = true;
   try {
     const saved = await api(`/collections/${encodeURIComponent(col)}`,
       { method: 'POST', body });
     status.textContent = `saved ${saved.id ?? ''}`; status.className = 'badge ok';
     toast(`Document saved to ${col}`, 'ok');
-    if ($('#colSel').value.trim() === col) loadCollection();
+    if ($('#colSel').value.trim() === col) loadCollection().catch(() => {});
     // A first insert materializes a brand-new collection: surface its chip now,
     // not after the next panel re-entry.
     loadColPicker();
   } catch (e) {
     status.textContent = e.message; status.className = 'badge err';
     toast(e.message, 'err');
+  } finally {
+    if (btn) btn.disabled = false;
   }
 }
 
@@ -656,7 +688,7 @@ async function cleanupExpired() {
   if (!col) return toast('Load a collection first', 'err');
   const r = await api(`/collections/${encodeURIComponent(col)}/cleanup`, { method: 'POST' });
   toast(`Removed ${r.deleted} expired docs`, 'ok');
-  loadCollection();
+  loadCollection().catch(() => {});
   loadColPicker();
 }
 
@@ -1014,31 +1046,98 @@ function bindKvTab() {
   const show = (v) => renderJson(out(), v);
   $$('#kvTabs .tab').forEach((t) => t.setAttribute('aria-selected', String(t.dataset.kvtab === kvTab)));
 
+  const runKvAction = async (fn, shouldFlash = true) => {
+    try {
+      const res = await fn();
+      show(res);
+      if (shouldFlash) flashOk();
+    } catch (e) {
+      flashErr();
+      toast(e.message, 'err');
+    }
+  };
+
   if (kvTab === 'kv') {
     $('#kvBrowse').onclick = () => kvBrowse().catch((e) => toast(e.message, 'err'));
     $('#kvPrefixGo').onclick = () => kvBrowse().catch((e) => toast(e.message, 'err'));
     $('#kvPrefix').addEventListener('keydown', (e) => e.key === 'Enter' && kvBrowse().catch((e) => toast(e.message, 'err')));
     $('#kvBucket').addEventListener('keydown', (e) => e.key === 'Enter' && kvBrowse().catch((e) => toast(e.message, 'err')));
     $('#kvNewKey').onclick = () => kvNewKeyForm();
-    loadKvBucketPicker();
+    loadKvBucketPicker().catch(() => {});
   } else if (kvTab === 'list') {
     const vals = () => v('#lsVals').split(',').map((s) => s.trim()).filter(Boolean);
-    $('#lsPush').onclick = async () => { show(await api(`/kv/lists/${v('#lsBucket')}/${v('#lsKey')}/rpush`, { method: 'POST', body: { values: vals() } })); flash(); };
-    $('#lsPop').onclick = async () => { show(await api(`/kv/lists/${v('#lsBucket')}/${v('#lsKey')}/rpop`, { method: 'POST', body: {} })); flash(); };
-    $('#lsRange').onclick = async () => show(await api(`/kv/lists/${v('#lsBucket')}/${v('#lsKey')}/lrange`));
+    const checkList = () => {
+      const b = v('#lsBucket'), k = v('#lsKey');
+      if (!b || !k) { toast('Bucket and Key required', 'err'); return null; }
+      return { b: encodeURIComponent(b), k: encodeURIComponent(k) };
+    };
+    $('#lsPush').onclick = () => {
+      const p = checkList();
+      if (!p) return;
+      runKvAction(() => api(`/kv/lists/${p.b}/${p.k}/rpush`, { method: 'POST', body: { values: vals() } }));
+    };
+    $('#lsPop').onclick = () => {
+      const p = checkList();
+      if (!p) return;
+      runKvAction(() => api(`/kv/lists/${p.b}/${p.k}/rpop`, { method: 'POST', body: {} }));
+    };
+    $('#lsRange').onclick = () => {
+      const p = checkList();
+      if (!p) return;
+      runKvAction(() => api(`/kv/lists/${p.b}/${p.k}/lrange`), false);
+    };
   } else if (kvTab === 'set') {
     const vals = () => v('#stVals').split(',').map((s) => s.trim()).filter(Boolean);
-    $('#stAdd').onclick = async () => { show(await api(`/kv/sets/${v('#stBucket')}/${v('#stKey')}/sadd`, { method: 'POST', body: { members: vals() } })); flash(); };
-    $('#stRem').onclick = async () => { show(await api(`/kv/sets/${v('#stBucket')}/${v('#stKey')}/srem`, { method: 'POST', body: { members: vals() } })); flash(); };
-    $('#stMembers').onclick = async () => show(await api(`/kv/sets/${v('#stBucket')}/${v('#stKey')}/smembers`));
+    const checkSet = () => {
+      const b = v('#stBucket'), k = v('#stKey');
+      if (!b || !k) { toast('Bucket and Key required', 'err'); return null; }
+      return { b: encodeURIComponent(b), k: encodeURIComponent(k) };
+    };
+    $('#stAdd').onclick = () => {
+      const p = checkSet();
+      if (!p) return;
+      runKvAction(() => api(`/kv/sets/${p.b}/${p.k}/sadd`, { method: 'POST', body: { members: vals() } }));
+    };
+    $('#stRem').onclick = () => {
+      const p = checkSet();
+      if (!p) return;
+      runKvAction(() => api(`/kv/sets/${p.b}/${p.k}/srem`, { method: 'POST', body: { members: vals() } }));
+    };
+    $('#stMembers').onclick = () => {
+      const p = checkSet();
+      if (!p) return;
+      runKvAction(() => api(`/kv/sets/${p.b}/${p.k}/smembers`), false);
+    };
   } else if (kvTab === 'hash') {
-    $('#hsSet').onclick = async () => { show(await api(`/kv/hashes/${v('#hsBucket')}/${v('#hsKey')}/hset`, { method: 'POST', body: { field: v('#hsField'), value: v('#hsVal') } })); flash(); };
-    $('#hsGet').onclick = async () => show(await api(`/kv/hashes/${v('#hsBucket')}/${v('#hsKey')}/hget?field=${encodeURIComponent(v('#hsField'))}`));
-    $('#hsAll').onclick = async () => show(await api(`/kv/hashes/${v('#hsBucket')}/${v('#hsKey')}/hgetall`));
+    const checkHash = () => {
+      const b = v('#hsBucket'), k = v('#hsKey');
+      if (!b || !k) { toast('Bucket and Key required', 'err'); return null; }
+      return { b: encodeURIComponent(b), k: encodeURIComponent(k) };
+    };
+    $('#hsSet').onclick = () => {
+      const p = checkHash();
+      if (!p) return;
+      const f = v('#hsField'), val = v('#hsVal');
+      if (!f) return toast('Field required', 'err');
+      runKvAction(() => api(`/kv/hashes/${p.b}/${p.k}/hset`, { method: 'POST', body: { field: f, value: val } }));
+    };
+    $('#hsGet').onclick = () => {
+      const p = checkHash();
+      if (!p) return;
+      const f = v('#hsField');
+      if (!f) return toast('Field required', 'err');
+      runKvAction(() => api(`/kv/hashes/${p.b}/${p.k}/hget?field=${encodeURIComponent(f)}`), false);
+    };
+    $('#hsAll').onclick = () => {
+      const p = checkHash();
+      if (!p) return;
+      runKvAction(() => api(`/kv/hashes/${p.b}/${p.k}/hgetall`), false);
+    };
   }
 
-  function v(id) { return $('#' + String(id).replace(/^#/, '')).value.trim(); }
-  function flash() { const s = $('#kvStatus'); s.textContent = 'ok'; s.className = 'badge ok'; setTimeout(() => { s.textContent = ''; }, 1500); }
+  function v(id) { return $('#' + String(id).replace(/^#/, ''))?.value?.trim() ?? ''; }
+  function flashOk() { const s = $('#kvStatus'); if (!s) return; s.textContent = 'ok'; s.className = 'badge ok'; setTimeout(() => { if (s.textContent === 'ok') s.textContent = ''; }, 1500); }
+  function flashErr() { const s = $('#kvStatus'); if (!s) return; s.textContent = 'error'; s.className = 'badge err'; setTimeout(() => { if (s.textContent === 'error') s.textContent = ''; }, 2500); }
 }
 
 /* ============================================================
@@ -1060,23 +1159,50 @@ async function cfStats() {
   renderJson($('#cfOut .code'), r);
 }
 async function cfPut() {
+  const fam = $('#cfFam').value.trim();
+  const row = $('#cfPutRow').value.trim();
+  if (!fam || !row) return toast('Family and Row required', 'err');
   let cols;
   try { cols = JSON.parse($('#cfPutCols').value || '{}'); }
   catch { return toast('Columns must be valid JSON', 'err'); }
-  const r = await api(`/columns/${encodeURIComponent($('#cfFam').value.trim())}/${encodeURIComponent($('#cfPutRow').value.trim())}`,
-    { method: 'PUT', body: cols });
-  toast(`Row written to ${$('#cfFam').value}`, 'ok');
-  $('#cfRow').value = $('#cfPutRow').value.trim();
-  cfFetch();
+  const btn = $('#cfPutGo');
+  if (btn) btn.disabled = true;
+  try {
+    await api(`/columns/${encodeURIComponent(fam)}/${encodeURIComponent(row)}`,
+      { method: 'PUT', body: cols });
+    toast(`Row written to ${fam}`, 'ok');
+    $('#cfRow').value = row;
+    cfFetch().catch((e) => toast(e.message, 'err'));
+  } catch (e) {
+    toast(e.message, 'err');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 /* ============================================================
    Vectors
    ============================================================ */
 async function vecInfo() {
-  // GET /api/vectors/{index}/{id} returns index-level stats for any id value
-  const r = await api(`/vectors/${encodeURIComponent($('#vecIdx').value.trim())}/_`);
-  $('#vecStatus').textContent = `${r.size ?? 0} vecs · ${r.dimensions ?? '?'}d (experimental)`;
+  const idx = $('#vecIdx')?.value?.trim();
+  const status = $('#vecStatus');
+  if (!idx) {
+    if (status) { status.textContent = 'index required'; status.className = 'badge err'; }
+    return;
+  }
+  try {
+    // GET /api/vectors/{index}/{id} returns index-level stats for any id value
+    const r = await api(`/vectors/${encodeURIComponent(idx)}/_`);
+    if (status) {
+      status.textContent = `${r.size ?? 0} vecs · ${r.dimensions ?? '?'}d (experimental)`;
+      status.className = 'badge ok';
+    }
+  } catch (e) {
+    if (status) {
+      status.textContent = e.status === 404 ? '0 vecs (empty)' : (e.message || 'error');
+      status.className = 'badge warn';
+    }
+  }
 }
 async function vecAdd() {
   const idx = $('#vecIdx').value.trim();
@@ -1103,7 +1229,7 @@ async function vecAdd() {
     toast(`Vector ${id} saved to ${idx}`, 'ok');
     if ($('#vecAddId')) $('#vecAddId').value = '';
     if ($('#vecAddData')) $('#vecAddData').value = '';
-    vecInfo();
+    vecInfo().catch(() => {});
   } catch (e) {
     if (status) { status.textContent = 'failed'; status.className = 'badge err'; }
     toast(e.message, 'err');
@@ -1143,13 +1269,23 @@ async function schRefresh() {
     : '<div class="empty">No schemas registered — collections accept any valid document.</div>';
 }
 async function schSave() {
+  const col = $('#schCol').value.trim();
+  if (!col) return toast('Collection name required', 'err');
   let fields;
   try { fields = JSON.parse($('#schFields').value); }
   catch { return toast('Fields must be valid JSON', 'err'); }
-  await api(`/schema/${encodeURIComponent($('#schCol').value.trim())}`,
-    { method: 'POST', body: { fields, strict: $('#schStrict').checked } });
-  toast(`Schema registered for ${$('#schCol').value}`, 'ok');
-  schRefresh();
+  const btn = $('#schSave');
+  if (btn) btn.disabled = true;
+  try {
+    await api(`/schema/${encodeURIComponent(col)}`,
+      { method: 'POST', body: { fields, strict: $('#schStrict').checked } });
+    toast(`Schema registered for ${col}`, 'ok');
+    schRefresh().catch((e) => toast(e.message, 'err'));
+  } catch (e) {
+    toast(e.message, 'err');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 /* ============================================================
@@ -1178,16 +1314,24 @@ async function txRefresh() {
          <button class="btn sm danger" data-tx="${esc(String(id))}" data-act="rollback">Rollback</button></td>`]));
   }
   $$('#txTable [data-tx]').forEach((b) => b.onclick = async () => {
-    await api('/transactions', { method: 'POST', body: { action: b.dataset.act, transactionId: Number(b.dataset.tx) } });
-    const actLabel = b.dataset.act === 'rollback' ? 'rolled back' : 'committed';
-    toast(`Transaction ${actLabel}`, 'ok');
-    txRefresh();
+    try {
+      await api('/transactions', { method: 'POST', body: { action: b.dataset.act, transactionId: Number(b.dataset.tx) } });
+      const actLabel = b.dataset.act === 'rollback' ? 'rolled back' : 'committed';
+      toast(`Transaction ${actLabel}`, 'ok');
+      await txRefresh();
+    } catch (e) {
+      toast(`Failed to ${b.dataset.act} tx: ${e.message}`, 'err');
+    }
   });
 }
 async function txBegin() {
-  const r = await api('/transactions', { method: 'POST', body: { action: 'begin' } });
-  toast(`Started tx #${r.transactionId}`, 'ok');
-  txRefresh();
+  try {
+    const r = await api('/transactions', { method: 'POST', body: { action: 'begin' } });
+    toast(`Started tx #${r.transactionId}`, 'ok');
+    await txRefresh();
+  } catch (e) {
+    toast(`Failed to start tx: ${e.message}`, 'err');
+  }
 }
 
 /* ============================================================
@@ -1207,7 +1351,7 @@ async function idxCreate() {
   if (!col || !field) return toast('Collection and field required', 'err');
   await api(`/indexes/${encodeURIComponent(col)}`, { method: 'POST', body: { field } });
   $('#idxStatus').textContent = `created ${col}.${field}`;
-  idxList();
+  idxList().catch((e) => toast(e.message, 'err'));
 }
 
 /* ============================================================
@@ -1240,7 +1384,7 @@ async function bkCreate() {
   } else {
     toast(`Backup created · ${docs} documents in ${cols.length} collection${cols.length === 1 ? '' : 's'}`, 'ok');
   }
-  bkRefresh();
+  bkRefresh().catch((e) => toast(e.message, 'err'));
 }
 async function bkRestore() {
   const file = $('#bkFile').value.trim();
@@ -1265,7 +1409,7 @@ async function bkRestore() {
     $('#bkStatus').textContent = `restored from ${r.file ?? 'file'}`;
     toast('Restore complete', 'ok');
     pollStatus();
-    bkRefresh();
+    bkRefresh().catch((e) => toast(e.message, 'err'));
   } catch (e) {
     $('#bkStatus').className = 'badge err';
     $('#bkStatus').textContent = 'restore failed';
@@ -1297,22 +1441,43 @@ async function cdcRefresh() {
         `<button class="btn sm danger" data-cdc="${c[0]}">Remove</button>`]))
     : '<div class="empty">No connectors configured.</div>';
   $$('#cdcConnectors [data-cdc]').forEach((b) => b.onclick = async () => {
-    await api(`/cdc/connectors/${encodeURIComponent(b.dataset.cdc)}`, { method: 'DELETE' });
-    cdcRefresh();
+    try {
+      await api(`/cdc/connectors/${encodeURIComponent(b.dataset.cdc)}`, { method: 'DELETE' });
+      toast(`Connector ${b.dataset.cdc} removed`, 'ok');
+      await cdcRefresh();
+    } catch (e) {
+      toast(e.message, 'err');
+    }
   });
 }
 async function cdcAdd() {
   const name = $('#cdcName').value.trim(), type = $('#cdcType').value, param = $('#cdcParam').value.trim();
   if (!name) return toast('Connector name required', 'err');
   const body = type === 'file' ? { type: 'file', outputDir: param } : { type: 'kafka', bootstrapServers: param, topic: name };
-  await api(`/cdc/connectors/${encodeURIComponent(name)}`, { method: 'POST', body });
-  toast(`Connector ${name} added`, 'ok');
-  cdcRefresh();
+  const btn = $('#cdcAdd');
+  if (btn) btn.disabled = true;
+  try {
+    await api(`/cdc/connectors/${encodeURIComponent(name)}`, { method: 'POST', body });
+    toast(`Connector ${name} added`, 'ok');
+    cdcRefresh().catch((e) => toast(e.message, 'err'));
+  } catch (e) {
+    toast(e.message, 'err');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 async function cdcToggle() {
-  const r = await api('/cdc');
-  await api(`/cdc/${r.enabled ? 'disable' : 'enable'}`, { method: 'POST' }).catch(() => {});
-  cdcRefresh();
+  const btn = $('#cdcToggle');
+  if (btn) btn.disabled = true;
+  try {
+    const r = await api('/cdc');
+    await api(`/cdc/${r.enabled ? 'disable' : 'enable'}`, { method: 'POST' });
+    cdcRefresh().catch((e) => toast(e.message, 'err'));
+  } catch (e) {
+    toast(e.message, 'err');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 async function cdcEvents() {
   const r = await api('/cdc/events').catch(() => ({ events: [] }));
@@ -1334,8 +1499,12 @@ async function audRefresh() {
     ]));
 }
 async function srvRefresh() {
-  renderJson($('#srvHealth'), await api('/health'));
-  renderJson($('#srvMetrics'), await api('/metrics'));
+  const [h, m] = await Promise.all([
+    api('/health').catch((e) => ({ error: e.message })),
+    api('/metrics').catch((e) => ({ error: e.message })),
+  ]);
+  renderJson($('#srvHealth'), h);
+  renderJson($('#srvMetrics'), m);
 }
 
 /* ============================================================
@@ -1374,6 +1543,7 @@ function sbItem(id, label, value, cls = '', title = '') {
  * two can never disagree about engine, storage, or connection state.
  */
 async function pollStatus() {
+  if (authRedirecting) return;
   let h = null;
   try {
     h = await api('/health');
@@ -1420,9 +1590,43 @@ async function pollStatus() {
 /* ============================================================
    Panel registry & global refresh
    ============================================================ */
+async function refreshKv() {
+  if (kvTab === 'kv') {
+    await loadKvBucketPicker().catch(() => {});
+    if ($('#kvBucket')?.value.trim()) await kvBrowse();
+  } else if (kvTab === 'list') {
+    const b = $('#lsBucket')?.value.trim(), k = $('#lsKey')?.value.trim();
+    if (b && k) renderJson($('#kvOut'), await api(`/kv/lists/${encodeURIComponent(b)}/${encodeURIComponent(k)}/lrange`));
+  } else if (kvTab === 'set') {
+    const b = $('#stBucket')?.value.trim(), k = $('#stKey')?.value.trim();
+    if (b && k) renderJson($('#kvOut'), await api(`/kv/sets/${encodeURIComponent(b)}/${encodeURIComponent(k)}/smembers`));
+  } else if (kvTab === 'hash') {
+    const b = $('#hsBucket')?.value.trim(), k = $('#hsKey')?.value.trim();
+    if (b && k) renderJson($('#kvOut'), await api(`/kv/hashes/${encodeURIComponent(b)}/${encodeURIComponent(k)}/hgetall`));
+  }
+}
+
+async function refreshColumns() {
+  const fam = $('#cfFam')?.value.trim(), row = $('#cfRow')?.value.trim();
+  if (fam && row) await cfFetch();
+  else if (fam) await cfStats();
+}
+
+async function refreshVectors() {
+  if ($('#vecIdx')?.value.trim()) await vecInfo();
+}
+
+async function refreshIndexes() {
+  if ($('#idxCol')?.value.trim()) await idxList();
+}
+
 const REFRESH = {
   overview: refreshOverview,
   collections: refreshCollections,
+  kv: refreshKv,
+  columns: refreshColumns,
+  vectors: refreshVectors,
+  indexes: refreshIndexes,
   tx: txRefresh,
   schema: schRefresh,
   backup: bkRefresh,
@@ -1435,6 +1639,8 @@ const REFRESH = {
 function onFirstOpen(id) {
   if (id === 'collections') loadColPicker();
   if (id === 'backup' || id === 'overview') loadStorageStatus().catch(() => {});
+  if (id === 'kv') loadKvBucketPicker().catch(() => {});
+  if (id === 'indexes' && $('#idxCol')?.value.trim()) idxList().catch(() => {});
 }
 
 /* --- storage/WAL status (Overview detail card) --- */
@@ -1496,7 +1702,7 @@ function bind() {
   $('#colCleanup').onclick = () => cleanupExpired().catch((e) => toast(e.message, 'err'));
   $('#colDrop').onclick = () => dropDocs().catch((e) => toast(e.message, 'err'));
   $('#insSubmit').onclick = () => insertDoc();
-  $('#colSel').addEventListener('keydown', (e) => e.key === 'Enter' && loadCollection());
+  $('#colSel').addEventListener('keydown', (e) => e.key === 'Enter' && loadCollection().catch((e) => toast(e.message, 'err')));
   $('#docViewJson').onclick = () => setDocView('json');
   $('#docViewTree').onclick = () => setDocView('tree');
 
@@ -1556,8 +1762,8 @@ function bind() {
 
   // backup
   $('#bkRefresh').onclick = () => bkRefresh().catch((e) => toast(e.message, 'err'));
-  $('#bkCreate').onclick = () => bkCreate();
-  $('#bkRestore').onclick = () => bkRestore();
+  $('#bkCreate').onclick = () => bkCreate().catch((e) => toast(e.message, 'err'));
+  $('#bkRestore').onclick = () => bkRestore().catch((e) => toast(e.message, 'err'));
 
   // cdc
   $('#cdcRefresh').onclick = () => cdcRefresh().catch((e) => toast(e.message, 'err'));
@@ -1608,9 +1814,23 @@ function boot() {
     const id = location.hash.slice(1);
     if (PANELS.some((p) => p.id === id) && id !== activePanel) goto(id);
   });
-  pollStatus();
-  setInterval(pollStatus, 10000);
-  setInterval(() => { if (activePanel === 'overview') refreshOverview().catch(() => {}); }, 5000);
+  window.addEventListener('online', () => {
+    toast('Network connection restored — refreshing status…', 'ok');
+    pollStatus().catch(() => {});
+    refreshPanel(activePanel);
+  });
+  window.addEventListener('offline', () => {
+    toast('Network offline — engine unreachable', 'err');
+    const chip = $('#chipHealth');
+    if (chip) {
+      chip.className = 'topbar-chip err';
+      $('#chipHealthText').textContent = 'Offline';
+    }
+    sbItem('sbConnection', 'connection', 'offline', 'err');
+  });
+  pollStatus().catch(() => {});
+  pollIntervalId = setInterval(pollStatus, 10000);
+  overviewIntervalId = setInterval(() => { if (activePanel === 'overview' && !authRedirecting) refreshOverview().catch(() => {}); }, 5000);
 }
 
 boot();
