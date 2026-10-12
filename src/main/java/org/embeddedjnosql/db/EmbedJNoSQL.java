@@ -90,6 +90,29 @@ public class EmbedJNoSQL implements Closeable {
     }
 
     /**
+     * Opens or creates a persistent file-based embedded database at the specified directory path.
+     *
+     * @param dataDir directory where data files and WAL will be stored
+     * @return initialized EmbedJNoSQL instance
+     */
+    public static EmbedJNoSQL open(java.nio.file.Path dataDir) {
+        return EmbedJNoSQLConfig.builder()
+                .storageEngine(EmbedJNoSQLConfig.StorageEngineType.FILE)
+                .dataDir(dataDir)
+                .build();
+    }
+
+    /**
+     * Opens or creates a persistent file-based embedded database at the specified directory path.
+     *
+     * @param dataDir directory path as string
+     * @return initialized EmbedJNoSQL instance
+     */
+    public static EmbedJNoSQL open(String dataDir) {
+        return open(java.nio.file.Paths.get(dataDir));
+    }
+
+    /**
      * Creates a temporary file-based embedded database in java.io.tmpdir
      * with an automated JVM shutdown hook for directory cleanup.
      */

@@ -351,4 +351,31 @@ class UtilityClassTest {
         index.remove("doc1");
         assertEquals(2, index.size());
     }
+
+    @Test
+    void testEmbedJNoSQLOpenAndOpenTemp(@org.junit.jupiter.api.io.TempDir java.nio.file.Path tempDir) {
+        // Test open(Path)
+        try (var db = EmbedJNoSQL.open(tempDir.resolve("db1"))) {
+            assertTrue(db.isOpen());
+            var col = db.documentCollection("items");
+            col.insert(Document.of("id", "i1").add("name", "Item 1"));
+            assertEquals(1, col.count(Query.all()));
+        }
+
+        // Test open(String)
+        try (var db = EmbedJNoSQL.open(tempDir.resolve("db2").toString())) {
+            assertTrue(db.isOpen());
+            var kv = db.keyValueBucket("cache");
+            kv.put("k1", "v1");
+            assertEquals("v1", kv.get("k1"));
+        }
+
+        // Test openTemp()
+        try (var db = EmbedJNoSQL.openTemp()) {
+            assertTrue(db.isOpen());
+            var col = db.documentCollection("temp_items");
+            col.insert(Document.of("id", "t1"));
+            assertEquals(1, col.count(Query.all()));
+        }
+    }
 }

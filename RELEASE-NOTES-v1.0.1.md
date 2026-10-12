@@ -39,7 +39,7 @@ EmbedJNoSQL `v1.0.1` delivers a hardened, production-ready embedded NoSQL engine
 
 | File | Size (Bytes) | SHA-256 Checksum |
 |---|---|---|
-| `embed-jnosql-core-1.0.1.jar` | 3,115,642 (3.11 MB) | `9D020ECBA7913B997F9E3D9FC31A3747BC853B4C695587394CB05B7E1E022317` |
+| `embed-jnosql-core-1.0.1.jar` | 3,115,815 (3.11 MB) | `4AAD95CA3B5D9842AB672E3C051F84D53BD73BBE51E0ED7EEDD53C8CD3497E2E` |
 
 ### Maven Coordinates
 ```xml
