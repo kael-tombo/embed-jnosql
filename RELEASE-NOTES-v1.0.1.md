@@ -22,7 +22,7 @@ EmbedJNoSQL `v1.0.1` delivers a hardened, production-ready embedded NoSQL engine
 - **`EmbedNoSQLRepository`**: Jakarta Data-style `CrudRepository` support (`findById`, `findAll`, `save`, `delete`).
 - **Annotation Polyglot Support**: Seamlessly reads `@jakarta.nosql.*`, `@jakarta.persistence.*`, and `@org.hibernate.annotations.*` as mapping hints without requiring relational JPA or JDBC runtimes.
 
-### 3. Spring Boot 3.x Auto-Configuration
+### 3. Spring Boot 4.x / 3.4+ Auto-Configuration
 - **Auto-Configured Engine**: `@Autowired EmbedJNoSQL db;` with full property binding (`embedjnosql.*`).
 - **Spring Data Repository Proxies**: Dynamic repository generation for interfaces extending `EmbedRepository`.
 - **Actuator Health & Metrics**: Integrated `/actuator/health` indicator and telemetry export.

@@ -70,7 +70,7 @@ EmbedJNoSQL executes all data models over a **single unified engine**. Collectio
 ```text
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                          APPLICATION CODE                               │
-│      Spring Boot 3  ·  Quarkus  ·  Micronaut  ·  Vert.x  ·  Plain Java  │
+│   Spring Boot 4 / 3.4+  ·  Quarkus  ·  Micronaut  ·  Vert.x  ·  Java    │
 └────────────────────────────────────┬────────────────────────────────────┘
                                      │
 ┌────────────────────────────────────▼────────────────────────────────────┐

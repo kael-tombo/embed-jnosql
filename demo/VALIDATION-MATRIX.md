@@ -7,7 +7,7 @@ This matrix documents the real test execution results across all demonstration a
 | Demo Application | Framework & Version | Integration Mechanism | Test Class | Tests Run | Failures | Errors | Status | Execution Time |
 |---|---|---|---|---|---|---|---|---|
 | **[annotation-showcase-demo](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/annotation-showcase-demo)** | Jakarta NoSQL / JPA / Hibernate | Tri-standard annotations & SQL | `AnnotationShowcaseTest` | 5 | 0 | 0 | **PASS** | 0.68 s |
-| **[spring-boot-demo](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/spring-boot-demo)** | Spring Boot 3.2.5 | `embed-jnosql-spring-boot-starter` | `EcommerceApplicationTest` | 6 | 0 | 0 | **PASS** | 4.78 s |
+| **[spring-boot-demo](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/spring-boot-demo)** | Spring Boot 4.0.0 (3.4+ compatible) | `embed-jnosql-spring-boot-starter` | `EcommerceApplicationTest` | 6 | 0 | 0 | **PASS** | 4.27 s |
 | **[quarkus-demo](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/quarkus-demo)** | Quarkus 3.8.0 | `embed-jnosql-quarkus-extension-runtime` | `ProductResourceTest` | 4 | 0 | 0 | **PASS** | 17.74 s |
 | **[micronaut-demo](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/micronaut-demo)** | Micronaut 4.2.0 | `embedjnosql-micronaut-integration` | `EcommerceControllerTest` | 4 | 0 | 0 | **PASS** | 3.59 s |
 | **[vertx-demo](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/vertx-demo)** | Eclipse Vert.x 4.5.4 | `embed-jnosql-core` (`executeBlocking`) | `EcommerceVerticleTest` | 4 | 0 | 0 | **PASS** | 2.00 s |

@@ -10,7 +10,7 @@ This directory contains the demonstration applications showcasing **EmbedJNoSQL*
 demo/
 ├── demo-common/              # Shared E-Commerce domain model & fixtures (Records)
 ├── demos/                    # 20 standalone single-feature demos (see table below)
-├── spring-boot-demo/         # Spring Boot 3.2.5 + EmbedJNoSQL Auto-Configuration starter demo
+├── spring-boot-demo/         # Spring Boot 4.0.0 (3.4+ compatible) + EmbedJNoSQL Auto-Configuration starter demo
 ├── quarkus-demo/             # Quarkus 3.8.0 + EmbedJNoSQL CDI Extension demo
 ├── micronaut-demo/           # Micronaut 4.2.0 + EmbedJNoSQL DI Integration demo
 ├── vertx-demo/               # Eclipse Vert.x 4.5.4 Reactive non-blocking demo
@@ -79,7 +79,7 @@ The 20 projects are generated from `gen-demos.sh` (templates in `mainNN.txt` / `
   - `SampleData`: Deterministic test fixtures.
 
 ### 2. [spring-boot-demo](spring-boot-demo)
-- **Framework**: Spring Boot 3.2.0
+- **Framework**: Spring Boot 4.0.0 (Spring Boot 3.4+ compatible)
 - **Integration**: `embed-jnosql-spring-boot-starter` (`EmbedJNoSQLTemplate`)
 - **Key Highlights**:
   - Auto-configuration of `EmbedJNoSQL` and `EmbedJNoSQLTemplate`.
