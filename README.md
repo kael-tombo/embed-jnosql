@@ -144,7 +144,7 @@ figures.
 ### Framework Starters & Standards
 
 ```xml
-<!-- Spring Boot 3.x Starter -->
+<!-- Spring Boot 4.x / 3.4+ Starter -->
 <dependency>
     <groupId>org.embeddedjnosql.db</groupId>
     <artifactId>embed-jnosql-spring-boot-starter</artifactId>
@@ -298,7 +298,7 @@ repo.save(new User("u2", "Ada"));
 Iterable<User> all = repo.findAll();
 ```
 
-### Spring Boot 3.x Starter & Auto-Configuration
+### Spring Boot 4.x / 3.4+ Starter & Auto-Configuration
 
 In your `pom.xml`:
 ```xml

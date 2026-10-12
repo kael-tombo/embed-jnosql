@@ -32,7 +32,7 @@ mvn clean install -DskipTests
   - `storage/`: Pluggable storage engines (`InMemoryEngine`, `FileEngine`, `BTreeEngine`, `LSMTreeEngine`)
   - `transaction/`: MVCC and ACID transaction managers
   - `console/`: Developer HTTP admin server
-- `spring-boot-starter/`: Spring Boot 3 auto-configuration and `EmbedJNoSQLTemplate`
+- `spring-boot-starter/`: Spring Boot 4.x / 3.4+ auto-configuration and `EmbedJNoSQLTemplate`
 - `quarkus-extension/`: Quarkus runtime and deployment modules
 - `micronaut-integration/`: Micronaut factory and CDI providers
 - `demo/`: Real-world framework demonstration applications

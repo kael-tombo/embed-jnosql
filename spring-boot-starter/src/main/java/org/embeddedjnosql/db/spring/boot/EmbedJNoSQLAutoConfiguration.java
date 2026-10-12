@@ -7,6 +7,7 @@ import org.embeddedjnosql.db.console.http.EmbedJNoSQLServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanFactory;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigurationPackages;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -14,9 +15,11 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
-import org.springframework.transaction.PlatformTransactionManager;
 
 /**
  * Spring Boot auto-configuration for embed-jnosql — the H2-style embedded NoSQL experience:
@@ -36,7 +39,7 @@ import org.springframework.transaction.PlatformTransactionManager;
  *       {@code embedjnosql.auto-create-collections}).</li>
  * </ul>
  */
-@Configuration(proxyBeanMethods = false)
+@AutoConfiguration
 @EnableConfigurationProperties(EmbedJNoSQLProperties.class)
 @ConditionalOnProperty(prefix = "embedjnosql", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class EmbedJNoSQLAutoConfiguration {
@@ -143,12 +146,19 @@ public class EmbedJNoSQLAutoConfiguration {
     @Configuration(proxyBeanMethods = false)
     @ConditionalOnProperty(prefix = "embedjnosql.transactions", name = "enabled",
             havingValue = "true", matchIfMissing = true)
+    @EnableTransactionManagement
     static class EmbedJNoSQLTransactionsConfiguration {
 
         @Bean
         @ConditionalOnMissingBean(PlatformTransactionManager.class)
         public EmbedJNoSQLTransactionManager embedJNoSQLTransactionManager(EmbedJNoSQL embedJNoSQL) {
             return new EmbedJNoSQLTransactionManager(embedJNoSQL);
+        }
+
+        @Bean
+        @ConditionalOnMissingBean(TransactionTemplate.class)
+        public TransactionTemplate transactionTemplate(PlatformTransactionManager transactionManager) {
+            return new TransactionTemplate(transactionManager);
         }
     }
 

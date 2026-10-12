@@ -37,7 +37,7 @@ public class EmbedJpaRepositoryFactory extends RepositoryFactorySupport {
     @Override
     protected java.util.Optional<org.springframework.data.repository.query.QueryLookupStrategy> getQueryLookupStrategy(
             org.springframework.data.repository.query.QueryLookupStrategy.Key key,
-            org.springframework.data.repository.query.QueryMethodEvaluationContextProvider provider) {
+            org.springframework.data.repository.query.ValueExpressionDelegate valueExpressionDelegate) {
         // NULL key = no explicit configuration: Spring Data's default CREATE_IF_NOT_FOUND
         EmbedJpaQueryLookupStrategy.Strategy strategy = key == null
                 ? EmbedJpaQueryLookupStrategy.Strategy.CREATE_IF_NOT_FOUND
