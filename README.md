@@ -81,10 +81,9 @@ Quarkus, Micronaut, Jakarta CDI, Hibernate annotations, Micrometer — is option
 `optional` scope) and absent unless you add it.
 
 ```xml
-<dependency>
     <groupId>org.embeddedjnosql.db</groupId>
     <artifactId>embed-jnosql-core</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 </dependency>
 ```
 
@@ -376,8 +375,8 @@ No data migration is required, and no data files were deleted by this change.
 for m in demo/*/pom.xml; do ./mvnw -f "$m" test; done
 ```
 
-Verified status for this change (commands and logs under `docs/release-audit/refocus/`):
-core **819 tests, 0 failures**; the nine demo projects **43 tests, 0 failures**; the
+Verified status for this change (commands and logs under `docs/release-audit/`):
+core **943 tests, 0 failures**; the nine demo projects **43 tests, 0 failures**; the
 Spring Boot starter **12 tests, 0 failures**; the CLI **4 tests, 0 failures**.
 
 ---
