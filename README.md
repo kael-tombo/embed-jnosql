@@ -7,6 +7,9 @@ One JAR, zero infrastructure. No server, no Docker, no daemon, no network.
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/Java-17%2B-orange.svg)](https://openjdk.org/)
+[![Tests](https://img.shields.io/badge/tests-1%2C021%20passing-brightgreen.svg)](#build--test)
+[![Zero Docker](https://img.shields.io/badge/Docker-zero%20required-blue.svg)](#why-embedjnosql)
+[![Shaded JAR](https://img.shields.io/badge/shaded%20JAR-3.1%20MB-blueviolet.svg)](#measured-artifact-sizes-this-repository-this-build)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2-brightgreen.svg)](demo/spring-boot-demo)
 [![Quarkus](https://img.shields.io/badge/Quarkus-3.8-purple.svg)](demo/quarkus-demo)
 [![Micronaut](https://img.shields.io/badge/Micronaut-4.2-red.svg)](demo/micronaut-demo)
@@ -57,6 +60,44 @@ database, no SQL engine, no dual-engine selector, and no JDBC driver.
 
 H2 appears here only as the reference point for *embedded simplicity*. EmbedJNoSQL's scope is
 NoSQL: it does not implement SQL, and does not aim to.
+
+---
+
+## Architecture: Unified Multi-Model Substrate
+
+EmbedJNoSQL executes all data models over a **single unified engine**. Collections, key-value buckets, Redis structures, and wide-column families share memory management, concurrency control (MVCC), and persistence:
+
+```text
+┌─────────────────────────────────────────────────────────────────────────┐
+│                          APPLICATION CODE                               │
+│      Spring Boot 3  ·  Quarkus  ·  Micronaut  ·  Vert.x  ·  Plain Java  │
+└────────────────────────────────────┬────────────────────────────────────┘
+                                     │
+┌────────────────────────────────────▼────────────────────────────────────┐
+│                       EMBEDJNOSQL API SURFACE                           │
+│  ┌───────────────────┬───────────────────┬───────────────────────────┐  │
+│  │ Document Model    │ Key-Value & Redis │ Wide-Column & Vectors     │  │
+│  │ · Dotted Queries  │ · Lists & Sets    │ · Cell TTL Matrix         │  │
+│  │ · Secondary Idx   │ · Hashes & TTL    │ · HNSW Vector Search*     │  │
+│  │ · Entity Mapping  │ · Atomic Counters │ · Sparse Attributes       │  │
+│  └─────────┬─────────┴─────────┬─────────┴─────────────┬─────────────┘  │
+│            └───────────────────┼───────────────────────┘                │
+│                                │                                        │
+│            ┌───────────────────▼───────────────────┐                    │
+│            │   MVCC & Transaction Engine (ACID)    │                    │
+│            │   Write-Ahead Log (WAL) Durability    │                    │
+│            └───────────────────┬───────────────────┘                    │
+└────────────────────────────────┼────────────────────────────────────────┘
+                                 │
+┌────────────────────────────────▼────────────────────────────────────────┐
+│                        STORAGE ENGINE MODES                             │
+│  ┌───────────────┬───────────────────┬─────────────────┬─────────────┐  │
+│  │  IN_MEMORY    │       FILE        │     B_TREE      │  LSM_TREE   │  │
+│  │ ConcurrentMap │ JSON + WAL Replay │ B+ Tree Indexed │  MemTable + │  │
+│  │ Zero Disk I/O │ Append-Only Fsync │ Page Flusher    │ SSTable Log │  │
+│  └───────────────┴───────────────────┴─────────────────┴─────────────┘  │
+└─────────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -376,6 +417,36 @@ meaning, data directory, connection state, transaction state, identity) read fro
 target and impact before running. Dual document view provides both syntax-highlighted **JSON**
 and collapsible interactive visual **Tree** inspection. There is **no SQL editor** — the SQL Studio
 was removed with the SQL product.
+
+---
+
+## Interactive Developer Shell (CLI)
+
+EmbedJNoSQL includes a standalone interactive terminal shell for database inspection and direct command-line scripting:
+
+```bash
+# Build CLI tool
+mvn -f cli/pom.xml package -DskipTests
+
+# Start interactive shell on data directory
+java -jar cli/target/embed-jnosql-cli-1.0.1.jar ./data
+```
+
+```text
+EMBEDJNOSQL:default> use products
+Using collection: products
+EMBEDJNOSQL:products> insert {"name":"Monitor","price":299.99,"category":"Hardware"}
+Inserted with id: 8a3f9e21...
+EMBEDJNOSQL:products> find category=Hardware
+Found 1 documents:
+  {"id":"8a3f9e21...","name":"Monitor","price":299.99,"category":"Hardware"}
+EMBEDJNOSQL:products> count
+Document count: 1
+EMBEDJNOSQL:products> stats
+Collection stats:
+  count: 1
+  storage: FILE
+```
 
 ---
 
