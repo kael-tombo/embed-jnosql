@@ -6,11 +6,11 @@
 
     <groupId>org.embeddedjnosql.db</groupId>
     <artifactId>embed-jnosql-spring-boot-starter</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <packaging>jar</packaging>
 
     <name>EmbedJNoSQL Spring Boot Starter</name>
-    <description>Spring Boot 3.4+ auto-configuration for the embedded EmbedJNoSQL NoSQL database. Zero-server, zero-config document and key-value persistence with Spring Data repository support.</description>
+    <description>Spring Boot 4.x / 3.4+ auto-configuration for the embedded EmbedJNoSQL NoSQL database. Zero-server, zero-config document and key-value persistence with Spring Data repository support.</description>
     <url>https://github.com/armand-ratombotiana/EmbedJNoSQL</url>
 
     <licenses>
@@ -79,7 +79,27 @@
         <dependency>
             <groupId>org.embeddedjnosql.db</groupId>
             <artifactId>embed-jnosql-core</artifactId>
+            <version>1.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.nosql</groupId>
+            <artifactId>jakarta.nosql-api</artifactId>
             <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.data</groupId>
+            <artifactId>jakarta.data-api</artifactId>
+            <version>1.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jnosql.mapping</groupId>
+            <artifactId>jnosql-mapping-api-core</artifactId>
+            <version>1.1.8</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jnosql.communication</groupId>
+            <artifactId>jnosql-communication-core</artifactId>
+            <version>1.1.8</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

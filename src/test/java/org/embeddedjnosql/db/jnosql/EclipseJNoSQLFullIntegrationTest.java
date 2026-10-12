@@ -239,7 +239,7 @@ class EclipseJNoSQLFullIntegrationTest {
     @Test
     @DisplayName("Template: insert, insert with Duration, update, find, delete")
     void testJakartaTemplateCrud() {
-        Template template = db.documentTemplate(Book.class);
+        Template template = (Template) db.documentTemplate(Book.class);
 
         Book b1 = new Book("978-1", "Effective Java", "Joshua Bloch", 45.0);
         Book b2 = new Book("978-2", "Clean Code", "Robert C. Martin", 40.0);
@@ -276,7 +276,7 @@ class EclipseJNoSQLFullIntegrationTest {
     @Test
     @DisplayName("QueryMapper: select with where, eq, gt, between, like, sort, skip, limit")
     void testQueryMapperSelect() {
-        Template template = db.documentTemplate(Book.class);
+        Template template = (Template) db.documentTemplate(Book.class);
         template.insert(new Book("B-1", "Design Patterns", "GoF", 55.0));
         template.insert(new Book("B-2", "Refactoring", "Martin Fowler", 45.0));
         template.insert(new Book("B-3", "Domain-Driven Design", "Eric Evans", 60.0));
@@ -340,7 +340,7 @@ class EclipseJNoSQLFullIntegrationTest {
     @Test
     @DisplayName("QueryMapper: delete with criteria execute")
     void testQueryMapperDelete() {
-        Template template = db.documentTemplate(Book.class);
+        Template template = (Template) db.documentTemplate(Book.class);
         template.insert(new Book("D-1", "Temp 1", "Anon", 10.0));
         template.insert(new Book("D-2", "Temp 2", "Anon", 12.0));
         template.insert(new Book("D-3", "Keep", "Known", 30.0));
@@ -422,7 +422,7 @@ class EclipseJNoSQLFullIntegrationTest {
     @Test
     @DisplayName("Mapping: @Embeddable subdocument and @Convert AttributeConverter")
     void testEmbeddableAndConvert() {
-        Template template = db.documentTemplate(Customer.class);
+        Template template = (Template) db.documentTemplate(Customer.class);
 
         Address addr = new Address("123 Java Lane", "Jakarta");
         Money money = new Money(250.75, "USD");
@@ -454,7 +454,7 @@ class EclipseJNoSQLFullIntegrationTest {
         EntityMapper.registerEntitySubclass(Vehicle.class, Car.class);
         EntityMapper.registerEntitySubclass(Vehicle.class, Truck.class);
 
-        Template template = db.documentTemplate(Vehicle.class);
+        Template template = (Template) db.documentTemplate(Vehicle.class);
 
         Car car = new Car("VIN-CAR-1", "Tesla", 4);
         Truck truck = new Truck("VIN-TRK-1", "Volvo", 18.5);
@@ -481,7 +481,7 @@ class EclipseJNoSQLFullIntegrationTest {
     @Test
     @DisplayName("Mapping: @MappedSuperclass persistent attributes inherited by subclass")
     void testMappedSuperclass() {
-        Template template = db.documentTemplate(AuditItem.class);
+        Template template = (Template) db.documentTemplate(AuditItem.class);
 
         AuditItem item = new AuditItem("ITEM-1", "admin_user", "Server Config");
         template.insert(item);

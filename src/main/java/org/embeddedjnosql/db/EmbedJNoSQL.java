@@ -264,21 +264,21 @@ public class EmbedJNoSQL implements Closeable {
      * Returns an EclipseDocumentTemplate for the default collection.
      * Implements both EmbedJNoSQL DocumentTemplate and jakarta.nosql.Template.
      */
-    public org.embeddedjnosql.db.adapter.jnosql.EclipseDocumentTemplate documentTemplate() {
+    public org.embeddedjnosql.db.adapter.jnosql.DocumentTemplate documentTemplate() {
         return org.embeddedjnosql.db.adapter.jnosql.EclipseDocumentTemplate.of(documentCollection("_default"));
     }
 
     /**
      * Returns an EclipseDocumentTemplate for the specified collection name.
      */
-    public org.embeddedjnosql.db.adapter.jnosql.EclipseDocumentTemplate documentTemplate(String collectionName) {
+    public org.embeddedjnosql.db.adapter.jnosql.DocumentTemplate documentTemplate(String collectionName) {
         return org.embeddedjnosql.db.adapter.jnosql.EclipseDocumentTemplate.of(documentCollection(collectionName));
     }
 
     /**
      * Returns an EclipseDocumentTemplate for the collection associated with the given entity class.
      */
-    public <T> org.embeddedjnosql.db.adapter.jnosql.EclipseDocumentTemplate documentTemplate(Class<T> entityClass) {
+    public <T> org.embeddedjnosql.db.adapter.jnosql.DocumentTemplate documentTemplate(Class<T> entityClass) {
         String colName = org.embeddedjnosql.db.adapter.jnosql.EntityMapper.getCollectionName(entityClass);
         return org.embeddedjnosql.db.adapter.jnosql.EclipseDocumentTemplate.of(documentCollection(colName));
     }
