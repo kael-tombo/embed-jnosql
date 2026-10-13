@@ -50,6 +50,10 @@
         <url>https://github.com/kael-tombo/embed-jnosql/issues</url>
     </issueManagement>
 
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
     <modules>
         <module>runtime</module>
         <module>deployment</module>
