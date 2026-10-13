@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">EmbedJNoSQL layered-core mark</title>
+  <rect x="24" y="24" width="464" height="464" rx="108" fill="#0C2745"/>
+  <g fill="none" stroke="#F7F9FC" stroke-width="20">
+    <rect x="112" y="112" width="288" height="88" rx="44"/>
+    <rect x="112" y="212" width="288" height="88" rx="44"/>
+    <rect x="112" y="312" width="288" height="88" rx="44"/>
+  </g>
+  <g fill="#E8AE1E">
+    <path d="M244 188h24v36h-24zM244 288h24v36h-24z"/>
+    <circle cx="256" cy="156" r="17"/>
+    <circle cx="256" cy="256" r="17"/>
+    <circle cx="256" cy="356" r="17"/>
+  </g>
+</svg>
