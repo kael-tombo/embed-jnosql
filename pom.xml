@@ -6,12 +6,12 @@
 
     <groupId>io.github.kael-tombo</groupId>
     <artifactId>embed-jnosql-core</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <packaging>jar</packaging>
 
     <name>EmbedJNoSQL NoSQL</name>
     <description>Embedded NoSQL database for the JVM. Document and Key-Value models over in-memory or durable file storage (InMemory/File/BTree/LSM), with annotation mapping for Jakarta NoSQL, Jakarta Persistence, and Hibernate annotations onto documents. No server required.</description>
-    <url>https://github.com/armand-ratombotiana/EmbedJNoSQL</url>
+    <url>https://github.com/kael-tombo/embed-jnosql</url>
 
     <licenses>
         <license>
@@ -35,20 +35,20 @@
 
     <organization>
         <name>EmbedJNoSQL</name>
-        <url>https://github.com/armand-ratombotiana/EmbedJNoSQL</url>
+        <url>https://github.com/kael-tombo/embed-jnosql</url>
     </organization>
 
     <scm>
-        <connection>scm:git:git://github.com/armand-ratombotiana/EmbedJNoSQL.git</connection>
-        <developerConnection>scm:git:ssh://github.com/armand-ratombotiana/EmbedJNoSQL.git</developerConnection>
-        <url>https://github.com/armand-ratombotiana/EmbedJNoSQL</url>
+        <connection>scm:git:git://github.com/kael-tombo/embed-jnosql.git</connection>
+        <developerConnection>scm:git:ssh://github.com/kael-tombo/embed-jnosql.git</developerConnection>
+        <url>https://github.com/kael-tombo/embed-jnosql</url>
         <tag>HEAD</tag>
     </scm>
 
 
     <issueManagement>
         <system>GitHub Issues</system>
-        <url>https://github.com/armand-ratombotiana/EmbedJNoSQL/issues</url>
+        <url>https://github.com/kael-tombo/embed-jnosql/issues</url>
     </issueManagement>
 
     <properties>

@@ -6,12 +6,12 @@
 
     <groupId>io.github.kael-tombo</groupId>
     <artifactId>embed-jnosql-spring-boot-starter</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <packaging>jar</packaging>
 
     <name>EmbedJNoSQL Spring Boot Starter</name>
     <description>Spring Boot 4.0.0 auto-configuration for the embedded EmbedJNoSQL NoSQL database. Zero-server, zero-config document and key-value persistence with Spring Data repository support.</description>
-    <url>https://github.com/armand-ratombotiana/EmbedJNoSQL</url>
+    <url>https://github.com/kael-tombo/embed-jnosql</url>
 
     <licenses>
         <license>
@@ -35,13 +35,13 @@
 
     <organization>
         <name>EmbedJNoSQL</name>
-        <url>https://github.com/armand-ratombotiana/EmbedJNoSQL</url>
+        <url>https://github.com/kael-tombo/embed-jnosql</url>
     </organization>
 
     <scm>
-        <connection>scm:git:git://github.com/armand-ratombotiana/EmbedJNoSQL.git</connection>
-        <developerConnection>scm:git:ssh://github.com/armand-ratombotiana/EmbedJNoSQL.git</developerConnection>
-        <url>https://github.com/armand-ratombotiana/EmbedJNoSQL</url>
+        <connection>scm:git:git://github.com/kael-tombo/embed-jnosql.git</connection>
+        <developerConnection>scm:git:ssh://github.com/kael-tombo/embed-jnosql.git</developerConnection>
+        <url>https://github.com/kael-tombo/embed-jnosql</url>
         <tag>HEAD</tag>
     </scm>
 
@@ -69,7 +69,7 @@
         <dependency>
             <groupId>io.github.kael-tombo</groupId>
             <artifactId>embed-jnosql-core</artifactId>
-            <version>1.0.1</version>
+            <version>1.0.2</version>
         </dependency>
         <dependency>
             <groupId>jakarta.nosql</groupId>

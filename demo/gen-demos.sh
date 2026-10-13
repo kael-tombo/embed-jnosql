@@ -24,7 +24,7 @@ cat <<EOF
         <dependency>
             <groupId>io.github.kael-tombo</groupId>
             <artifactId>embed-jnosql-core</artifactId>
-            <version>1.0.1</version>
+            <version>1.0.2</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
