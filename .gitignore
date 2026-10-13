@@ -24,6 +24,8 @@ Thumbs.db
 # Internal dev / scratch buffers
 .freebuff/
 .audit-baseline/
+.worktrees/
+.superpowers/
 
 # Internal release-audit artefacts (kept locally, not for public consumption)
 release-audit/
