@@ -1,16 +1,16 @@
 # Release Notes — EmbedJNoSQL v1.0.2
 
-**Release status as of 2026-10-13:** prepared; Maven Central publication is pending
-**Planned tag:** `v1.0.2`
+**Release status as of 2026-10-13:** tagged; Maven Central deployment is in progress
+**Release tag:** [`v1.0.2`](https://github.com/kael-tombo/embed-jnosql/tree/v1.0.2)
 **License:** Apache License 2.0
 
-> This document describes the prepared release candidate. The tag has not been pushed and none of
-> the `1.0.2` artifacts has been published to Maven Central. The candidate should be treated as
-> available only after hosted release validation and post-publication checks succeed.
+> The `v1.0.2` tag is pushed and all hosted validation gates have passed. Maven Central deployment
+> and artifact/signature verification are still in progress. Treat the coordinates below as
+> unavailable from Central until the release workflow confirms publication.
 
 ## Release scope
 
-This release prepares the seven first-party library and integration artifacts for Maven Central.
+This release comprises seven first-party library and integration artifacts for Maven Central.
 Demo applications are validation consumers and are not published artifacts.
 
 | Group ID | Artifact ID | Version |
@@ -39,11 +39,10 @@ feature.
 
 ## Validation and availability
 
-The release preflight confirmed that all seven `1.0.2` coordinates were absent from Maven Central
-at the time it ran. Effective-POM, metadata, packaging, and workflow syntax checks have been
-performed locally. The full release-candidate test matrix, hosted CI, tag push, publication, and
-post-publication verification are still required before these coordinates can be used from Maven
-Central.
+The release preflight confirmed that all seven `1.0.2` coordinates were absent from Maven Central.
+The hosted core, integration, application-demo, and feature-demo validation jobs have passed. The
+publish job and post-publication checks are still running; Central availability is not yet
+confirmed.
 
 Until publication is verified, install the relevant modules from the repository checkout as
 described in the [README](./README.md).

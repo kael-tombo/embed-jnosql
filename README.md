@@ -103,9 +103,10 @@ EmbedJNoSQL executes all data models over a **single unified engine**. Collectio
 
 ## Installation
 
-> **Maven Central release status:** the `1.0.2` release candidate is prepared, but publication
-> and post-publication verification have not completed. Core and the Spring Boot starter `1.0.1`
-> remain available on Maven Central; use `1.0.2` coordinates below after the release is confirmed.
+> **Maven Central release status:** `1.0.2` is tagged, and all hosted validation jobs have
+> passed. Maven Central deployment and artifact/signature verification are in progress. Core and
+> the Spring Boot starter `1.0.1` remain the latest versions available on Central; use `1.0.2`
+> coordinates below after the release workflow confirms publication.
 > Until then, install the release artifacts from this checkout:
 
 ```bash
@@ -150,14 +151,14 @@ The core API is embedded and synchronous. The following framework integrations a
 
 | Framework | Integration | Verified evidence | Artifact availability |
 |---|---|---|---|
-| **Spring Boot 4.0.0** | Auto-configuration, Spring Data repository support | Demo suite: 41 tests passed | Starter 1.0.1 is published; 1.0.2 candidate awaits Central verification |
-| **Quarkus 3.8.0** | CDI extension | Demo suite: 14 tests passed, including Jakarta `Template` injection | 1.0.2 candidate awaits Central verification |
-| **Micronaut 4.2.0** | Compile-time DI | Demo suite: 11 tests passed | 1.0.2 candidate awaits Central verification |
+| **Spring Boot 4.0.0** | Auto-configuration, Spring Data repository support | Demo suite: 41 tests passed | Starter 1.0.2 tagged; Central deployment in progress |
+| **Quarkus 3.8.0** | CDI extension | Demo suite: 14 tests passed, including Jakarta `Template` injection | Extension 1.0.2 tagged; Central deployment in progress |
+| **Micronaut 4.2.0** | Compile-time DI | Demo suite: 11 tests passed | Integration 1.0.2 tagged; Central deployment in progress |
 | **Eclipse Vert.x 4.5.4** | Worker dispatch with `executeBlocking` | Demo suite: 11 tests passed | Uses the core API; no dedicated Vert.x artifact |
 
-The demo test counts above come from the preceding local validation run; the full `1.0.2` release
-candidate validation is still pending. See the [validation matrix](demo/VALIDATION-MATRIX.md) for
-the evidence scope.
+The hosted `1.0.2` release gates passed: 1,172 tests across core, integration modules, and demo
+suites. Maven Central deployment and signature verification are still in progress. See the
+[validation matrix](demo/VALIDATION-MATRIX.md) for test counts and scope.
 
 ```xml
 <!-- Use 1.0.2 after its Maven Central publication is verified. -->

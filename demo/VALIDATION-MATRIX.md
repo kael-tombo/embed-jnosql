@@ -1,11 +1,9 @@
 # Demonstration Validation Matrix
 
-This matrix records the latest local Maven Wrapper validation from the repository root using an
-isolated Maven local repository. The run used Apache Maven 3.9.6 and Eclipse Temurin JDK 25.0.4.1;
-the project compiler target is Java 17. CI is configured to test Java 17 and 21. These local results
-do not claim that a hosted CI run has completed.
-The recorded run predates the `1.0.2` release-POM alignment; validation of that release candidate is
-still pending.
+This matrix records the `1.0.2` release validation completed on 2026-10-13. The core coverage gate
+used Maven Wrapper 3.9.6 and Eclipse Temurin JDK 17; integration modules and demos were also
+verified on JDK 17. The hosted release workflow completed all pre-publication test gates
+successfully. Maven Central deployment and artifact/signature verification remain in progress.
 
 ## Summary
 
@@ -25,19 +23,18 @@ The Quarkus and Micronaut modules compiled and passed Maven `verify`; they did n
 Surefire test reports. `demo-common` also installed successfully with tests skipped because it
 contains shared demo models, not a test suite.
 
-Core and the Spring Boot starter `1.0.1` are published on Maven Central. The `1.0.2` release
-candidate includes all seven first-party release coordinates, but publication and Central
-verification have not completed. The framework rows below describe the modules used in the
-recorded pre-candidate run; install the current checkout before testing the `1.0.2` candidate.
-Demo applications remain validation consumers and are not published artifacts.
+Core and the Spring Boot starter `1.0.1` remain the latest artifacts available on Maven Central.
+The `v1.0.2` tag includes all seven first-party release coordinates, and hosted validation passed;
+Central publication and verification are still in progress. Demo applications remain validation
+consumers and are not published artifacts.
 
 ## Framework and Application Demos
 
 | Demo | Framework / version | Integration or scope | Tests | Failures | Errors | Skipped | Result |
 |---|---|---|---:|---:|---:|---:|---|
-| [spring-boot-demo](spring-boot-demo) | Spring Boot 4.0.0 | Published Spring Boot starter 1.0.1 | 41 | 0 | 0 | 0 | **PASS** |
-| [quarkus-demo](quarkus-demo) | Quarkus 3.8.0 | Source-only Quarkus extension 1.0.0; includes Jakarta `Template` CDI injection | 14 | 0 | 0 | 0 | **PASS** |
-| [micronaut-demo](micronaut-demo) | Micronaut 4.2.0 | Source-only Micronaut integration 1.0.0 | 11 | 0 | 0 | 0 | **PASS** |
+| [spring-boot-demo](spring-boot-demo) | Spring Boot 4.0.0 | Spring Boot starter 1.0.2 (Central publication pending) | 41 | 0 | 0 | 0 | **PASS** |
+| [quarkus-demo](quarkus-demo) | Quarkus 3.8.0 | Quarkus extension 1.0.2 (Central publication pending); includes Jakarta `Template` CDI injection | 14 | 0 | 0 | 0 | **PASS** |
+| [micronaut-demo](micronaut-demo) | Micronaut 4.2.0 | Micronaut integration 1.0.2 (Central publication pending) | 11 | 0 | 0 | 0 | **PASS** |
 | [vertx-demo](vertx-demo) | Eclipse Vert.x 4.5.4 | Core API with `executeBlocking` | 11 | 0 | 0 | 0 | **PASS** |
 | [end-to-end-validation](end-to-end-validation) | JUnit 5.10.2 | Storage-engine lifecycle and durability | 4 | 0 | 0 | 0 | **PASS** |
 | [advanced-queries-demo](advanced-queries-demo) | EmbedJNoSQL core | Document queries and JVM-side aggregation | 5 | 0 | 0 | 0 | **PASS** |

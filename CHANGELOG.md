@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.0.2] — Prepared; Maven Central publication pending
+## [1.0.2] — Tagged; Maven Central publication in progress
 
 ### Changed
 
@@ -48,8 +48,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Publishes the seven release coordinates in dependency order, then polls Maven Central for each
   artifact and its required JAR, source, Javadoc, and signature files.
 - The CI core-JAR size check derives its expected filename from the root POM version.
-- **Publication is not yet confirmed.** Do not use `1.0.2` from Maven Central until the release
-  workflow and post-publication verification complete.
+- The `v1.0.2` tag is pushed and all hosted validation gates have passed. Maven Central deployment
+  and artifact/signature verification are in progress. Do not use `1.0.2` from Central until the
+  release workflow confirms publication.
 
 ---
 

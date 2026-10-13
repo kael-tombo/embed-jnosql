@@ -651,7 +651,7 @@
   <a href="#" class="nav-logo" aria-label="EmbedJNoSQL home">
     <img src="assets/embedjnosql-logo-512-transparent.png" alt="EmbedJNoSQL" width="30" height="30" />
     <span class="nav-logo-text">EmbedJNoSQL</span>
-    <span class="nav-logo-version">v1.0.1</span>
+    <span class="nav-logo-version">v1.0.2</span>
   </a>
   <ul class="nav-links">
     <li><a href="#features">Features</a></li>
@@ -670,7 +670,7 @@
 <section class="hero">
   <div class="hero-eyebrow" role="note">
     <span class="hero-eyebrow-dot" aria-hidden="true"></span>
-    v1.0.1 stable · v1.0.2 Maven Central release pending · Apache 2.0
+    v1.0.2 tagged · hosted validation passed · Maven Central publication in progress · Apache 2.0
   </div>
 
   <h1>The <span class="gold">NoSQL database</span> that<br class="desktop-break" /> lives <span class="muted">inside</span> your JVM.</h1>
@@ -706,7 +706,7 @@
       <span class="stat-label">External dependencies</span>
     </div>
     <div class="stat" role="listitem">
-      <span class="stat-value">1,021</span>
+      <span class="stat-value">1,172</span>
       <span class="stat-label">Verified tests</span>
     </div>
     <div class="stat" role="listitem">
@@ -1509,7 +1509,7 @@ Runtime.getRuntime().addShutdownHook(
       <div class="principle">
         <span class="principle-icon">🧪</span>
         <div class="principle-title">Test-First Reliability</div>
-        <div class="principle-desc">1,021 tests across the core engine, Spring Boot starter, demo projects, and CLI. The test count and pass rate appear in every release note — no vague "extensively tested" claims.</div>
+        <div class="principle-desc">1,172 tests passed across the core engine, first-party modules, and demo projects. Maven Central publication and signature verification are in progress.</div>
       </div>
       <div class="principle">
         <span class="principle-icon">🔒</span>
@@ -1528,10 +1528,12 @@ Runtime.getRuntime().addShutdownHook(
     <p class="section-sub">Clone, install, then add a single dependency to your build file.</p>
 
     <div class="install-note" style="margin-top:1.5rem;">
-      <strong>Maven Central Distribution:</strong> Core and the Spring Boot starter 1.0.1 are
-      published. The 1.0.2 release candidate covers all seven first-party artifacts; publication
-      and Central verification are pending. The 1.0.2 coordinates below become available after
-      that verification. Demo applications are not release artifacts.
+      <strong>Maven Central Distribution:</strong> The <code>v1.0.2</code> tag is pushed and all
+      hosted validation gates have passed. Deployment and signature verification for the seven
+      first-party artifacts are in progress. Core and the Spring Boot starter <code>1.0.1</code>
+      remain the latest versions available from Central. See the
+      <a href="https://github.com/kael-tombo/embed-jnosql/blob/main/RELEASE-NOTES-v1.0.2.md">release notes</a>.
+      Demo applications are validation consumers, not release artifacts.
     </div>
 
     <div class="install-box">
