@@ -22,7 +22,7 @@ jobs:
   # Demo tests are deferred to Job 4 (post-publish validation)
   # ─────────────────────────────────────────────────────────────────────────────
   test-core:
-    name: Verify Core (943 tests)
+    name: Verify Core (949 tests)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -33,7 +33,7 @@ jobs:
           distribution: 'temurin'
           cache: maven
       - name: Run core tests
-        run: mvn -B verify -DskipTests=false
+        run: ./mvnw -B verify -DskipTests=false
 
   # ─────────────────────────────────────────────────────────────────────────────
   # JOB 2: Verify Spring Boot Starter (78 tests)
@@ -51,9 +51,10 @@ jobs:
           distribution: 'temurin'
           cache: maven
       - name: Install core to local repo
-        run: mvn -B install -DskipTests
+        run: ./mvnw -B install -DskipTests
+
       - name: Run starter tests
-        run: mvn -B -f spring-boot-starter/pom.xml test
+        run: ./mvnw -B -f spring-boot-starter/pom.xml test
 
   # ─────────────────────────────────────────────────────────────────────────────
   # JOB 3: Publish BOTH artifacts to Maven Central
@@ -76,6 +77,15 @@ jobs:
           server-id: central
           server-username: MAVEN_CENTRAL_TOKEN_USERNAME
           server-password: MAVEN_CENTRAL_TOKEN_PASSWORD
+
+      - name: Verify Maven Wrapper version
+        run: |
+          maven_version="$(./mvnw -v | sed -n 's/^Apache Maven \([0-9.]*\).*/\1/p')"
+          echo "Using Maven $maven_version"
+          if [ "$maven_version" != "3.9.6" ]; then
+            echo "::error::Expected Maven 3.9.6 from the project wrapper, got $maven_version"
+            exit 1
+          fi
 
       # ── Import GPG key ────────────────────────────────────────────────────
       - name: Import GPG key
@@ -143,25 +153,25 @@ jobs:
           cache: maven
 
       # ── 1. Core test suite ──────────────────────────────────────────────────
-      - name: Run Core Test Suite (943 tests)
-        run: mvn -B test
+      - name: Run Core Test Suite (949 tests)
+        run: ./mvnw -B test
 
       - name: Install core locally
-        run: mvn -B install -DskipTests
+        run: ./mvnw -B install -DskipTests
 
       # ── 2. Starters & Integration modules ──────────────────────────────────
       - name: Verify & Install Starter, Extension, and CLI Modules
         run: |
           for module in spring-boot-starter quarkus-extension micronaut-integration cli; do
             echo "::group::Verify $module"
-            (cd "$module" && mvn -B clean test) || exit 1
-            (cd "$module" && mvn -B install -DskipTests) || exit 1
+            ./mvnw -B -f "$module/pom.xml" clean test || exit 1
+            ./mvnw -B -f "$module/pom.xml" install -DskipTests || exit 1
             echo "::endgroup::"
           done
 
       # ── 3. Install demo common ──────────────────────────────────────────────
       - name: Install Demo Common
-        run: (cd demo/demo-common && mvn -B install -DskipTests)
+        run: ./mvnw -B -f demo/demo-common/pom.xml install -DskipTests
 
       # ── 4. Framework & Showcase Demos ───────────────────────────────────────
       - name: Run Framework & Showcase Demo Suites
@@ -172,10 +182,10 @@ jobs:
                    annotation-showcase-demo batch-processing-demo \
                    load-and-stress-demo; do
             echo "::group::Demo $d"
-            if (cd "demo/$d" && mvn -B clean test); then
+            if ./mvnw -B -f "demo/$d/pom.xml" clean test; then
               echo "::notice title=Demo $d::PASSED"
             else
-              echo "::error title=Demo $d failed::mvn clean test failed"
+              echo "::error title=Demo $d failed::Maven Wrapper clean test failed"
               failed="$failed $d"
             fi
             echo "::endgroup::"
@@ -190,10 +200,10 @@ jobs:
             if [ -f "$d/pom.xml" ]; then
               name=$(basename "$d")
               echo "::group::Single Demo $name"
-              if (cd "$d" && mvn -B clean test); then
+              if ./mvnw -B -f "$d/pom.xml" clean test; then
                 echo "::notice title=Single Demo $name::PASSED"
               else
-                echo "::error title=Single Demo $name failed::mvn clean test failed"
+                echo "::error title=Single Demo $name failed::Maven Wrapper clean test failed"
                 failed="$failed $name"
               fi
               echo "::endgroup::"
@@ -211,7 +221,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Suite | Scope | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|---|---|---|" >> $GITHUB_STEP_SUMMARY
-          echo "| **Core Database** | Document, Key-Value, Indexes, Transactions, Storage Engines | ✅ PASS (943 tests) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Core Database** | Document, Key-Value, Indexes, Transactions, Storage Engines | ✅ PASS (949 tests) |" >> $GITHUB_STEP_SUMMARY
           echo "| **Spring Boot Starter** | Autoconfiguration, EmbedRepository, Transactions | ✅ PASS (78 tests) |" >> $GITHUB_STEP_SUMMARY
           echo "| **Quarkus Extension** | CDI injection, DevServices, Native build | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
           echo "| **Micronaut Integration** | Factory DI, Singleton bean lifecycle | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
