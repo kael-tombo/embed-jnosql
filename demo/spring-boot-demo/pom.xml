@@ -64,8 +64,7 @@
         </dependency>
 
         <!-- Test -->
-        <!-- Spring Data JPA-style repository surface over EmbedJNoSQL (optional starter deps,
-             so the demo declares them explicitly at the starter-pinned 3.3.0 version) -->
+        <!-- Spring Data repository API managed by the Spring Boot 4.0.0 parent. -->
         <dependency>
             <groupId>org.springframework.data</groupId>
             <artifactId>spring-data-commons</artifactId>

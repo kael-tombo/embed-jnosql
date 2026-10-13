@@ -52,7 +52,7 @@
     </issueManagement>
 
     <properties>
-        <!-- NOTE: Requires Java 21+ in production. Using Java 17 for CI/development. -->
+        <!-- Java 17 is the compiler target; CI tests Java 17 and 21. -->
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

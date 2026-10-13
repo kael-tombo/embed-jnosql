@@ -10,7 +10,7 @@
     <packaging>jar</packaging>
 
     <name>EmbedJNoSQL Spring Boot Starter</name>
-    <description>Spring Boot 4.x / 3.4+ auto-configuration for the embedded EmbedJNoSQL NoSQL database. Zero-server, zero-config document and key-value persistence with Spring Data repository support.</description>
+    <description>Spring Boot 4.0.0 auto-configuration for the embedded EmbedJNoSQL NoSQL database. Zero-server, zero-config document and key-value persistence with Spring Data repository support.</description>
     <url>https://github.com/armand-ratombotiana/EmbedJNoSQL</url>
 
     <licenses>

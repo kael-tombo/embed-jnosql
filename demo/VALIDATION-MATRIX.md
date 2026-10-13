@@ -1,55 +1,82 @@
 # Demonstration Validation Matrix
 
-This matrix documents the real test execution results across all demonstration applications and frameworks in the EmbedJNoSQL ecosystem.
+This matrix records the latest local Maven Wrapper validation from the repository root using an
+isolated Maven local repository. The run used Apache Maven 3.9.6 and Eclipse Temurin JDK 25.0.4.1;
+the project compiler target is Java 17. CI is configured to test Java 17 and 21. These local results
+do not claim that a hosted CI run has completed.
 
-## Framework Execution Matrix
+## Summary
 
-| Demo Application | Framework & Version | Integration Mechanism | Test Class | Tests Run | Failures | Errors | Status | Execution Time |
-|---|---|---|---|---|---|---|---|---|
-| **[annotation-showcase-demo](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/annotation-showcase-demo)** | Jakarta NoSQL / JPA / Hibernate | Tri-standard annotations & SQL | `AnnotationShowcaseTest` | 5 | 0 | 0 | **PASS** | 0.68 s |
-| **[spring-boot-demo](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/spring-boot-demo)** | Spring Boot 4.0.0 (3.4+ compatible) | `embed-jnosql-spring-boot-starter` | `EcommerceApplicationTest` | 6 | 0 | 0 | **PASS** | 4.27 s |
-| **[quarkus-demo](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/quarkus-demo)** | Quarkus 3.8.0 | `embed-jnosql-quarkus-extension-runtime` | `ProductResourceTest` | 4 | 0 | 0 | **PASS** | 17.74 s |
-| **[micronaut-demo](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/micronaut-demo)** | Micronaut 4.2.0 | `embedjnosql-micronaut-integration` | `EcommerceControllerTest` | 4 | 0 | 0 | **PASS** | 3.59 s |
-| **[vertx-demo](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/vertx-demo)** | Eclipse Vert.x 4.5.4 | `embed-jnosql-core` (`executeBlocking`) | `EcommerceVerticleTest` | 4 | 0 | 0 | **PASS** | 2.00 s |
-| **[end-to-end-validation](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/end-to-end-validation)** | JUnit 5.10.2 | Native Multi-Engine Matrix | `MultiEngineE2EValidationTest` | 4 | 0 | 0 | **PASS** | 0.76 s |
-| **[batch-processing-demo](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/batch-processing-demo)** | EmbedJNoSQL Core — Document + KV + List | Atomic batch, chunked ingestion, fault injection | `BatchProcessingDemoTest` | 5 | 0 | 0 | **PASS** | — |
-| **[advanced-queries-demo](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/advanced-queries-demo)** | EmbedJNoSQL SQL + NoSQL Dual-Engine | SQL JOINs, aggregations, entity fluent API | `AdvancedQueriesDemoTest` | 5 | 0 | 0 | **PASS** | — |
-| **[load-and-stress-demo](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/load-and-stress-demo)** | EmbedJNoSQL Core — Concurrent load & charge | CountDownLatch burst, latency percentiles | `LoadAndChargeTest` | 6 | 0 | 0 | **PASS** | 2.927 s |
+All executed tests passed with zero failures, errors, or skips.
 
----
+| Suite | Tests | Failures | Errors | Skipped | Result |
+|---|---:|---:|---:|---:|---|
+| Core (`clean verify -Pcoverage-check`) | 951 | 0 | 0 | 0 | **PASS** |
+| Spring Boot starter (`clean verify`) | 78 | 0 | 0 | 0 | **PASS** |
+| CLI (`clean verify`) | 4 | 0 | 0 | 0 | **PASS** |
+| Quarkus and Micronaut integration modules (`clean verify`) | 0 | 0 | 0 | 0 | **BUILD PASS; no test reports** |
+| Nine application demos | 102 | 0 | 0 | 0 | **PASS** |
+| 20 single-feature core demos | 37 | 0 | 0 | 0 | **PASS** |
+| **Total executed tests** | **1,172** | **0** | **0** | **0** | **PASS** |
 
-## Multi-Engine Capabilities Matrix
+The Quarkus and Micronaut modules compiled and passed Maven `verify`; they did not produce
+Surefire test reports. `demo-common` also installed successfully with tests skipped because it
+contains shared demo models, not a test suite.
 
-| Storage Engine | Documents (`products`/`orders`) | Key-Value (`price_cache`) | Wide-Column (`inventory`) | MVCC ACID Transactions | Restart Durability | Status |
-|---|---|---|---|---|---|---|
-| `IN_MEMORY` | Yes | Yes | Yes | Yes | N/A (RAM-only) | **VERIFIED** |
-| `FILE` | Yes | Yes | Yes | Yes | Verified | **VERIFIED** |
-| `B_TREE` | Yes | Yes | Yes | Yes | Verified | **VERIFIED** |
-| `LSM_TREE` | Yes | Yes | Yes | Yes | Verified | **VERIFIED** |
+Core and the Spring Boot starter, both version `1.0.1`, are published on Maven Central. The
+Quarkus extension and Micronaut integration are version `1.0.0` source-checkout modules and are
+not published on Maven Central; install them locally before running the corresponding demos.
 
----
+## Framework and Application Demos
 
-## Load Testing Benchmarks (load-and-stress-demo)
+| Demo | Framework / version | Integration or scope | Tests | Failures | Errors | Skipped | Result |
+|---|---|---|---:|---:|---:|---:|---|
+| [spring-boot-demo](spring-boot-demo) | Spring Boot 4.0.0 | Published Spring Boot starter 1.0.1 | 41 | 0 | 0 | 0 | **PASS** |
+| [quarkus-demo](quarkus-demo) | Quarkus 3.8.0 | Source-only Quarkus extension 1.0.0; includes Jakarta `Template` CDI injection | 14 | 0 | 0 | 0 | **PASS** |
+| [micronaut-demo](micronaut-demo) | Micronaut 4.2.0 | Source-only Micronaut integration 1.0.0 | 11 | 0 | 0 | 0 | **PASS** |
+| [vertx-demo](vertx-demo) | Eclipse Vert.x 4.5.4 | Core API with `executeBlocking` | 11 | 0 | 0 | 0 | **PASS** |
+| [end-to-end-validation](end-to-end-validation) | JUnit 5.10.2 | Storage-engine lifecycle and durability | 4 | 0 | 0 | 0 | **PASS** |
+| [advanced-queries-demo](advanced-queries-demo) | EmbedJNoSQL core | Document queries and JVM-side aggregation | 5 | 0 | 0 | 0 | **PASS** |
+| [annotation-showcase-demo](annotation-showcase-demo) | JNoSQL, Jakarta Persistence and Hibernate annotations | Mapping metadata over documents; no JPA `EntityManager` or SQL engine | 5 | 0 | 0 | 0 | **PASS** |
+| [batch-processing-demo](batch-processing-demo) | EmbedJNoSQL core | Atomic batches and rollback | 5 | 0 | 0 | 0 | **PASS** |
+| [load-and-stress-demo](load-and-stress-demo) | EmbedJNoSQL core | Concurrent operations and metrics | 6 | 0 | 0 | 0 | **PASS** |
+| **Total** |  |  | **102** | **0** | **0** | **0** | **PASS** |
 
-Measured on JVM in-process with `IN_MEMORY` engine. All scenarios: **6/6 PASS, 0 failures, error rate = 0%**.
+## Single-Feature Core Demos
 
-| Test ID | Scenario | Threads | Total Ops | Duration | p50 Latency | p95 Latency | p99 Latency | Throughput |
-|---|---|---|---|---|---|---|---|---|
-| LOAD-01 | Concurrent Writes | 10 | 1,000 | 464 ms | 0 ms | 1 ms | 305 ms | **2,155 ops/sec** |
-| LOAD-02 | 50-Thread Safety | 50 | 2,500 | 168 ms | 0 ms | 1 ms | 1 ms | **14,881 ops/sec** |
-| LOAD-03 | Read-After-Write | 8 | 400 | 51 ms | 0 ms | 1 ms | 32 ms | **7,843 ops/sec** |
-| LOAD-04 | Mixed Engine (Doc+KV) | 12 | 1,200 | 22 ms | 0 ms | 1 ms | 1 ms | **54,545 ops/sec** |
-| LOAD-05 | Saturation / Charge | 20 | 12,815 | 1,996 ms | 1 ms | 2 ms | 10 ms | **6,420 ops/sec** |
-| LOAD-06 | MetricsReport Stats | — | — | — | — | — | — | **Unit verified** |
+Each project depends on `embed-jnosql-core` only; these are NoSQL behavior demonstrations, not
+SQL/JPA dual-engine tests.
 
-> **Read-after-write consistency:** 0 violations across 400 concurrent write+read pairs.  
-> **Saturation:** 12,815 documents written in 2 seconds by 20 threads with 0 failures.
+| # | Demo | Tests | Failures | Errors | Skipped | Result |
+|---:|---|---:|---:|---:|---:|---|
+| 01 | [Document CRUD](demos/01-document-crud) | 2 | 0 | 0 | 0 | **PASS** |
+| 02 | [Native query predicates](demos/02-native-query-predicates) | 1 | 0 | 0 | 0 | **PASS** |
+| 03 | [Nested-field queries](demos/03-nested-field-queries) | 1 | 0 | 0 | 0 | **PASS** |
+| 04 | [Secondary indexes](demos/04-secondary-indexes) | 1 | 0 | 0 | 0 | **PASS** |
+| 05 | [TTL expiry](demos/05-ttl-expiry) | 3 | 0 | 0 | 0 | **PASS** |
+| 06 | [Key-value buckets](demos/06-key-value-buckets) | 2 | 0 | 0 | 0 | **PASS** |
+| 07 | [Redis-style lists](demos/07-redis-style-lists) | 2 | 0 | 0 | 0 | **PASS** |
+| 08 | [Redis-style sets](demos/08-redis-style-sets) | 2 | 0 | 0 | 0 | **PASS** |
+| 09 | [Redis-style hashes](demos/09-redis-style-hashes) | 2 | 0 | 0 | 0 | **PASS** |
+| 10 | [Wide-column families](demos/10-wide-column-families) | 2 | 0 | 0 | 0 | **PASS** |
+| 11 | [MVCC transactions](demos/11-mvcc-transactions) | 2 | 0 | 0 | 0 | **PASS** |
+| 12 | [Aggregation pipeline](demos/12-aggregation-pipeline) | 2 | 0 | 0 | 0 | **PASS** |
+| 13 | [SQL-to-NoSQL migration](demos/13-sql-to-nosql-migration) | 2 | 0 | 0 | 0 | **PASS** |
+| 14 | [Event bus](demos/14-event-bus) | 2 | 0 | 0 | 0 | **PASS** |
+| 15 | [Metrics](demos/15-metrics) | 2 | 0 | 0 | 0 | **PASS** |
+| 16 | [Backup and restore](demos/16-backup-restore) | 2 | 0 | 0 | 0 | **PASS** |
+| 17 | [CDC change feed](demos/17-cdc-change-feed) | 2 | 0 | 0 | 0 | **PASS** |
+| 18 | [Text search](demos/18-text-search) | 2 | 0 | 0 | 0 | **PASS** |
+| 19 | [Vector search](demos/19-vector-search) | 2 | 0 | 0 | 0 | **PASS** |
+| 20 | [Durability and recovery](demos/20-durability-recovery) | 1 | 0 | 0 | 0 | **PASS** |
+| **Total** | **20 suites** | **37** | **0** | **0** | **0** | **PASS** |
 
----
+## Storage-Engine Coverage
 
-## Verification Evidence Log
-- All demo sub-modules compile and execute using standard `mvn clean test` commands.
-- Zero mock libraries: real disk files and actual in-process memory structures are allocated, asserted, and closed cleanly.
-- Transaction abort scenarios verify complete isolation: inventory levels never corrupt upon rollback.
-- Load testing validates thread-safety: 50 concurrent writers produce zero data corruption or orphaned records.
+The `end-to-end-validation` demo passed its four-test suite covering storage-engine lifecycle,
+data-model co-existence, transactions, and durability/recovery. The four engine modes exercised
+are `IN_MEMORY`, `FILE`, `B_TREE`, and `LSM_TREE`.
 
+Performance figures are not included here: this validation run checked the six load-and-stress
+JUnit tests but did not run a reproducible benchmark campaign. Timing and throughput vary by
+machine and runtime.

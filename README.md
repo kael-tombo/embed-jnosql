@@ -7,10 +7,10 @@ One JAR, zero infrastructure. No server, no Docker, no daemon, no network.
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/Java-17%2B-orange.svg)](https://openjdk.org/)
-[![Tests](https://img.shields.io/badge/tests-1%2C021%20passing-brightgreen.svg)](#build--test)
+[![Tests](https://img.shields.io/badge/tests-1%2C172%20passing-brightgreen.svg)](#build--test)
 [![Zero Docker](https://img.shields.io/badge/Docker-zero%20required-blue.svg)](#why-embedjnosql)
 [![Shaded JAR](https://img.shields.io/badge/shaded%20JAR-3.1%20MB-blueviolet.svg)](#measured-artifact-sizes-this-repository-this-build)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2-brightgreen.svg)](demo/spring-boot-demo)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.0-brightgreen.svg)](demo/spring-boot-demo)
 [![Quarkus](https://img.shields.io/badge/Quarkus-3.8-purple.svg)](demo/quarkus-demo)
 [![Micronaut](https://img.shields.io/badge/Micronaut-4.2-red.svg)](demo/micronaut-demo)
 [![Vert.x](https://img.shields.io/badge/Vert.x-4.5-blue.svg)](demo/vertx-demo)
@@ -70,7 +70,7 @@ EmbedJNoSQL executes all data models over a **single unified engine**. Collectio
 ```text
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                          APPLICATION CODE                               │
-│   Spring Boot 4 / 3.4+  ·  Quarkus  ·  Micronaut  ·  Vert.x  ·  Java    │
+│   Spring Boot 4.0.0  ·  Quarkus 3.8.0  ·  Micronaut 4.2.0  ·  Vert.x  │
 └────────────────────────────────────┬────────────────────────────────────┘
                                      │
 ┌────────────────────────────────────▼────────────────────────────────────┐
@@ -141,38 +141,37 @@ headroom; the "core JAR" in the narrow sense is ~570 KiB. Framework starters, th
 extension, and demo applications add their own dependencies and are **not** included in these
 figures.
 
-### Framework Starters & Standards
+### Framework Integrations & Standards
 
-EmbedJNoSQL was engineered with a zero-daemon, in-process architecture. That gives it a distinct advantage across modern Java web frameworks:
+The core API is embedded and synchronous. The following framework integrations are backed by the demo applications and test results in this repository; no broader framework compatibility is implied.
 
-| Framework | Integration Style | Maturity in EmbedJNoSQL | Code Pattern |
+| Framework | Integration | Verified evidence | Artifact availability |
 |---|---|---|---|
-| **Spring Boot 4 / 3.4+** | `@AutoConfiguration`, Spring Data Repositories, `@Transactional` | First-Class Starter (`embed-jnosql-spring-boot-starter`) | `@Autowired EmbedJNoSQL db;` |
-| **Quarkus 3.x** | CDI Extension (`@ApplicationScoped`), DevServices | Dedicated Extension (`quarkus-extension/`) | `@Inject EmbedJNoSQL db;` |
-| **Micronaut 4.x** | Compile-Time DI (`@Factory`, `@Singleton`) | Dedicated Integration (`micronaut-integration/`) | `@Inject EmbedJNoSQL db;` |
-| **Eclipse Vert.x 4.x** | Non-blocking / Worker dispatch (`executeBlocking`) | Validated Pattern (`demo/vertx-demo/`) | `vertx.executeBlocking(...)` |
-| **Javalin / Ktor / Helidon** | Lightweight programmatic injection | Native (Zero Glue Code) | `EmbedJNoSQL.inMemory()` |
+| **Spring Boot 4.0.0** | Auto-configuration, Spring Data repository support | Demo suite: 41 tests passed | Core and starter 1.0.1 are on Maven Central |
+| **Quarkus 3.8.0** | CDI extension | Demo suite: 14 tests passed, including Jakarta `Template` injection | Extension 1.0.0 is source-checkout/local-install only |
+| **Micronaut 4.2.0** | Compile-time DI | Demo suite: 11 tests passed | Integration 1.0.0 is source-checkout/local-install only |
+| **Eclipse Vert.x 4.5.4** | Worker dispatch with `executeBlocking` | Demo suite: 11 tests passed | Uses the core API; no dedicated Vert.x artifact |
 
 ```xml
-<!-- Spring Boot 4.x / 3.4+ Starter -->
+<!-- Published on Maven Central; tested with Spring Boot 4.0.0 -->
 <dependency>
     <groupId>io.github.kael-tombo</groupId>
     <artifactId>embed-jnosql-spring-boot-starter</artifactId>
     <version>1.0.1</version>
 </dependency>
 
-<!-- Quarkus Extension -->
+<!-- Source-checkout/local-install only; not published to Maven Central -->
 <dependency>
     <groupId>io.github.kael-tombo</groupId>
     <artifactId>embed-jnosql-quarkus-extension-runtime</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.0</version>
 </dependency>
 
-<!-- Micronaut Integration -->
+<!-- Source-checkout/local-install only; not published to Maven Central -->
 <dependency>
     <groupId>io.github.kael-tombo</groupId>
     <artifactId>embedjnosql-micronaut-integration</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.0</version>
 </dependency>
 ```
 
@@ -308,7 +307,7 @@ repo.save(new User("u2", "Ada"));
 Iterable<User> all = repo.findAll();
 ```
 
-### Spring Boot 4.x / 3.4+ Starter & Auto-Configuration
+### Spring Boot 4.0.0 Starter & Auto-Configuration
 
 In your `pom.xml`:
 ```xml
@@ -386,12 +385,12 @@ keep all database calls **off the Vert.x event loop** by dispatching them throug
 <dependency>
     <groupId>io.vertx</groupId>
     <artifactId>vertx-core</artifactId>
-    <version>4.5.10</version>
+    <version>4.5.4</version>
 </dependency>
 <dependency>
     <groupId>io.vertx</groupId>
     <artifactId>vertx-web</artifactId>
-    <version>4.5.10</version>
+    <version>4.5.4</version>
 </dependency>
 ```
 
@@ -724,11 +723,11 @@ was removed with the SQL product.
 EmbedJNoSQL includes a standalone interactive terminal shell for database inspection and direct command-line scripting:
 
 ```bash
-# Build CLI tool
-mvn -f cli/pom.xml package -DskipTests
+# Build the CLI tool (run from the repository root)
+./mvnw -B -f cli/pom.xml package -DskipTests
 
 # Start interactive shell on data directory
-java -jar cli/target/embed-jnosql-cli-1.0.1.jar ./data
+java -jar cli/target/embed-jnosql-cli-1.0.0.jar ./data
 ```
 
 ```text
@@ -811,21 +810,33 @@ No data migration is required, and no data files were deleted by this change.
 ## Build & Test
 
 ```bash
-# Core: build and run the full suite
-./mvnw test
+# Run core tests and install it for standalone consumers
+./mvnw -B clean verify -Pcoverage-check
+./mvnw -B install -DskipTests
 
-# Install core, then run a framework demo (each demo is a standalone Maven project)
-./mvnw -DskipTests install
-./mvnw -f demo/spring-boot-demo/pom.xml test
+# Install source-only framework modules and shared demo models
+./mvnw -B -f spring-boot-starter/pom.xml install -DskipTests
+./mvnw -B -f quarkus-extension/pom.xml install -DskipTests
+./mvnw -B -f micronaut-integration/pom.xml install -DskipTests
+./mvnw -B -f demo/demo-common/pom.xml install -DskipTests
 
-# All demos
-for m in demo/*/pom.xml; do ./mvnw -f "$m" test; done
+# Run all nine framework/application demo suites
+for m in spring-boot-demo quarkus-demo micronaut-demo vertx-demo \
+         end-to-end-validation advanced-queries-demo annotation-showcase-demo \
+         batch-processing-demo load-and-stress-demo; do
+  ./mvnw -B -f "demo/$m/pom.xml" clean test || exit 1
+done
+
+# Run all 20 single-feature core demos
+for pom in demo/demos/*/pom.xml; do
+  ./mvnw -B -f "$pom" clean test || exit 1
+done
 ```
 
-Verified status for this release:
-core **943 tests, 0 failures**; Spring Boot starter **78 tests (covering all 36 validation scenarios), 0 failures**;
-the demo projects **43 tests, 0 failures**; the CLI **4 tests, 0 failures**.
-Total: **1,021 tests, 0 failures, 100% green**.
+Latest local validation with Maven Wrapper 3.9.6 and JDK 25.0.4.1: core **951 tests**,
+Spring Boot starter **78**, CLI **4**, nine application demos **102**, and 20 single-feature
+demos **37**. All **1,172 tests passed** with zero failures, errors, or skips. The source level
+is Java 17; CI is configured to test Java 17 and 21.
 
 ---
 

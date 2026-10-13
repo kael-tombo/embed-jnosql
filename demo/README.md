@@ -1,6 +1,6 @@
 # EmbedJNoSQL Demonstration Ecosystem
 
-This directory contains the demonstration applications showcasing **EmbedJNoSQL** embedded multi-model NoSQL database across the Java/JVM ecosystem. Every demo is a standalone Maven project; see `RUNBOOK.md` for the exact run procedure (install core, install `demo-common`, then `mvn test` each demo).
+This directory contains demonstration applications for the embedded multi-model NoSQL database **EmbedJNoSQL**. Each demo is a standalone Maven project; see `RUNBOOK.md` for the reproducible build and test order using the repository's Maven Wrapper.
 
 ---
 
@@ -10,14 +10,14 @@ This directory contains the demonstration applications showcasing **EmbedJNoSQL*
 demo/
 ├── demo-common/              # Shared E-Commerce domain model & fixtures (Records)
 ├── demos/                    # 20 standalone single-feature demos (see table below)
-├── spring-boot-demo/         # Spring Boot 4.0.0 (3.4+ compatible) + EmbedJNoSQL Auto-Configuration starter demo
+├── spring-boot-demo/         # Spring Boot 4.0.0 + EmbedJNoSQL auto-configuration starter demo
 ├── quarkus-demo/             # Quarkus 3.8.0 + EmbedJNoSQL CDI Extension demo
 ├── micronaut-demo/           # Micronaut 4.2.0 + EmbedJNoSQL DI Integration demo
 ├── vertx-demo/               # Eclipse Vert.x 4.5.4 Reactive non-blocking demo
 ├── end-to-end-validation/    # Multi-engine lifecycle and durability verification
 ├── advanced-queries-demo/    # Native document queries, filtering, and JVM-side aggregation
 ├── batch-processing-demo/    # Atomic batch writes, rollback, throughput patterns
-├── load-and-stress-demo/     # Concurrency harness and indicative performance figures
+├── load-and-stress-demo/     # Concurrency and load-test harness
 └── annotation-showcase-demo/ # Multi-standard annotations (JNoSQL, JPA, Hibernate) over documents
 ```
 
@@ -53,24 +53,47 @@ Twenty standalone Maven projects, each demonstrating one engine capability with 
 ### Building and running the demos
 
 ```bash
-# from demo/
-mvn -B install -f demo-common/pom.xml   # not required by demos/, but keeps the workspace consistent
+# Run these commands from the repository root.
+# Install core, framework integrations, and shared demo models.
+./mvnw -B install -DskipTests
+./mvnw -B -f spring-boot-starter/pom.xml install -DskipTests
+./mvnw -B -f quarkus-extension/pom.xml install -DskipTests
+./mvnw -B -f micronaut-integration/pom.xml install -DskipTests
+./mvnw -B -f demo/demo-common/pom.xml install -DskipTests
 
-# run every demo's test suite
-for d in demos/*/; do mvn -B test -f "$d/pom.xml"; done
+# Run the nine framework/application demo suites.
+for m in spring-boot-demo quarkus-demo micronaut-demo vertx-demo \
+         end-to-end-validation advanced-queries-demo annotation-showcase-demo \
+         batch-processing-demo load-and-stress-demo; do
+  ./mvnw -B -f "demo/$m/pom.xml" clean test || exit 1
+done
 
-# run one demo as a program (example: nested-field queries)
-mvn -B compile exec:java -f demos/03-nested-field-queries/pom.xml \
+# Run all 20 single-feature core demos.
+for pom in demo/demos/*/pom.xml; do
+  ./mvnw -B -f "$pom" clean test || exit 1
+done
+
+# Run one single-feature demo (example: nested-field queries).
+./mvnw -B compile exec:java -f demo/demos/03-nested-field-queries/pom.xml \
   -Dexec.mainClass=org.embeddedjnosql.db.demo.demos.nestedfieldqueries.NestedFieldDemo
 ```
 
-The 20 projects are generated from `gen-demos.sh` (templates in `mainNN.txt` / `testNN.txt`); edit those and re-run the script to regenerate.
+On native Windows PowerShell, use `.\mvnw.cmd` instead of `./mvnw`. The 20 projects are
+generated from `gen-demos.sh` (templates in `mainNN.txt` / `testNN.txt`); after regenerating,
+review the diff because the generator rewrites all generated demo sources and tests.
+
+### Artifact availability
+
+`embed-jnosql-core:1.0.1` and `embed-jnosql-spring-boot-starter:1.0.1` are published on Maven Central.
+The Quarkus extension and Micronaut integration are version `1.0.0` source-checkout modules and are
+not published on Maven Central; install them from the repository root before running their demos.
+The commands below and in [the runbook](RUNBOOK.md) perform that installation.
 
 ---
 
 ## Demonstration Applications Overview
 
-### 1. [demo-common](file:///c:/Users/jratombo-adm/Desktop/JNoSQL-EMBED/demo/demo-common)
+### 1. [demo-common](demo-common)
 - Implements the unified **E-Commerce & Order Management** domain model using modern Java 17 records:
   - `Product`: Document model with nested tags and flexible attribute maps.
   - `Order` & `OrderItem`: Transactional order placements.
@@ -79,7 +102,7 @@ The 20 projects are generated from `gen-demos.sh` (templates in `mainNN.txt` / `
   - `SampleData`: Deterministic test fixtures.
 
 ### 2. [spring-boot-demo](spring-boot-demo)
-- **Framework**: Spring Boot 4.0.0 (Spring Boot 3.4+ compatible)
+- **Framework**: Spring Boot 4.0.0 (the version tested by this demo)
 - **Integration**: `embed-jnosql-spring-boot-starter` (`EmbedJNoSQLTemplate`)
 - **Key Highlights**:
   - Auto-configuration of `EmbedJNoSQL` and `EmbedJNoSQLTemplate`.
@@ -131,27 +154,7 @@ The 20 projects are generated from `gen-demos.sh` (templates in `mainNN.txt` / `
 
 ## Running the Demonstrations
 
-To build and run tests for all demo applications:
-
-```bash
-# Build shared domain
-cd demo/demo-common && mvn clean install
-
-# Run Spring Boot Demo
-cd ../spring-boot-demo && mvn test
-
-# Run Quarkus Demo
-cd ../quarkus-demo && mvn test
-
-# Run Micronaut Demo
-cd ../micronaut-demo && mvn test
-
-# Run Vert.x Demo
-cd ../vertx-demo && mvn test
-
-# Run Multi-Engine E2E Validation
-cd ../end-to-end-validation && mvn test
-
-# Run Annotation & Dual-Engine Showcase Demo
-cd ../annotation-showcase-demo && mvn test && mvn compile exec:java
-```
+From the repository root, use the Maven Wrapper commands in
+[Building and running the demos](#building-and-running-the-demos). That sequence covers all nine
+framework/application suites and all 20 single-feature demos; [the runbook](RUNBOOK.md) also
+documents how to launch the framework demo servers.
