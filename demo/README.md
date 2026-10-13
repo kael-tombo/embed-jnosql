@@ -84,9 +84,11 @@ review the diff because the generator rewrites all generated demo sources and te
 
 ### Artifact availability
 
-`embed-jnosql-core:1.0.1` and `embed-jnosql-spring-boot-starter:1.0.1` are published on Maven Central.
-The Quarkus extension and Micronaut integration are version `1.0.0` source-checkout modules and are
-not published on Maven Central; install them from the repository root before running their demos.
+The `1.0.2` Maven Central release candidate includes all seven first-party core and integration
+coordinates, but publication and post-publication verification are still pending. Core and the
+Spring Boot starter `1.0.1` remain published. Until `1.0.2` is verified on Central, install the
+modules from this checkout before running demos. The demo applications themselves are validation
+consumers and are not Maven Central release artifacts.
 The commands below and in [the runbook](RUNBOOK.md) perform that installation.
 
 ---

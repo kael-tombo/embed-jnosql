@@ -103,16 +103,21 @@ EmbedJNoSQL executes all data models over a **single unified engine**. Collectio
 
 ## Installation
 
-> **Not on Maven Central (yet).** EmbedJNoSQL is distributed from **GitHub Releases**; no artifact is
-> published to a public repository, so the coordinates below do **not** resolve on their own.
-> Install locally first — then they work exactly as written.
+> **Maven Central release status:** the `1.0.2` release candidate is prepared, but publication
+> and post-publication verification have not completed. Core and the Spring Boot starter `1.0.1`
+> remain available on Maven Central; use `1.0.2` coordinates below after the release is confirmed.
+> Until then, install the release artifacts from this checkout:
 
 ```bash
-git clone <repository-url> && cd JNoSQL-EMBED
-./mvnw -DskipTests install     # installs embed-jnosql-core and the starters into your local repo
+git clone https://github.com/kael-tombo/embed-jnosql.git && cd embed-jnosql
+./mvnw -B -DskipTests install
+for module in spring-boot-starter micronaut-integration cli quarkus-extension; do
+  ./mvnw -B -f "$module/pom.xml" -DskipTests install
+done
 ```
 
-Alternatively, download the shaded jar from the GitHub Release and put it on your classpath.
+The release includes the seven first-party core and integration coordinates; demo applications
+remain unpublished consumers.
 
 ### Core (Java 17+, three runtime dependencies)
 
@@ -125,7 +130,7 @@ Quarkus, Micronaut, Jakarta CDI, Hibernate annotations, Micrometer — is option
 <dependency>
     <groupId>io.github.kael-tombo</groupId>
     <artifactId>embed-jnosql-core</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
 </dependency>
 ```
 
@@ -133,13 +138,11 @@ Quarkus, Micronaut, Jakarta CDI, Hibernate annotations, Micrometer — is option
 
 | Artifact | Bytes | Human |
 |---|---|---|
-| Shaded core jar (`target/embed-jnosql-core-1.0.1.jar`: core classes + Jackson + slf4j-api + console assets) | 3,115,815 | 2.97 MiB / 3.11 MB |
-| Core classes only (`target/original-embed-jnosql-core-1.0.1.jar`, no bundled dependencies) | 584,240 | 570 KiB |
+| Core jar (`target/embed-jnosql-core-1.0.2.jar`: core classes + Jackson + slf4j-api + console assets) | 3,115,628 | 2.97 MiB / 3.12 MB |
 
 The **whole distribution** target (< 5 MB for the bundled, ready-to-run core jar) is met with
-headroom; the "core JAR" in the narrow sense is ~570 KiB. Framework starters, the Quarkus
-extension, and demo applications add their own dependencies and are **not** included in these
-figures.
+headroom. Framework starters, the Quarkus extension, and demo applications add their own
+dependencies and are **not** included in these figures.
 
 ### Framework Integrations & Standards
 
@@ -147,31 +150,35 @@ The core API is embedded and synchronous. The following framework integrations a
 
 | Framework | Integration | Verified evidence | Artifact availability |
 |---|---|---|---|
-| **Spring Boot 4.0.0** | Auto-configuration, Spring Data repository support | Demo suite: 41 tests passed | Core and starter 1.0.1 are on Maven Central |
-| **Quarkus 3.8.0** | CDI extension | Demo suite: 14 tests passed, including Jakarta `Template` injection | Extension 1.0.0 is source-checkout/local-install only |
-| **Micronaut 4.2.0** | Compile-time DI | Demo suite: 11 tests passed | Integration 1.0.0 is source-checkout/local-install only |
+| **Spring Boot 4.0.0** | Auto-configuration, Spring Data repository support | Demo suite: 41 tests passed | Starter 1.0.1 is published; 1.0.2 candidate awaits Central verification |
+| **Quarkus 3.8.0** | CDI extension | Demo suite: 14 tests passed, including Jakarta `Template` injection | 1.0.2 candidate awaits Central verification |
+| **Micronaut 4.2.0** | Compile-time DI | Demo suite: 11 tests passed | 1.0.2 candidate awaits Central verification |
 | **Eclipse Vert.x 4.5.4** | Worker dispatch with `executeBlocking` | Demo suite: 11 tests passed | Uses the core API; no dedicated Vert.x artifact |
 
+The demo test counts above come from the preceding local validation run; the full `1.0.2` release
+candidate validation is still pending. See the [validation matrix](demo/VALIDATION-MATRIX.md) for
+the evidence scope.
+
 ```xml
-<!-- Published on Maven Central; tested with Spring Boot 4.0.0 -->
+<!-- Use 1.0.2 after its Maven Central publication is verified. -->
 <dependency>
     <groupId>io.github.kael-tombo</groupId>
     <artifactId>embed-jnosql-spring-boot-starter</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
 </dependency>
 
-<!-- Source-checkout/local-install only; not published to Maven Central -->
+<!-- Use 1.0.2 after its Maven Central publication is verified. -->
 <dependency>
     <groupId>io.github.kael-tombo</groupId>
     <artifactId>embed-jnosql-quarkus-extension-runtime</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.2</version>
 </dependency>
 
-<!-- Source-checkout/local-install only; not published to Maven Central -->
+<!-- Use 1.0.2 after its Maven Central publication is verified. -->
 <dependency>
     <groupId>io.github.kael-tombo</groupId>
     <artifactId>embedjnosql-micronaut-integration</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.2</version>
 </dependency>
 ```
 
@@ -314,7 +321,7 @@ In your `pom.xml`:
 <dependency>
     <groupId>io.github.kael-tombo</groupId>
     <artifactId>embed-jnosql-spring-boot-starter</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
 </dependency>
 ```
 
@@ -378,7 +385,7 @@ keep all database calls **off the Vert.x event loop** by dispatching them throug
 <dependency>
     <groupId>io.github.kael-tombo</groupId>
     <artifactId>embed-jnosql-core</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
 </dependency>
 
 <!-- Your Vert.x dependencies -->
@@ -702,7 +709,7 @@ try (var db = EmbedJNoSQL.create(EmbedJNoSQL.embed()
 Or from the shaded jar:
 
 ```bash
-java -jar target/embed-jnosql-core-1.0.1.jar --port 8080 --engine FILE --data-dir ./data
+java -jar target/embed-jnosql-core-1.0.2.jar --port 8080 --engine FILE --data-dir ./data
 ```
 
 Panels: **Overview, Collections (documents), Key-Value & Redis Structures, Wide-Column
@@ -727,7 +734,7 @@ EmbedJNoSQL includes a standalone interactive terminal shell for database inspec
 ./mvnw -B -f cli/pom.xml package -DskipTests
 
 # Start interactive shell on data directory
-java -jar cli/target/embed-jnosql-cli-1.0.0.jar ./data
+java -jar cli/target/embed-jnosql-cli-1.0.2.jar ./data
 ```
 
 ```text

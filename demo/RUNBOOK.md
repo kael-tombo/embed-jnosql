@@ -13,9 +13,9 @@ This runbook provides step-by-step instructions to build, launch, test, and trou
 
 ## 1. Quick Start (Build & Test Everything)
 
-Run the following commands from the repository root. The Quarkus and Micronaut integration
-artifacts are source-checkout-only version `1.0.0` modules, not Maven Central releases; install
-them locally before testing their demo applications.
+Run the following commands from the repository root. The `1.0.2` release candidate is not yet
+published to Maven Central, so install the core and framework modules locally before testing the
+demos. Core and the Spring Boot starter `1.0.1` remain available from Central.
 
 ```bash
 # 1. Verify core and install it for the independent Maven projects

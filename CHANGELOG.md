@@ -29,11 +29,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated SEO meta keywords to include Vert.x, Javalin, Helidon, Dropwizard
   - Added `showFwTab()` JavaScript tab controller and `.fw-tab`/`.fw-panel` CSS
 
+---
+
+## [1.0.2] — Prepared; Maven Central publication pending
+
+### Changed
+
+- Aligned the seven first-party core and integration artifacts, plus first-party demo consumers,
+  on version `1.0.2`. Demo applications remain validation consumers and are not release artifacts.
+- Corrected Maven Central publishing metadata for the Micronaut integration, CLI, and Quarkus
+  extension modules.
+
 ### CI / CD
 
-- Updated [`.github/workflows/publish-central.yml`](file:///.github/workflows/publish-central.yml):
-  - **Deactivated demo test execution prior to and during publish**: Deployments use fast pre-flight core/starter unit verification and `-DskipTests` to prevent releasing from being stalled or blocked by demo builds.
-  - **Added post-publish validation job (`validate-all-after-publish`)**: Automatically triggers after publishing to Maven Central to validate all test suites end-to-end: Core test suite (943 tests), Spring Boot Starter (78 tests), Quarkus extension, Micronaut integration, CLI, all framework demos (Spring Boot, Quarkus, Micronaut, Vert.x), showcase demos, and all 20 single-feature demos.
+- The Maven Central workflow now checks release versions and coordinate availability before
+  publishing, and blocks publication until core, integration, framework-demo, showcase-demo, and
+  feature-demo validation succeeds.
+- Publishes the seven release coordinates in dependency order, then polls Maven Central for each
+  artifact and its required JAR, source, Javadoc, and signature files.
+- The CI core-JAR size check derives its expected filename from the root POM version.
+- **Publication is not yet confirmed.** Do not use `1.0.2` from Maven Central until the release
+  workflow and post-publication verification complete.
 
 ---
 

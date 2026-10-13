@@ -670,7 +670,7 @@
 <section class="hero">
   <div class="hero-eyebrow" role="note">
     <span class="hero-eyebrow-dot" aria-hidden="true"></span>
-    v1.0.1 — 1,021 tests, 0 failures, Apache 2.0
+    v1.0.1 stable · v1.0.2 Maven Central release pending · Apache 2.0
   </div>
 
   <h1>The <span class="gold">NoSQL database</span> that<br class="desktop-break" /> lives <span class="muted">inside</span> your JVM.</h1>
@@ -1528,9 +1528,10 @@ Runtime.getRuntime().addShutdownHook(
     <p class="section-sub">Clone, install, then add a single dependency to your build file.</p>
 
     <div class="install-note" style="margin-top:1.5rem;">
-      <strong>Maven Central Distribution:</strong> Published to Sonatype Central / Maven Central Portal.
-      Coordinates are active below, or install directly into your local repository:<br>
-      <code>git clone https://github.com/kael-tombo/embed-jnosql &amp;&amp; cd embed-jnosql &amp;&amp; mvn -DskipTests install</code>
+      <strong>Maven Central Distribution:</strong> Core and the Spring Boot starter 1.0.1 are
+      published. The 1.0.2 release candidate covers all seven first-party artifacts; publication
+      and Central verification are pending. The 1.0.2 coordinates below become available after
+      that verification. Demo applications are not release artifacts.
     </div>
 
     <div class="install-box">
@@ -1546,21 +1547,21 @@ Runtime.getRuntime().addShutdownHook(
       <div class="tab-panel active" id="tab-maven" role="tabpanel">
         <div class="copy-row"><button class="copy-btn" onclick="copyCode(this,'mavenCode')">Copy XML</button></div>
         <pre class="code-body" id="mavenCode"><code>&lt;<span class="kw">dependency</span>&gt;
-    &lt;<span class="kw">groupId</span>&gt;org.embeddedjnosql.db&lt;/<span class="kw">groupId</span>&gt;
+    &lt;<span class="kw">groupId</span>&gt;io.github.kael-tombo&lt;/<span class="kw">groupId</span>&gt;
     &lt;<span class="kw">artifactId</span>&gt;embed-jnosql-core&lt;/<span class="kw">artifactId</span>&gt;
-    &lt;<span class="kw">version</span>&gt;1.0.1&lt;/<span class="kw">version</span>&gt;
+    &lt;<span class="kw">version</span>&gt;1.0.2&lt;/<span class="kw">version</span>&gt;
 &lt;/<span class="kw">dependency</span>&gt;</code></pre>
       </div>
       <div class="tab-panel" id="tab-gradle" role="tabpanel">
         <div class="copy-row"><button class="copy-btn" onclick="copyCode(this,'gradleCode')">Copy Gradle</button></div>
-        <pre class="code-body" id="gradleCode"><code>implementation(<span class="str">'io.github.kael-tombo:embed-jnosql-core:1.0.1'</span>)</code></pre>
+        <pre class="code-body" id="gradleCode"><code>implementation(<span class="str">'io.github.kael-tombo:embed-jnosql-core:1.0.2'</span>)</code></pre>
       </div>
       <div class="tab-panel" id="tab-spring" role="tabpanel">
         <div class="copy-row"><button class="copy-btn" onclick="copyCode(this,'springCode')">Copy XML</button></div>
         <pre class="code-body" id="springCode"><code>&lt;<span class="kw">dependency</span>&gt;
-    &lt;<span class="kw">groupId</span>&gt;org.embeddedjnosql.db&lt;/<span class="kw">groupId</span>&gt;
+    &lt;<span class="kw">groupId</span>&gt;io.github.kael-tombo&lt;/<span class="kw">groupId</span>&gt;
     &lt;<span class="kw">artifactId</span>&gt;embed-jnosql-spring-boot-starter&lt;/<span class="kw">artifactId</span>&gt;
-    &lt;<span class="kw">version</span>&gt;1.0.1&lt;/<span class="kw">version</span>&gt;
+    &lt;<span class="kw">version</span>&gt;1.0.2&lt;/<span class="kw">version</span>&gt;
 &lt;/<span class="kw">dependency</span>&gt;</code></pre>
       </div>
       <div class="tab-panel" id="tab-jnosql" role="tabpanel">
@@ -1576,17 +1577,17 @@ Runtime.getRuntime().addShutdownHook(
       <div class="tab-panel" id="tab-quarkus" role="tabpanel">
         <div class="copy-row"><button class="copy-btn" onclick="copyCode(this,'quarkusCode')">Copy XML</button></div>
         <pre class="code-body" id="quarkusCode"><code>&lt;<span class="kw">dependency</span>&gt;
-    &lt;<span class="kw">groupId</span>&gt;org.embeddedjnosql.db&lt;/<span class="kw">groupId</span>&gt;
-    &lt;<span class="kw">artifactId</span>&gt;embed-jnosql-quarkus-extension&lt;/<span class="kw">artifactId</span>&gt;
-    &lt;<span class="kw">version</span>&gt;1.0.1&lt;/<span class="kw">version</span>&gt;
+    &lt;<span class="kw">groupId</span>&gt;io.github.kael-tombo&lt;/<span class="kw">groupId</span>&gt;
+    &lt;<span class="kw">artifactId</span>&gt;embed-jnosql-quarkus-extension-runtime&lt;/<span class="kw">artifactId</span>&gt;
+    &lt;<span class="kw">version</span>&gt;1.0.2&lt;/<span class="kw">version</span>&gt;
 &lt;/<span class="kw">dependency</span>&gt;</code></pre>
       </div>
       <div class="tab-panel" id="tab-micronaut" role="tabpanel">
         <div class="copy-row"><button class="copy-btn" onclick="copyCode(this,'micronautCode')">Copy XML</button></div>
         <pre class="code-body" id="micronautCode"><code>&lt;<span class="kw">dependency</span>&gt;
-    &lt;<span class="kw">groupId</span>&gt;org.embeddedjnosql.db&lt;/<span class="kw">groupId</span>&gt;
-    &lt;<span class="kw">artifactId</span>&gt;embed-jnosql-micronaut-integration&lt;/<span class="kw">artifactId</span>&gt;
-    &lt;<span class="kw">version</span>&gt;1.0.1&lt;/<span class="kw">version</span>&gt;
+    &lt;<span class="kw">groupId</span>&gt;io.github.kael-tombo&lt;/<span class="kw">groupId</span>&gt;
+    &lt;<span class="kw">artifactId</span>&gt;embedjnosql-micronaut-integration&lt;/<span class="kw">artifactId</span>&gt;
+    &lt;<span class="kw">version</span>&gt;1.0.2&lt;/<span class="kw">version</span>&gt;
 &lt;/<span class="kw">dependency</span>&gt;</code></pre>
       </div>
     </div>

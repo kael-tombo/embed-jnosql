@@ -4,6 +4,8 @@ This matrix records the latest local Maven Wrapper validation from the repositor
 isolated Maven local repository. The run used Apache Maven 3.9.6 and Eclipse Temurin JDK 25.0.4.1;
 the project compiler target is Java 17. CI is configured to test Java 17 and 21. These local results
 do not claim that a hosted CI run has completed.
+The recorded run predates the `1.0.2` release-POM alignment; validation of that release candidate is
+still pending.
 
 ## Summary
 
@@ -23,9 +25,11 @@ The Quarkus and Micronaut modules compiled and passed Maven `verify`; they did n
 Surefire test reports. `demo-common` also installed successfully with tests skipped because it
 contains shared demo models, not a test suite.
 
-Core and the Spring Boot starter, both version `1.0.1`, are published on Maven Central. The
-Quarkus extension and Micronaut integration are version `1.0.0` source-checkout modules and are
-not published on Maven Central; install them locally before running the corresponding demos.
+Core and the Spring Boot starter `1.0.1` are published on Maven Central. The `1.0.2` release
+candidate includes all seven first-party release coordinates, but publication and Central
+verification have not completed. The framework rows below describe the modules used in the
+recorded pre-candidate run; install the current checkout before testing the `1.0.2` candidate.
+Demo applications remain validation consumers and are not published artifacts.
 
 ## Framework and Application Demos
 

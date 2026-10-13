@@ -51,6 +51,16 @@ SQL dialect, or dual-engine track, and none is planned.
 
 ---
 
+## 1.0.2 — Full Maven Central Release *(candidate; publication pending)*
+
+- [x] Align the seven first-party core and integration artifacts on version `1.0.2`.
+- [x] Gate publication on core, integration, framework-demo, showcase-demo, and feature-demo
+      validation; verify published artifacts and signed sidecars.
+- [ ] Push the release only after hosted CI passes, publish the tag, and verify all seven
+      coordinates on Maven Central. Until then, `1.0.1` remains the current stable release.
+
+---
+
 ## 1.1.0 — Storage & Indexing Hardening
 
 - [ ] Paged B-Tree engine: on-disk page splitting instead of whole-index rewrites on flush.
