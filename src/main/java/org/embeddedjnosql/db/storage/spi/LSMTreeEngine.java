@@ -32,6 +32,7 @@ public class LSMTreeEngine implements StorageEngine {
     private final boolean asyncEnabled;
     private final WriteAheadLog wal;
     private final List<SSTable> sstables;
+    private long lastSstableTimestamp = Long.MIN_VALUE;
     private final long maxSstableSize;
     private final BloomFilter bloomFilter;
     /** R-62: persisted identity for collections that hold no records yet. */
@@ -415,7 +416,7 @@ public class LSMTreeEngine implements StorageEngine {
             Map<String, String> toWrite = new LinkedHashMap<>(memtable);
             memtable.clear();
             
-            String filename = "sst_" + System.currentTimeMillis() + "_" + UUID.randomUUID().toString().substring(0, 8) + ".dat";
+            String filename = "sst_" + nextSstableTimestamp() + "_" + UUID.randomUUID().toString().substring(0, 8) + ".dat";
             Path sstPath = sstDir.resolve(filename);
             
             SSTable sstable = SSTable.write(sstPath, toWrite);
@@ -437,6 +438,7 @@ public class LSMTreeEngine implements StorageEngine {
             
             try {
                 List<SSTable> toMerge = new ArrayList<>(sstables.subList(0, Math.min(3, sstables.size())));
+                long mergeTimestamp = sstableTimestamp(toMerge.get(0).getPath());
                 
                 Map<String, String> merged = new LinkedHashMap<>();
                 // Newest-wins: apply oldest table first so newer values overwrite
@@ -451,7 +453,7 @@ public class LSMTreeEngine implements StorageEngine {
                     Files.deleteIfExists(sstable.getPath());
                 }
                 
-                String filename = "sst_" + System.currentTimeMillis() + "_merged.dat";
+                String filename = "sst_" + mergeTimestamp + "_merged_" + UUID.randomUUID().toString().substring(0, 8) + ".dat";
                 Path sstPath = sstDir.resolve(filename);
                 SSTable newSstable = SSTable.write(sstPath, merged);
                 sstables.add(0, newSstable);
@@ -467,17 +469,35 @@ public class LSMTreeEngine implements StorageEngine {
         
         try (var stream = Files.list(sstDir)) {
             var files = stream.filter(p -> p.toString().endsWith(".dat"))
-                    .sorted()
+                    .sorted(Comparator.comparingLong(this::sstableTimestamp)
+                            .thenComparing(p -> p.getFileName().toString()))
                     .toList();
             
             for (Path file : files) {
                 SSTable sstable = SSTable.read(file);
                 sstables.add(sstable);
+                lastSstableTimestamp = Math.max(lastSstableTimestamp, sstableTimestamp(file));
                 for (String k : sstable.getAll().keySet()) {
                     bloomFilter.add(k);
                 }
             }
         }
+    }
+
+    private long nextSstableTimestamp() {
+        long timestamp = Math.max(System.currentTimeMillis(), Math.addExact(lastSstableTimestamp, 1));
+        lastSstableTimestamp = timestamp;
+        return timestamp;
+    }
+
+    private long sstableTimestamp(Path path) {
+        String filename = path.getFileName().toString();
+        int timestampStart = "sst_".length();
+        int timestampEnd = filename.indexOf('_', timestampStart);
+        if (!filename.startsWith("sst_") || timestampEnd < 0) {
+            throw new IllegalStateException("Invalid SSTable filename: " + filename);
+        }
+        return Long.parseLong(filename.substring(timestampStart, timestampEnd));
     }
 
     private void recoverFromWal() throws IOException {

@@ -22,7 +22,7 @@ jobs:
   # Demo tests are deferred to Job 4 (post-publish validation)
   # ─────────────────────────────────────────────────────────────────────────────
   test-core:
-    name: Verify Core (949 tests)
+    name: Verify Core (951 tests)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -153,7 +153,7 @@ jobs:
           cache: maven
 
       # ── 1. Core test suite ──────────────────────────────────────────────────
-      - name: Run Core Test Suite (949 tests)
+      - name: Run Core Test Suite (951 tests)
         run: ./mvnw -B test
 
       - name: Install core locally
@@ -221,7 +221,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Suite | Scope | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|---|---|---|" >> $GITHUB_STEP_SUMMARY
-          echo "| **Core Database** | Document, Key-Value, Indexes, Transactions, Storage Engines | ✅ PASS (949 tests) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Core Database** | Document, Key-Value, Indexes, Transactions, Storage Engines | ✅ PASS (951 tests) |" >> $GITHUB_STEP_SUMMARY
           echo "| **Spring Boot Starter** | Autoconfiguration, EmbedRepository, Transactions | ✅ PASS (78 tests) |" >> $GITHUB_STEP_SUMMARY
           echo "| **Quarkus Extension** | CDI injection, DevServices, Native build | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
           echo "| **Micronaut Integration** | Factory DI, Singleton bean lifecycle | ✅ PASS |" >> $GITHUB_STEP_SUMMARY

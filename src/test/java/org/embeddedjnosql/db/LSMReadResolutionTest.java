@@ -6,7 +6,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -90,6 +93,57 @@ class LSMReadResolutionTest {
                     "the newest value must win across layers, found: " + values);
             assertTrue(reopened.get("cfg", "theme").contains("\"v\":2"));
         });
+    }
+
+    @Test
+    @DisplayName("new SSTables follow the latest persisted timestamp after a clock rollback")
+    void newSstableFollowsPersistedTimestamp(@TempDir Path dir) throws IOException {
+        Path sstDir = dir.resolve(".sst");
+        Files.createDirectories(sstDir);
+        long persistedTimestamp = System.currentTimeMillis() + 60_000;
+        LSMTreeEngine.SSTable.write(
+                sstDir.resolve("sst_" + persistedTimestamp + "_00000000.dat"),
+                Map.of("cfg:theme", "{\"v\":1}"));
+
+        withEngine(dir, engine -> {
+            engine.put("cfg", "theme", "{\"v\":2}");
+            engine.flush();
+        });
+
+        withEngine(dir, reopened ->
+                assertEquals("{\"v\":2}", reopened.get("cfg", "theme"),
+                        "the new SSTable must remain newer than the persisted one"));
+    }
+
+    @Test
+    @DisplayName("compaction preserves newest-value ordering after a restart")
+    void compactionPreservesNewestValueAfterRestart(@TempDir Path dir) throws Exception {
+        var engine = new LSMTreeEngine(dir);
+        try {
+            for (int version = 1; version <= 4; version++) {
+                engine.put("cfg", "theme", "{\"v\":" + version + "}");
+                engine.flush();
+                waitForNextMillisecond();
+            }
+
+            var compact = LSMTreeEngine.class.getDeclaredMethod("compact");
+            compact.setAccessible(true);
+            compact.invoke(engine);
+        } finally {
+            engine.close();
+        }
+
+        withEngine(dir, reopened -> {
+            assertEquals("{\"v\":4}", reopened.get("cfg", "theme"),
+                    "compaction must not make a newer, unmerged table appear older");
+        });
+    }
+
+    private void waitForNextMillisecond() throws InterruptedException {
+        long current = System.currentTimeMillis();
+        while (System.currentTimeMillis() <= current) {
+            Thread.sleep(1);
+        }
     }
 
     @Test
