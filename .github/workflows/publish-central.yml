@@ -1,15 +1,13 @@
 name: Publish to Maven Central
 
 on:
-  # Trigger on a version tag push: git tag v1.0.1 && git push origin v1.0.1
   push:
     tags:
       - 'v*.*.*'
-  # Allow manual dispatch for one-off releases
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version (e.g. 1.0.1)'
+        description: 'Release version (must match all release POMs)'
         required: true
         type: string
 
@@ -17,214 +15,429 @@ permissions:
   contents: read
 
 jobs:
-  # ─────────────────────────────────────────────────────────────────────────────
-  # PRE-PUBLISH INTEGRITY (Demo tests deactivated during publish to avoid blockers)
-  # Demo tests are deferred to Job 4 (post-publish validation)
-  # ─────────────────────────────────────────────────────────────────────────────
-  test-core:
-    name: Verify Core Tests
+  release-preflight:
+    name: Check release version and Central coordinates
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.validate-version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Java 17
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
           cache: maven
-      - name: Run core tests
-        run: ./mvnw -B verify -DskipTests=false
+      - name: Validate release POM versions and ensure coordinates are unused
+        id: validate-version
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          case "$GITHUB_EVENT_NAME" in
+            push)
+              requested="${GITHUB_REF_NAME#v}"
+              if [[ "$GITHUB_REF_NAME" != "v$requested" ]]; then
+                echo "::error::Release tags must use the v<version> format"
+                exit 1
+              fi
+              ;;
+            workflow_dispatch)
+              requested="$REQUESTED_VERSION"
+              ;;
+            *)
+              echo "::error::Unsupported release event: $GITHUB_EVENT_NAME"
+              exit 1
+              ;;
+          esac
 
-  # ─────────────────────────────────────────────────────────────────────────────
-  # JOB 2: Verify Spring Boot Starter
-  # ─────────────────────────────────────────────────────────────────────────────
+          if [[ ! "$requested" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Invalid release version: $requested"
+            exit 1
+          fi
+
+          poms=(
+            pom.xml
+            spring-boot-starter/pom.xml
+            micronaut-integration/pom.xml
+            cli/pom.xml
+            quarkus-extension/pom.xml
+            quarkus-extension/runtime/pom.xml
+            quarkus-extension/deployment/pom.xml
+          )
+          expected=""
+          for pom in "${poms[@]}"; do
+            version="$(./mvnw -B -q -f "$pom" help:evaluate \
+              -Dexpression=project.version -DforceStdout)"
+            echo "$pom resolves to $version"
+            if [[ -z "$expected" ]]; then
+              expected="$version"
+            elif [[ "$version" != "$expected" ]]; then
+              echo "::error::$pom resolves to $version, expected $expected"
+              exit 1
+            fi
+          done
+
+          if [[ "$requested" != "$expected" ]]; then
+            echo "::error::Requested version $requested does not match release POM version $expected"
+            exit 1
+          fi
+
+          artifacts=(
+            embed-jnosql-core
+            embed-jnosql-spring-boot-starter
+            embedjnosql-micronaut-integration
+            embed-jnosql-cli
+            embed-jnosql-quarkus-extension
+            embed-jnosql-quarkus-extension-runtime
+            embed-jnosql-quarkus-extension-deployment
+          )
+          for artifact in "${artifacts[@]}"; do
+            path="io/github/kael-tombo/$artifact/$expected/$artifact-$expected.pom"
+            status="$(curl -sS -o /dev/null -w '%{http_code}' \
+              "https://repo.maven.apache.org/maven2/$path" || true)"
+            if [[ "$status" == "200" ]]; then
+              echo "::error::Immutable release coordinate already exists: io.github.kael-tombo:$artifact:$expected"
+              exit 1
+            elif [[ "$status" != "404" ]]; then
+              echo "::error::Could not safely check io.github.kael-tombo:$artifact:$expected (HTTP $status)"
+              exit 1
+            fi
+          done
+
+          echo "All seven release coordinates are version $expected and are not yet present on Maven Central."
+          echo "version=$expected" >> "$GITHUB_OUTPUT"
+
+  test-core:
+    name: Verify Core and Coverage
+    runs-on: ubuntu-latest
+    needs: release-preflight
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+      - name: Run core tests and coverage gate
+        run: ./mvnw -B clean verify -Pcoverage-check
+
   test-starter:
     name: Verify Spring Boot Starter Tests
     runs-on: ubuntu-latest
-    needs: test-core
+    needs: [release-preflight, test-core]
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Java 17
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
           cache: maven
-      - name: Install core to local repo
+      - name: Install core from this commit
         run: ./mvnw -B install -DskipTests
-
       - name: Run starter tests
-        run: ./mvnw -B -f spring-boot-starter/pom.xml test
+        run: ./mvnw -B -f spring-boot-starter/pom.xml clean verify
 
-  # ─────────────────────────────────────────────────────────────────────────────
-  # JOB 3: Publish BOTH artifacts to Maven Central
-  # ─────────────────────────────────────────────────────────────────────────────
-  publish:
-    name: Publish to Maven Central
+  test-quarkus:
+    name: Verify Quarkus Parent and Reactor
     runs-on: ubuntu-latest
-    needs: [test-core, test-starter]
-
+    needs: release-preflight
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+      - name: Install core from this commit
+        run: ./mvnw -B install -DskipTests
+      - name: Verify Quarkus parent, runtime, and deployment
+        run: ./mvnw -B -f quarkus-extension/pom.xml clean verify
 
+  test-micronaut:
+    name: Verify Micronaut Integration
+    runs-on: ubuntu-latest
+    needs: release-preflight
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+      - name: Install core from this commit
+        run: ./mvnw -B install -DskipTests
+      - name: Verify Micronaut integration
+        run: ./mvnw -B -f micronaut-integration/pom.xml clean verify
+
+  test-cli:
+    name: Verify CLI
+    runs-on: ubuntu-latest
+    needs: release-preflight
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+      - name: Install core from this commit
+        run: ./mvnw -B install -DskipTests
+      - name: Verify CLI
+        run: ./mvnw -B -f cli/pom.xml clean verify
+
+  test-app-demos:
+    name: Verify Application Demo Suites
+    runs-on: ubuntu-latest
+    needs: release-preflight
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+      - name: Install first-party modules and demo common from this commit
+        run: |
+          set -euo pipefail
+          ./mvnw -B install -DskipTests
+          for module in spring-boot-starter micronaut-integration cli quarkus-extension; do
+            ./mvnw -B -f "$module/pom.xml" install -DskipTests
+          done
+          ./mvnw -B -f demo/demo-common/pom.xml install -DskipTests
+      - name: Run all nine application demo suites
+        run: |
+          set -euo pipefail
+          failed=()
+          for demo in spring-boot-demo quarkus-demo micronaut-demo vertx-demo \
+                      end-to-end-validation advanced-queries-demo \
+                      annotation-showcase-demo batch-processing-demo \
+                      load-and-stress-demo; do
+            echo "::group::Demo $demo"
+            if ./mvnw -B -f "demo/$demo/pom.xml" clean test; then
+              echo "::notice title=Demo $demo::PASSED"
+            else
+              echo "::error title=Demo $demo failed::Maven Wrapper clean test failed"
+              failed+=("$demo")
+            fi
+            echo "::endgroup::"
+          done
+          if [[ "${#failed[@]}" -ne 0 ]]; then
+            printf 'Failing application demos: %s\n' "${failed[*]}"
+            exit 1
+          fi
+
+  test-feature-demos:
+    name: Verify All 20 Single-Feature Demo Suites
+    runs-on: ubuntu-latest
+    needs: release-preflight
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+      - name: Install first-party modules and demo common from this commit
+        run: |
+          set -euo pipefail
+          ./mvnw -B install -DskipTests
+          for module in spring-boot-starter micronaut-integration cli quarkus-extension; do
+            ./mvnw -B -f "$module/pom.xml" install -DskipTests
+          done
+          ./mvnw -B -f demo/demo-common/pom.xml install -DskipTests
+      - name: Run all 20 single-feature demo suites
+        run: |
+          set -euo pipefail
+          count=0
+          failed=()
+          for pom in demo/demos/*/pom.xml; do
+            name="$(basename "$(dirname "$pom")")"
+            echo "::group::Single-feature demo $name"
+            if ./mvnw -B -f "$pom" clean test; then
+              echo "::notice title=Single-feature demo $name::PASSED"
+            else
+              echo "::error title=Single-feature demo $name failed::Maven Wrapper clean test failed"
+              failed+=("$name")
+            fi
+            echo "::endgroup::"
+            count=$((count + 1))
+          done
+          if [[ "$count" -ne 20 ]]; then
+            echo "::error::Expected 20 single-feature demo POMs, found $count"
+            exit 1
+          fi
+          if [[ "${#failed[@]}" -ne 0 ]]; then
+            printf 'Failing single-feature demos: %s\n' "${failed[*]}"
+            exit 1
+          fi
+
+  publish:
+    name: Publish All Seven Artifacts to Maven Central
+    runs-on: ubuntu-latest
+    needs:
+      - release-preflight
+      - test-core
+      - test-starter
+      - test-quarkus
+      - test-micronaut
+      - test-cli
+      - test-app-demos
+      - test-feature-demos
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate publishing credentials
+        env:
+          MAVEN_CENTRAL_TOKEN_USERNAME: ${{ secrets.MAVEN_CENTRAL_TOKEN_USERNAME }}
+          MAVEN_CENTRAL_TOKEN_PASSWORD: ${{ secrets.MAVEN_CENTRAL_TOKEN_PASSWORD }}
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$MAVEN_CENTRAL_TOKEN_USERNAME" || -z "$MAVEN_CENTRAL_TOKEN_PASSWORD" \
+             || -z "$GPG_PRIVATE_KEY" || -z "$GPG_PASSPHRASE" ]]; then
+            echo "::error::One or more required Maven Central/GPG secrets are not configured"
+            exit 1
+          fi
       - name: Set up Java 17 with Maven Central settings
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
           cache: maven
-          # This populates ~/.m2/settings.xml with the <server id="central"> entry
           server-id: central
           server-username: MAVEN_CENTRAL_TOKEN_USERNAME
           server-password: MAVEN_CENTRAL_TOKEN_PASSWORD
-
       - name: Verify Maven Wrapper version
         run: |
+          set -euo pipefail
           maven_version="$(./mvnw -v | sed -n 's/^Apache Maven \([0-9.]*\).*/\1/p')"
           echo "Using Maven $maven_version"
-          if [ "$maven_version" != "3.9.6" ]; then
+          if [[ "$maven_version" != "3.9.6" ]]; then
             echo "::error::Expected Maven 3.9.6 from the project wrapper, got $maven_version"
             exit 1
           fi
-
-      # ── Import GPG key ────────────────────────────────────────────────────
       - name: Import GPG key
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
+          set -euo pipefail
+          mkdir -p ~/.gnupg
+          chmod 700 ~/.gnupg
           echo "$GPG_PRIVATE_KEY" | gpg --batch --import
           echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
           gpg-connect-agent reloadagent /bye
-
-      # ── Publish embed-jnosql-core ─────────────────────────────────────────
       - name: Deploy embed-jnosql-core
         env:
           MAVEN_CENTRAL_TOKEN_USERNAME: ${{ secrets.MAVEN_CENTRAL_TOKEN_USERNAME }}
           MAVEN_CENTRAL_TOKEN_PASSWORD: ${{ secrets.MAVEN_CENTRAL_TOKEN_PASSWORD }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
+          set -euo pipefail
           ./mvnw -B clean deploy -P maven-central -DskipTests \
             -Dgpg.passphrase="${MAVEN_GPG_PASSPHRASE}"
-
-      # ── Install core locally (needed for starter compile) ─────────────────
-      - name: Install core locally (for starter build)
+      - name: Install core locally for downstream modules
         run: ./mvnw -B install -DskipTests
-
-      # ── Publish embed-jnosql-spring-boot-starter ──────────────────────────
       - name: Deploy embed-jnosql-spring-boot-starter
         env:
           MAVEN_CENTRAL_TOKEN_USERNAME: ${{ secrets.MAVEN_CENTRAL_TOKEN_USERNAME }}
           MAVEN_CENTRAL_TOKEN_PASSWORD: ${{ secrets.MAVEN_CENTRAL_TOKEN_PASSWORD }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
+          set -euo pipefail
           ./mvnw -B -f spring-boot-starter/pom.xml clean deploy -P maven-central -DskipTests \
             -Dgpg.passphrase="${MAVEN_GPG_PASSPHRASE}"
-
-      - name: Summary
+      - name: Deploy embedjnosql-micronaut-integration
+        env:
+          MAVEN_CENTRAL_TOKEN_USERNAME: ${{ secrets.MAVEN_CENTRAL_TOKEN_USERNAME }}
+          MAVEN_CENTRAL_TOKEN_PASSWORD: ${{ secrets.MAVEN_CENTRAL_TOKEN_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
-          echo "## ✅ Published to Maven Central" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Artifact | Version |" >> $GITHUB_STEP_SUMMARY
-          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
-          echo "| \`io.github.kael-tombo:embed-jnosql-core\` | \`$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| \`io.github.kael-tombo:embed-jnosql-spring-boot-starter\` | \`$(./mvnw -f spring-boot-starter/pom.xml help:evaluate -Dexpression=project.version -q -DforceStdout)\` |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "View on Central: https://central.sonatype.com/search?q=embeddedjnosql" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "ℹ️ _Demo tests were deactivated during publication to expedite release deployment. Full validation starts next._" >> $GITHUB_STEP_SUMMARY
+          set -euo pipefail
+          ./mvnw -B -f micronaut-integration/pom.xml clean deploy -P maven-central -DskipTests \
+            -Dgpg.passphrase="${MAVEN_GPG_PASSPHRASE}"
+      - name: Deploy embed-jnosql-cli
+        env:
+          MAVEN_CENTRAL_TOKEN_USERNAME: ${{ secrets.MAVEN_CENTRAL_TOKEN_USERNAME }}
+          MAVEN_CENTRAL_TOKEN_PASSWORD: ${{ secrets.MAVEN_CENTRAL_TOKEN_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          ./mvnw -B -f cli/pom.xml clean deploy -P maven-central -DskipTests \
+            -Dgpg.passphrase="${MAVEN_GPG_PASSPHRASE}"
+      - name: Deploy Quarkus parent, runtime, and deployment
+        env:
+          MAVEN_CENTRAL_TOKEN_USERNAME: ${{ secrets.MAVEN_CENTRAL_TOKEN_USERNAME }}
+          MAVEN_CENTRAL_TOKEN_PASSWORD: ${{ secrets.MAVEN_CENTRAL_TOKEN_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          ./mvnw -B -f quarkus-extension/pom.xml clean deploy -P maven-central -DskipTests \
+            -Dgpg.passphrase="${MAVEN_GPG_PASSPHRASE}"
 
-  # ─────────────────────────────────────────────────────────────────────────────
-  # JOB 4: Post-Publish Validation — Validate ALL tests after publishing
-  # ─────────────────────────────────────────────────────────────────────────────
-  validate-all-after-publish:
-    name: Validate All Tests (Post-Publish)
+  verify-publication:
+    name: Verify Maven Central Artifacts and Signatures
     runs-on: ubuntu-latest
-    needs: publish
-
+    needs: [publish, release-preflight]
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Java 21
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-          cache: maven
-
-      # ── 1. Core test suite ──────────────────────────────────────────────────
-      - name: Run Core Test Suite
-        run: ./mvnw -B test
-
-      - name: Install core locally
-        run: ./mvnw -B install -DskipTests
-
-      # ── 2. Starters & Integration modules ──────────────────────────────────
-      - name: Verify & Install Starter, Extension, and CLI Modules
+      - name: Wait for every release artifact and signed sidecar on Maven Central
+        env:
+          RELEASE_VERSION: ${{ needs.release-preflight.outputs.version }}
         run: |
-          for module in spring-boot-starter quarkus-extension micronaut-integration cli; do
-            echo "::group::Verify $module"
-            ./mvnw -B -f "$module/pom.xml" clean test || exit 1
-            ./mvnw -B -f "$module/pom.xml" install -DskipTests || exit 1
-            echo "::endgroup::"
-          done
+          set -euo pipefail
+          version="$RELEASE_VERSION"
+          jars=(
+            embed-jnosql-core
+            embed-jnosql-spring-boot-starter
+            embedjnosql-micronaut-integration
+            embed-jnosql-cli
+            embed-jnosql-quarkus-extension-runtime
+            embed-jnosql-quarkus-extension-deployment
+          )
+          poms=(embed-jnosql-quarkus-extension "${jars[@]}")
+          missing=()
 
-      # ── 3. Install demo common ──────────────────────────────────────────────
-      - name: Install Demo Common
-        run: ./mvnw -B -f demo/demo-common/pom.xml install -DskipTests
-
-      # ── 4. Framework & Showcase Demos ───────────────────────────────────────
-      - name: Run Framework & Showcase Demo Suites
-        run: |
-          failed=""
-          for d in spring-boot-demo quarkus-demo micronaut-demo vertx-demo \
-                   end-to-end-validation advanced-queries-demo \
-                   annotation-showcase-demo batch-processing-demo \
-                   load-and-stress-demo; do
-            echo "::group::Demo $d"
-            if ./mvnw -B -f "demo/$d/pom.xml" clean test; then
-              echo "::notice title=Demo $d::PASSED"
-            else
-              echo "::error title=Demo $d failed::Maven Wrapper clean test failed"
-              failed="$failed $d"
-            fi
-            echo "::endgroup::"
-          done
-          [ -z "$failed" ] || { echo "Failing framework demos:$failed"; exit 1; }
-
-      # ── 5. Single-Feature Demos (01-20) ─────────────────────────────────────
-      - name: Run Single-Feature Demos (01 to 20)
-        run: |
-          failed=""
-          for d in demo/demos/*; do
-            if [ -f "$d/pom.xml" ]; then
-              name=$(basename "$d")
-              echo "::group::Single Demo $name"
-              if ./mvnw -B -f "$d/pom.xml" clean test; then
-                echo "::notice title=Single Demo $name::PASSED"
-              else
-                echo "::error title=Single Demo $name failed::Maven Wrapper clean test failed"
-                failed="$failed $name"
+          for attempt in $(seq 1 12); do
+            missing=()
+            for artifact in "${poms[@]}"; do
+              base="io/github/kael-tombo/$artifact/$version/$artifact-$version"
+              files=("$base.pom" "$base.pom.asc")
+              if [[ "$artifact" != "embed-jnosql-quarkus-extension" ]]; then
+                files+=(
+                  "$base.jar" "$base.jar.asc"
+                  "$base-sources.jar" "$base-sources.jar.asc"
+                  "$base-javadoc.jar" "$base-javadoc.jar.asc"
+                )
               fi
-              echo "::endgroup::"
+              for path in "${files[@]}"; do
+                status="$(curl -sS -o /dev/null -w '%{http_code}' \
+                  "https://repo.maven.apache.org/maven2/$path" 2>/dev/null || true)"
+                if [[ "$status" != "200" ]]; then
+                  missing+=("$path (HTTP ${status:-000})")
+                fi
+              done
+            done
+
+            if [[ "${#missing[@]}" -eq 0 ]]; then
+              echo "All seven POMs, six main JARs, sources, Javadocs, and signatures are available."
+              break
+            fi
+            echo "Attempt $attempt/12: ${#missing[@]} files are not available yet."
+            if [[ "$attempt" -lt 12 ]]; then
+              sleep 30
             fi
           done
-          [ -z "$failed" ] || { echo "Failing single demos:$failed"; exit 1; }
 
-      # ── 6. Validation Summary Report ────────────────────────────────────────
-      - name: Post-Publish Validation Summary
+          if [[ "${#missing[@]}" -ne 0 ]]; then
+            echo "::error::Maven Central publication is incomplete; unavailable files:"
+            printf ' - %s\n' "${missing[@]}"
+            exit 1
+          fi
+      - name: Release verification summary
+        env:
+          RELEASE_VERSION: ${{ needs.release-preflight.outputs.version }}
         run: |
-          echo "## 🧪 Post-Publish Validation (Release Commit)" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "All validation commands for this release commit completed successfully:" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Suite | Scope | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|---|---|---|" >> $GITHUB_STEP_SUMMARY
-          echo "| **Core Database** | Document, Key-Value, Indexes, Transactions, Storage Engines | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Spring Boot Starter** | Autoconfiguration, EmbedRepository, Transactions | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Quarkus and Micronaut Modules** | Maven clean/test/install lifecycle | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
-          echo "| **CLI Tooling** | Shell commands, Interactive Console | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Application Demos** | Framework integrations, storage, query, annotation, batch, and load suites | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Single-Feature Core Demos** | All 20 dedicated scenario suites | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✨ **Core, integrations, CLI, and demo validation completed successfully.**" >> $GITHUB_STEP_SUMMARY
+          echo "## Maven Central release verified" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Version $RELEASE_VERSION was validated before deployment; all seven POMs, six JARs, sources, Javadocs, and signatures now resolve from Maven Central." >> "$GITHUB_STEP_SUMMARY"

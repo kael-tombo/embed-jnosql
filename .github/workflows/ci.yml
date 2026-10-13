@@ -53,7 +53,14 @@ jobs:
       - name: Enforce core jar size limit (5 MB)
         if: matrix.java == '21'
         run: |
-          SIZE=$(stat -c %s target/embed-jnosql-core-1.0.1.jar)
+          set -euo pipefail
+          VERSION="$(./mvnw -q help:evaluate -Dexpression=project.version -DforceStdout)"
+          JAR="target/embed-jnosql-core-${VERSION}.jar"
+          if [ ! -f "$JAR" ]; then
+            echo "::error::Expected core jar not found: $JAR"
+            exit 1
+          fi
+          SIZE=$(stat -c %s "$JAR")
           LIMIT=$((5 * 1024 * 1024))
           echo "core jar: ${SIZE} bytes (limit ${LIMIT})"
           if [ "$SIZE" -gt "$LIMIT" ]; then
