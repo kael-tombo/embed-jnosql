@@ -27,7 +27,9 @@ public class DocumentCrudDemo {
 
         // 2. Read it back by id
         Document readBack = users.findById(id);
-        if (readBack == null) throw new AssertionError("doc not found after insert");
+        if (readBack == null) {
+            throw new AssertionError("doc not found after insert");
+        }
         if (!"Ada".equals(readBack.get("name"))) {
             throw new AssertionError("expected name=Ada, got " + readBack.get("name"));
         }
@@ -36,6 +38,9 @@ public class DocumentCrudDemo {
         readBack.add("role", "COUNTESS");
         users.update(readBack);
         Document afterUpdate = users.findById(id);
+        if (afterUpdate == null) {
+            throw new AssertionError("doc not found after update");
+        }
         if (!"COUNTESS".equals(afterUpdate.get("role"))) {
             throw new AssertionError("update did not stick");
         }

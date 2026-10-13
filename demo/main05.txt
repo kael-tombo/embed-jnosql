@@ -36,10 +36,10 @@ public class TtlExpiryDemo {
 
         Thread.sleep(1300); // let every 1s TTL lapse
 
-        boolean docGone = sessions.findById("s1").isEmpty();
+        boolean docGone = sessions.findById("s1") == null;
         boolean kvGone = cache.get("eur:sku-1") == null;
         boolean colGone = metrics.getWithTtlCheck("row-1", "hits") == null;
-        boolean durableSurvived = sessions.findById("s2").isPresent();
+        boolean durableSurvived = sessions.findById("s2") != null;
 
         if (!docGone || !kvGone || !colGone || !durableSurvived) {
             throw new AssertionError("TTL expiry inconsistent: " + new Result(docGone, kvGone, colGone, durableSurvived));

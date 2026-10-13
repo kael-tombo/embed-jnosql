@@ -20,7 +20,7 @@ class DocumentCrudDemoTest {
     void deletedDocumentIsGone() {
         try (EmbedJNoSQL db = EmbedJNoSQL.inMemory()) {
             DocumentCrudDemo.Result r = DocumentCrudDemo.runDemo(db);
-            assertTrue(db.documentCollection("users").findById(r.id()).isEmpty(),
+            assertNull(db.documentCollection("users").findById(r.id()),
                     "after deleteById the document must not be readable");
         }
     }
