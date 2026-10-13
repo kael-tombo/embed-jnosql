@@ -94,12 +94,12 @@ jobs:
           MAVEN_CENTRAL_TOKEN_PASSWORD: ${{ secrets.MAVEN_CENTRAL_TOKEN_PASSWORD }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
-          mvn -B clean deploy -P maven-central -DskipTests \
+          ./mvnw -B clean deploy -P maven-central -DskipTests \
             -Dgpg.passphrase="${MAVEN_GPG_PASSPHRASE}"
 
       # ── Install core locally (needed for starter compile) ─────────────────
       - name: Install core locally (for starter build)
-        run: mvn -B install -DskipTests
+        run: ./mvnw -B install -DskipTests
 
       # ── Publish embed-jnosql-spring-boot-starter ──────────────────────────
       - name: Deploy embed-jnosql-spring-boot-starter
@@ -108,7 +108,7 @@ jobs:
           MAVEN_CENTRAL_TOKEN_PASSWORD: ${{ secrets.MAVEN_CENTRAL_TOKEN_PASSWORD }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
-          mvn -B -f spring-boot-starter/pom.xml clean deploy -P maven-central -DskipTests \
+          ./mvnw -B -f spring-boot-starter/pom.xml clean deploy -P maven-central -DskipTests \
             -Dgpg.passphrase="${MAVEN_GPG_PASSPHRASE}"
 
       - name: Summary
@@ -117,7 +117,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Artifact | Version |" >> $GITHUB_STEP_SUMMARY
           echo "|---|---|" >> $GITHUB_STEP_SUMMARY
-          echo "| \`io.github.kael-tombo:embed-jnosql-core\` | \`$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| \`io.github.kael-tombo:embed-jnosql-core\` | \`$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)\` |" >> $GITHUB_STEP_SUMMARY
           echo "| \`io.github.kael-tombo:embed-jnosql-spring-boot-starter\` | \`1.0.1\` |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "View on Central: https://central.sonatype.com/search?q=embeddedjnosql" >> $GITHUB_STEP_SUMMARY
@@ -220,4 +220,3 @@ jobs:
           echo "| **Feature Demos (01-20)** | 20 dedicated scenario verification suites | ✅ PASS (37 tests) |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "✨ **Full repository test verification completed successfully after deployment.**" >> $GITHUB_STEP_SUMMARY
-
