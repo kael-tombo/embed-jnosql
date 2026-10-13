@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: ['21', '23']
+        java: ['17', '21']
       fail-fast: false
 
     steps:
@@ -86,7 +86,7 @@ jobs:
         run: |
           for module in spring-boot-starter quarkus-extension micronaut-integration cli; do
             echo "::group::Verify $module"
-            (cd "$module" && mvn -B verify) || exit 1
+            ./mvnw -B -f "$module/pom.xml" verify || exit 1
             echo "::endgroup::"
           done
 
@@ -108,7 +108,7 @@ jobs:
 
       - name: OWASP Dependency-Check (fail on Critical)
         run: >
-          mvn -B org.owasp:dependency-check-maven:10.0.4:check
+          ./mvnw -B org.owasp:dependency-check-maven:10.0.4:check
           -DfailBuildOnCVSS=9
           -DfailOnError=false
 
@@ -140,7 +140,7 @@ jobs:
       - name: Install core and demo-common
         run: |
           ./mvnw -B clean install -DskipTests
-          (cd demo/demo-common && mvn -B install -DskipTests)  # runners preinstall mvn; no wrapper in demo-common
+          ./mvnw -B -f demo/demo-common/pom.xml install -DskipTests
 
       - name: Install starter modules (needed by framework demos)
         # spring-boot-demo, quarkus-demo and micronaut-demo resolve embeddedjnosql starter
@@ -148,7 +148,7 @@ jobs:
         # locally before the demo loop. Mirrors the integrations job's module list.
         run: |
           for module in spring-boot-starter quarkus-extension micronaut-integration; do
-            (cd "$module" && mvn -B install -DskipTests) || exit 1
+            ./mvnw -B -f "$module/pom.xml" install -DskipTests || exit 1
           done
 
       - name: Run all demo test suites
@@ -159,10 +159,10 @@ jobs:
                    annotation-showcase-demo batch-processing-demo \
                    load-and-stress-demo; do
             echo "::group::Demo $d"
-            if (cd "demo/$d" && mvn -B clean test); then
+            if ./mvnw -B -f "demo/$d/pom.xml" clean test; then
               echo "::notice title=Demo $d::PASSED"
             else
-              echo "::error title=Demo $d failed::mvn clean test exited non-zero; see the group above for the surefire failure summary"
+              echo "::error title=Demo $d failed::Maven Wrapper clean test exited non-zero; see the group above for the surefire failure summary"
               failed="$failed $d"
             fi
             echo "::endgroup::"
@@ -172,6 +172,22 @@ jobs:
             grep -h -A 6 "<<< FAILURE\!\|<<< ERROR\!" "demo/$d/target/surefire-reports"/*.txt 2>/dev/null | head -40 | sed "s/^/[$d] /" || true
           done
           [ -z "$failed" ] || { echo "Failing demos:$failed"; exit 1; }
+
+      - name: Run all 20 single-feature demo suites
+        run: |
+          failed=""
+          for pom in demo/demos/*/pom.xml; do
+            name=$(basename "$(dirname "$pom")")
+            echo "::group::Single-feature demo $name"
+            if ./mvnw -B -f "$pom" clean test; then
+              echo "::notice title=Single-feature demo $name::PASSED"
+            else
+              echo "::error title=Single-feature demo $name failed::Maven Wrapper clean test failed"
+              failed="$failed $name"
+            fi
+            echo "::endgroup::"
+          done
+          [ -z "$failed" ] || { echo "Failing single-feature demos:$failed"; exit 1; }
 
   benchmark:
     needs: build
@@ -189,7 +205,7 @@ jobs:
           cache: maven
 
       - name: Run Benchmarks
-        run: mvn -B -Pbenchmark clean package exec:java -Dexec.mainClass=org.embeddedjnosql.db.benchmark.BenchmarkRunner
+        run: ./mvnw -B -Pbenchmark clean package exec:java -Dexec.mainClass=org.embeddedjnosql.db.benchmark.BenchmarkRunner
 
       - name: Upload Benchmark Results
         uses: actions/upload-artifact@v4
