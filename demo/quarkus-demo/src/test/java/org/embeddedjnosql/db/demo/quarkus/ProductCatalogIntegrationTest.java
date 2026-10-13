@@ -4,6 +4,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import jakarta.inject.Inject;
+import jakarta.nosql.Template;
 import org.embeddedjnosql.db.EmbedJNoSQL;
 import org.junit.jupiter.api.Test;
 
@@ -29,6 +30,9 @@ public class ProductCatalogIntegrationTest {
 
     @Inject
     EmbedJNoSQL db;
+
+    @Inject
+    Template template;
 
     // ── Helpers ───────────────────────────────────────────────────────────
 
@@ -206,5 +210,10 @@ public class ProductCatalogIntegrationTest {
         assertEquals("IN_MEMORY", config.getValue("embedjnosql.engine", String.class),
                 "embedjnosql.engine resolves through SmallRye Config");
         assertEquals("true", config.getValue("embedjnosql.auto-flush", String.class));
+    }
+
+    @Test
+    public void testJakartaNoSqlTemplateIsAvailableFromCdi() {
+        assertNotNull(template);
     }
 }

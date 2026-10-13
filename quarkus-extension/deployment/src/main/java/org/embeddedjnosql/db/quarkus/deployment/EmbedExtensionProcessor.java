@@ -5,6 +5,7 @@ import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.ExecutionTime;
 import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
+import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.NativeImageResourceBuildItem;
 import org.embeddedjnosql.db.quarkus.EmbedConfig;
 import org.embeddedjnosql.db.quarkus.EmbedDBProducer;
@@ -30,6 +31,16 @@ class EmbedExtensionProcessor {
     @BuildStep
     AdditionalBeanBuildItem registerBeans() {
         return AdditionalBeanBuildItem.unremovableOf(EmbedDBProducer.class);
+    }
+
+    @BuildStep
+    IndexDependencyBuildItem indexJakartaNoSqlApi() {
+        return new IndexDependencyBuildItem("jakarta.nosql", "jakarta.nosql-api");
+    }
+
+    @BuildStep
+    IndexDependencyBuildItem indexJNoSqlMappingApi() {
+        return new IndexDependencyBuildItem("org.eclipse.jnosql.mapping", "jnosql-mapping-api-core");
     }
 
     @BuildStep
