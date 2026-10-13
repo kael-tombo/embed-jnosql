@@ -1,6 +1,6 @@
 # Maven Central Full Release Design
 
-**Status:** Conversational design approved; written-spec review pending
+**Status:** Written spec approved; implementation plan in review
 **Target release:** `1.0.2`
 **Scope:** Publish all first-party library and integration artifacts
 
