@@ -17,12 +17,14 @@
 #   - login password is the API key (the old ps1 used admin/admin123).
 #
 # Usage: scripts/deep-test.sh [port]
-# Requires: target/embed-jnosql-core-1.0.0.jar (build with: mvn -DskipTests package)
+# Requires the versioned core JAR produced by ./mvnw -DskipTests package.
 set -u
 
 PORT="${1:-8099}"
 BASE="http://127.0.0.1:${PORT}"
-JAR="target/embed-jnosql-core-1.0.0.jar"
+source "$(dirname "${BASH_SOURCE[0]}")/core-jar-path.sh"
+JAR="$(find_core_jar)" || exit 2
+JAVA_CLASSPATH="$(core_java_classpath "$JAR")" || exit 2
 DATA_DIR="target/deep-test-data"
 LOG="target/deep-test-server.log"
 KEY="deep-test-key-DO-NOT-USE-IN-PROD"
@@ -90,7 +92,7 @@ fi
 
 echo "=== EmbedJNoSQL DEEP FEATURE TEST SUITE (bash) ==="
 echo "== booting server WITH --api-key on :$PORT =="
-java -jar "$JAR" --port "$PORT" --data-dir "$DATA_DIR" --engine FILE --sync --api-key "$KEY" >"$LOG" 2>&1 &
+java -cp "$JAVA_CLASSPATH" org.embeddedjnosql.db.EmbedJNoSQL --port "$PORT" --data-dir "$DATA_DIR" --engine FILE --sync --api-key "$KEY" >"$LOG" 2>&1 &
 SERVER_PID=$!
 for i in $(seq 1 30); do
   code=$(curl -s -m 2 -o /dev/null -w '%{http_code}' "$BASE/api/health" 2>/dev/null)

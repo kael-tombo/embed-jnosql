@@ -13,7 +13,7 @@
 # suite does not catch that class; a contract probe does.
 #
 # Usage: scripts/console-contract-gate.sh [port]
-# Requires: target/embed-jnosql-core-1.0.0.jar (build with: mvn -DskipTests package)
+# Requires the versioned core JAR produced by ./mvnw -DskipTests package.
 set -u
 
 PORT="${1:-8097}"
@@ -22,7 +22,9 @@ PORT="${1:-8097}"
 # assertions by the nature of the engine.
 ENGINE="${ENGINE:-FILE}"
 BASE="http://127.0.0.1:${PORT}"
-JAR="target/embed-jnosql-core-1.0.0.jar"
+source "$(dirname "${BASH_SOURCE[0]}")/core-jar-path.sh"
+JAR="$(find_core_jar)" || exit 2
+JAVA_CLASSPATH="$(core_java_classpath "$JAR")" || exit 2
 DATA_DIR="target/contract-gate-data-${ENGINE}"
 LOG="target/contract-gate-server-${ENGINE}.log"
 
@@ -143,7 +145,7 @@ stop_server() {
 # A failed bind leaves the *old* server serving, which would make the checks below meaningless.
 start_server() {
   local suffix="$1"
-  java -jar "$JAR" --port "$PORT" --data-dir "$DATA_DIR" --engine "$ENGINE" --sync >"$LOG.$suffix" 2>&1 &
+  java -cp "$JAVA_CLASSPATH" org.embeddedjnosql.db.EmbedJNoSQL --port "$PORT" --data-dir "$DATA_DIR" --engine "$ENGINE" --sync >"$LOG.$suffix" 2>&1 &
   SERVER_PID=$!
   for i in $(seq 1 30); do
     if server_answers; then
@@ -173,7 +175,7 @@ if curl -s -m 2 -o /dev/null "$BASE/api/health" 2>/dev/null; then
 fi
 
 echo "== booting server on :$PORT ($ENGINE) =="
-java -jar "$JAR" --port "$PORT" --data-dir "$DATA_DIR" --engine "$ENGINE" --sync >"$LOG" 2>&1 &
+java -cp "$JAVA_CLASSPATH" org.embeddedjnosql.db.EmbedJNoSQL --port "$PORT" --data-dir "$DATA_DIR" --engine "$ENGINE" --sync >"$LOG" 2>&1 &
 SERVER_PID=$!
 
 for i in $(seq 1 30); do
@@ -574,7 +576,7 @@ if curl -s -m 2 -o /dev/null "$CORS_BASE/api/health" 2>/dev/null; then
   fail "something is already listening on :$CORS_PORT — cannot verify the CORS opt-in"
 else
   EMBEDJNOSQL_SECURITY_CORS_ENABLED=true EMBEDJNOSQL_SECURITY_ALLOWED_ORIGINS=https://app.example \
-    java -jar "$JAR" --port "$CORS_PORT" --data-dir "$DATA_DIR-cors" --engine "$ENGINE" --sync >"$LOG.cors" 2>&1 &
+    java -cp "$JAVA_CLASSPATH" org.embeddedjnosql.db.EmbedJNoSQL --port "$CORS_PORT" --data-dir "$DATA_DIR-cors" --engine "$ENGINE" --sync >"$LOG.cors" 2>&1 &
   CORS_PID=$!
   CORS_UP=0
   for i in $(seq 1 30); do

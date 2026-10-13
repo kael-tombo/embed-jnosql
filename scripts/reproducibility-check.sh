@@ -11,7 +11,8 @@
 
 set -u
 
-JAR="${1:-target/embed-jnosql-core-1.0.0.jar}"
+source "$(dirname "${BASH_SOURCE[0]}")/core-jar-path.sh"
+JAR="${1:-$(find_core_jar)}" || exit 2
 # Prefer the Maven wrapper (what CI uses) so local and CI builds are the same build.
 if [ -x ./mvnw ]; then MVN="./mvnw"; elif [ -f ./mvnw ]; then MVN="sh ./mvnw"; else MVN="mvn"; fi
 WORK="$(mktemp -d 2>/dev/null || echo target/.repro-work)"

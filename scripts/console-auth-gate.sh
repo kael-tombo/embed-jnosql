@@ -11,12 +11,14 @@
 #      logout invalidates the session (401 afterwards).
 #
 # Usage: scripts/console-auth-gate.sh [port]
-# Requires: target/embed-jnosql-core-1.0.0.jar (build with: mvn -DskipTests package)
+# Requires the versioned core JAR produced by ./mvnw -DskipTests package.
 set -u
 
 PORT="${1:-8098}"
 BASE="http://127.0.0.1:${PORT}"
-JAR="target/embed-jnosql-core-1.0.0.jar"
+source "$(dirname "${BASH_SOURCE[0]}")/core-jar-path.sh"
+JAR="$(find_core_jar)" || exit 2
+JAVA_CLASSPATH="$(core_java_classpath "$JAR")" || exit 2
 DATA_DIR="target/contract-auth-gate-data"
 LOG="target/contract-auth-gate-server.log"
 KEY="gate-secret-key-DO-NOT-USE-IN-PROD"
@@ -46,7 +48,7 @@ trap cleanup EXIT
 rm -rf "$DATA_DIR"
 
 echo "== booting server WITH --api-key on :$PORT =="
-java -jar "$JAR" --port "$PORT" --data-dir "$DATA_DIR" --engine FILE --sync --api-key "$KEY" >"$LOG" 2>&1 &
+java -cp "$JAVA_CLASSPATH" org.embeddedjnosql.db.EmbedJNoSQL --port "$PORT" --data-dir "$DATA_DIR" --engine FILE --sync --api-key "$KEY" >"$LOG" 2>&1 &
 SERVER_PID=$!
 
 for i in $(seq 1 30); do
