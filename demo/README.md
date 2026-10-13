@@ -84,11 +84,9 @@ review the diff because the generator rewrites all generated demo sources and te
 
 ### Artifact availability
 
-The `1.0.2` release tag is pushed and all hosted validation gates have passed. Maven Central
-deployment and artifact/signature verification are in progress. Core and the Spring Boot starter
-`1.0.1` remain the latest versions available from Central. Until the workflow confirms `1.0.2`,
-install the modules from this checkout before running demos. Demo applications are validation
-consumers, not Maven Central release artifacts.
+The `1.0.2` release tag is pushed, all hosted validation gates have passed, and all seven first-party
+artifacts plus required signatures are verified on Maven Central. Demo applications are validation
+consumers, not release artifacts.
 The commands below and in [the runbook](RUNBOOK.md) perform that installation.
 
 ---

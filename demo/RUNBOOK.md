@@ -13,11 +13,8 @@ This runbook provides step-by-step instructions to build, launch, test, and trou
 
 ## 1. Quick Start (Build & Test Everything)
 
-Run the following commands from the repository root. The `v1.0.2` tag is pushed and its hosted
-validation gates passed; Maven Central deployment and artifact/signature verification are still
-in progress. Until the workflow confirms publication, install the core and framework modules
-locally before testing the demos. Core and the Spring Boot starter `1.0.1` remain available from
-Central.
+Run the following commands from the repository root when you need to build from source. The
+`v1.0.2` release and all seven artifact families are published and verified on Maven Central.
 
 ```bash
 # 1. Verify core and install it for the independent Maven projects

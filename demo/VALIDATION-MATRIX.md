@@ -24,17 +24,17 @@ Surefire test reports. `demo-common` also installed successfully with tests skip
 contains shared demo models, not a test suite.
 
 Core and the Spring Boot starter `1.0.1` remain the latest artifacts available on Maven Central.
-The `v1.0.2` tag includes all seven first-party release coordinates, and hosted validation passed;
-Central publication and verification are still in progress. Demo applications remain validation
-consumers and are not published artifacts.
+The `v1.0.2` tag includes all seven first-party release coordinates, hosted validation passed, and
+all seven POMs, six JARs, source/Javadoc artifacts, and signatures are verified on Central. Demo
+applications remain validation consumers and are not published artifacts.
 
 ## Framework and Application Demos
 
 | Demo | Framework / version | Integration or scope | Tests | Failures | Errors | Skipped | Result |
 |---|---|---|---:|---:|---:|---:|---|
-| [spring-boot-demo](spring-boot-demo) | Spring Boot 4.0.0 | Spring Boot starter 1.0.2 (Central publication pending) | 41 | 0 | 0 | 0 | **PASS** |
-| [quarkus-demo](quarkus-demo) | Quarkus 3.8.0 | Quarkus extension 1.0.2 (Central publication pending); includes Jakarta `Template` CDI injection | 14 | 0 | 0 | 0 | **PASS** |
-| [micronaut-demo](micronaut-demo) | Micronaut 4.2.0 | Micronaut integration 1.0.2 (Central publication pending) | 11 | 0 | 0 | 0 | **PASS** |
+| [spring-boot-demo](spring-boot-demo) | Spring Boot 4.0.0 | Spring Boot starter 1.0.2 (published) | 41 | 0 | 0 | 0 | **PASS** |
+| [quarkus-demo](quarkus-demo) | Quarkus 3.8.0 | Quarkus extension 1.0.2 (published); includes Jakarta `Template` CDI injection | 14 | 0 | 0 | 0 | **PASS** |
+| [micronaut-demo](micronaut-demo) | Micronaut 4.2.0 | Micronaut integration 1.0.2 (published) | 11 | 0 | 0 | 0 | **PASS** |
 | [vertx-demo](vertx-demo) | Eclipse Vert.x 4.5.4 | Core API with `executeBlocking` | 11 | 0 | 0 | 0 | **PASS** |
 | [end-to-end-validation](end-to-end-validation) | JUnit 5.10.2 | Storage-engine lifecycle and durability | 4 | 0 | 0 | 0 | **PASS** |
 | [advanced-queries-demo](advanced-queries-demo) | EmbedJNoSQL core | Document queries and JVM-side aggregation | 5 | 0 | 0 | 0 | **PASS** |

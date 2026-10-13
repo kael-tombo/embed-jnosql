@@ -36,7 +36,7 @@ SQL dialect, or dual-engine track, and none is planned.
 
 ---
 
-## 1.0.1 — Console Reliability & JNoSQL Integration Sprint *(current stable)*
+## 1.0.1 — Console Reliability & JNoSQL Integration Sprint *(superseded)*
 
 - [x] Eclipse JNoSQL / Jakarta NoSQL full integration (`EmbedJNoSQLDocumentManager`, `EmbedJNoSQLTemplate`, `EmbedRepository`).
 - [x] Spring Boot auto-configuration and entity-discovery scanning.
@@ -51,13 +51,13 @@ SQL dialect, or dual-engine track, and none is planned.
 
 ---
 
-## 1.0.2 — Full Maven Central Release *(tagged; publication in progress)*
+## 1.0.2 — Full Maven Central Release *(published and verified)*
 
 - [x] Align the seven first-party core and integration artifacts on version `1.0.2`.
 - [x] Pass hosted core, integration, framework-demo, showcase-demo, and feature-demo validation.
 - [x] Push the annotated `v1.0.2` release tag.
-- [ ] Publish and verify all seven coordinates and signed sidecars on Maven Central. Until
-      verification completes, `1.0.1` remains the latest release available from Central.
+- [x] Publish all seven core and integration coordinates.
+- [x] Verify all seven POMs, six JARs, source/Javadoc artifacts, and required signatures on Central.
 
 ---
 

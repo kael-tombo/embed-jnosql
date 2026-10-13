@@ -1,12 +1,11 @@
 # Release Notes — EmbedJNoSQL v1.0.2
 
-**Release status as of 2026-10-13:** tagged; Maven Central deployment is in progress
+**Release status as of 2026-10-13:** published and verified on Maven Central
 **Release tag:** [`v1.0.2`](https://github.com/kael-tombo/embed-jnosql/tree/v1.0.2)
 **License:** Apache License 2.0
 
-> The `v1.0.2` tag is pushed and all hosted validation gates have passed. Maven Central deployment
-> and artifact/signature verification are still in progress. Treat the coordinates below as
-> unavailable from Central until the release workflow confirms publication.
+> The `v1.0.2` tag is pushed, all hosted validation gates passed, and all seven artifact families
+> plus their required signatures are verified on Maven Central.
 
 ## Release scope
 
@@ -40,9 +39,9 @@ feature.
 ## Validation and availability
 
 The release preflight confirmed that all seven `1.0.2` coordinates were absent from Maven Central.
-The hosted core, integration, application-demo, and feature-demo validation jobs have passed. The
-publish job and post-publication checks are still running; Central availability is not yet
-confirmed.
+The hosted core, integration, application-demo, and feature-demo validation jobs passed. Maven
+Central verification confirmed all seven POMs, six main JARs, source JARs, Javadoc JARs, and
+signatures.
 
-Until publication is verified, install the relevant modules from the repository checkout as
-described in the [README](./README.md).
+All seven listed coordinates are available from Maven Central. Install from the repository only
+when you need to build from source or test unreleased changes, as described in the [README](./README.md).
