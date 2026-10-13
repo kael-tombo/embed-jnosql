@@ -214,18 +214,17 @@ jobs:
       # ── 6. Validation Summary Report ────────────────────────────────────────
       - name: Post-Publish Validation Summary
         run: |
-          echo "## 🧪 All Tests Validated (Post-Publish)" >> $GITHUB_STEP_SUMMARY
+          echo "## 🧪 Post-Publish Validation (Release Commit)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "All test suites executed against the release build:" >> $GITHUB_STEP_SUMMARY
+          echo "All validation commands for this release commit completed successfully:" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Suite | Scope | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|---|---|---|" >> $GITHUB_STEP_SUMMARY
           echo "| **Core Database** | Document, Key-Value, Indexes, Transactions, Storage Engines | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
           echo "| **Spring Boot Starter** | Autoconfiguration, EmbedRepository, Transactions | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Quarkus Extension** | CDI injection, DevServices, Native build | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Micronaut Integration** | Factory DI, Singleton bean lifecycle | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Quarkus and Micronaut Modules** | Maven clean/test/install lifecycle | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
           echo "| **CLI Tooling** | Shell commands, Interactive Console | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Framework Demos** | Spring Boot, Quarkus, Micronaut, Vert.x | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Feature Demos (01-20)** | 20 dedicated scenario verification suites | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Application Demos** | Framework integrations, storage, query, annotation, batch, and load suites | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Single-Feature Core Demos** | All 20 dedicated scenario suites | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✨ **Full repository test verification completed successfully after deployment.**" >> $GITHUB_STEP_SUMMARY
+          echo "✨ **Core, integrations, CLI, and demo validation completed successfully.**" >> $GITHUB_STEP_SUMMARY
