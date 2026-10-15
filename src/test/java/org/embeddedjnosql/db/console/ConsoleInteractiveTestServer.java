@@ -12,38 +12,47 @@ import org.embeddedjnosql.db.nosql.kv.KeyValueBucket;
 import org.embeddedjnosql.db.nosql.kv.ListBucket;
 import org.embeddedjnosql.db.nosql.kv.SetBucket;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.util.Map;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Standalone runner for live Console UI validation and browser testing.
- * Binds on port 9095 (or fallback) with security and console enabled,
- * and seeds initial multi-model data across Document, KV, Column, and Vector data models.
+ * Binds on a caller-selected loopback port with an isolated data directory,
+ * and seeds initial multi-model data across Document, KV, and Column data models.
  */
 public class ConsoleInteractiveTestServer {
 
-    public static final int PREFERRED_PORT = 9095;
-    public static final String ADMIN_USER = "admin";
-    public static final String ADMIN_PASS = "Admin123456!#";
-    public static final String API_KEY = "embeddedjnosql-console-api-key-2026";
-
     public static void main(String[] args) throws Exception {
+        if (args.length != 2) {
+            throw new IllegalArgumentException("Expected arguments: <port> <data-directory>");
+        }
+        int port = Integer.parseInt(args[0]);
+        Path dataDirectory = Path.of(args[1]).toAbsolutePath().normalize();
+        Files.createDirectories(dataDirectory);
+
+        String adminUser = requiredEnvironmentVariable("E2E_ADMIN_USER");
+        String adminPassword = requiredEnvironmentVariable("E2E_ADMIN_PASSWORD");
+        String apiKey = requiredEnvironmentVariable("E2E_API_KEY");
+
         System.out.println("Starting EmbedJNoSQL Console Interactive Test Server...");
 
         EmbedJNoSQL db = EmbedJNoSQL.embed()
-                .storageEngine(EmbedJNoSQLConfig.StorageEngineType.IN_MEMORY)
+                .storageEngine(EmbedJNoSQLConfig.StorageEngineType.FILE)
+                .dataDir(dataDirectory)
                 .console(ConsoleConfig.builder()
                         .enabled(true)
-                        .port(PREFERRED_PORT)
+                        .port(port)
                         .host("127.0.0.1")
-                        .intelligentPort(true)
+                        .intelligentPort(false)
                         .build())
                 .security(SecurityConfig.builder()
                         .authEnabled(true)
-                        .adminUsername(ADMIN_USER)
-                        .adminPassword(ADMIN_PASS)
-                        .apiKey(API_KEY)
+                        .adminUsername(adminUser)
+                        .adminPassword(adminPassword)
+                        .apiKey(apiKey)
                         .csrfEnabled(true)
                         .rateLimitEnabled(false)
                         .bruteForceProtectionEnabled(true)
@@ -129,26 +138,40 @@ public class ConsoleInteractiveTestServer {
             System.err.println("Document seed note: " + e.getMessage());
         }
 
-        // Record server details to a marker file
-        File marker = new File("target/console-test-server.ready");
-        try (FileWriter fw = new FileWriter(marker)) {
-            fw.write("port=" + actualPort + "\n");
-            fw.write("username=" + ADMIN_USER + "\n");
-            fw.write("password=" + ADMIN_PASS + "\n");
-            fw.write("apiKey=" + API_KEY + "\n");
-        }
+        System.out.println("E2E_SERVER_READY http://127.0.0.1:" + actualPort + "/");
 
-        System.out.println("SERVER_READY on port " + actualPort);
-
-        // Keep alive until interrupted or shutdown hook
+        AtomicBoolean closed = new AtomicBoolean();
+        Runnable closeDatabase = () -> {
+            if (closed.compareAndSet(false, true)) {
+                try { db.close(); } catch (Exception ignored) {}
+            }
+        };
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("Shutting down test server...");
-            try { db.close(); } catch (Exception ignored) {}
-            if (marker.exists()) marker.delete();
+            closeDatabase.run();
         }));
+
+        Thread shutdownSignal = new Thread(() -> {
+            try (BufferedReader input = new BufferedReader(new InputStreamReader(System.in))) {
+                if ("STOP".equals(input.readLine())) {
+                    closeDatabase.run();
+                    System.exit(0);
+                }
+            } catch (Exception ignored) {}
+        });
+        shutdownSignal.setDaemon(true);
+        shutdownSignal.start();
 
         while (true) {
             Thread.sleep(1000);
         }
+    }
+
+    private static String requiredEnvironmentVariable(String name) {
+        String value = System.getenv(name);
+        if (value == null || value.isBlank()) {
+            throw new IllegalStateException("Missing required environment variable: " + name);
+        }
+        return value;
     }
 }
