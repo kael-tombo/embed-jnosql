@@ -75,7 +75,7 @@
 **Alternatives and recovery:** Storage exceptions are caught and page can continue; invalid stored values are not validated. Current source default is **dark**, and sign-in page uses independent hard-coded dark styles; these are observed gaps against the approved light-first design, not future behavior. The required fallback is light for absent, invalid, or unreadable storage.
 **Evidence / tests:** Source only; no theme browser test in baseline. Fallback-to-light and preference parity across sign-in/console are not implemented or tested.
 **Acceptance criteria:**
-- **CONSOLE-006-AC01:** Given local storage contains a supported theme, when either sign-in or the console loads, then the same saved theme is applied; when toggled in either page, then the selection is saved and remains consistent across reloads and navigation between sign-in and console.
+- **CONSOLE-006-AC01:** Given local storage contains a supported theme, when either sign-in or the console loads, then the same saved theme is applied; when toggled in the console, then the selection is saved and remains consistent across reloads and navigation between sign-in and console.
 - **CONSOLE-006-AC02:** Given the saved preference is absent, invalid, or unreadable because storage access fails, when sign-in or the console loads, then both render in light theme without an uncaught failure; current source defaults to dark and does not meet this criterion.
 - **CONSOLE-006-AC03:** Given either theme, when all panels, dialogs, focus, disabled, error, empty and table states are inspected, then text and controls remain readable at desktop/mobile widths. This requires browser verification.
 

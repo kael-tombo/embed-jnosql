@@ -5,7 +5,8 @@
    ============================================================ */
 
 :root {
-  /* ---- Palette: dark (default) ---- */
+  color-scheme: dark;
+  /* ---- Palette: dark fallback ---- */
   --bg-0: #0b0e14;          /* app background */
   --bg-1: #11151f;          /* panels */
   --bg-2: #161b28;          /* raised surfaces */
@@ -58,6 +59,7 @@
 
 /* ---- Light theme ---- */
 [data-theme="light"] {
+  color-scheme: light;
   --bg-0: #f4f6fa;
   --bg-1: #ffffff;
   --bg-2: #f8fafc;

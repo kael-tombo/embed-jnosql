@@ -1506,16 +1506,6 @@ async function srvRefresh() {
 /* ============================================================
    Topbar: health, engine, uptime, theme
    ============================================================ */
-function setTheme(t) {
-  document.documentElement.dataset.theme = t;
-  try { localStorage.setItem('embedjnosql.theme', t); } catch { /* ignore */ }
-}
-function initTheme() {
-  let t = 'dark';
-  try { t = localStorage.getItem('embedjnosql.theme') || 'dark'; } catch { /* ignore */ }
-  setTheme(t);
-}
-
 /* ---------- server health polling: drives the topbar chips ---------- */
 async function pollStatus() {
   if (authRedirecting) return;
@@ -1631,7 +1621,9 @@ function bind() {
   $$('[data-goto]').forEach((b) => b.onclick = () => goto(b.dataset.goto));
 
   // topbar
-  $('#btnTheme').onclick = () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+  $('#btnTheme').onclick = () => window.EmbedJNoSQLTheme.setTheme(
+    document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark',
+  );
   $('#btnRefreshAll').onclick = () => { refreshPanel(activePanel); pollStatus(); };
   $('#btnHelp').onclick = () => openHelp();
   $('#helpClose').onclick = () => { $('#helpBackdrop').hidden = true; $('#btnHelp').focus(); };
@@ -1756,7 +1748,6 @@ function helpEscape(e) {
 
 function boot() {
   buildNav();
-  initTheme();
   bind();
   bindKvTab();
   // Deep-link support: honor #panel on load and keep browser

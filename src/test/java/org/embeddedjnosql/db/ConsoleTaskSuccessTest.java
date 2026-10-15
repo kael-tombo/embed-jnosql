@@ -261,6 +261,39 @@ public class ConsoleTaskSuccessTest {
                 + "dialog, explicit state vocabulary, SQL Studio absent");
     }
 
+    @Test
+    @DisplayName("both pages load the shared light-first theme controller before the console stylesheet")
+    void sharedThemeAssetsLoadBeforeStylesheets() throws Exception {
+        Path staticRoot = Path.of("src/main/resources/static");
+        String consoleHtml = Files.readString(staticRoot.resolve("index.html"), StandardCharsets.UTF_8);
+        String loginHtml = Files.readString(staticRoot.resolve("login.html"), StandardCharsets.UTF_8);
+        String themeJs = Files.readString(staticRoot.resolve("js/theme.js"), StandardCharsets.UTF_8);
+
+        for (String html : new String[]{consoleHtml, loginHtml}) {
+            assertTrue(html.contains("<html lang=\"en\" data-theme=\"light\">"),
+                    "both shipped pages must default to light theme");
+            int themeScript = html.indexOf("<script src=\"/js/theme.js\"></script>");
+            int stylesheet = html.indexOf("<link rel=\"stylesheet\" href=\"/css/console.css\">");
+            assertTrue(themeScript >= 0, "both pages must include the shared theme controller");
+            assertTrue(stylesheet >= 0, "both pages must include the console stylesheet");
+            assertTrue(themeScript < stylesheet,
+                    "the shared theme controller must execute before the stylesheet is loaded");
+        }
+
+        assertTrue(themeJs.contains("embedjnosql.theme"), "the existing theme storage key must be retained");
+        assertTrue(themeJs.contains("new Set(['light', 'dark'])"),
+                "the controller must accept only the light and dark themes");
+        assertTrue(themeJs.contains("let theme = 'light'"),
+                "missing, invalid, or unreadable storage must fall back to light");
+        assertTrue(themeJs.contains("throw new TypeError"),
+                "invalid programmatic themes must be rejected explicitly");
+        assertTrue(themeJs.contains("window.EmbedJNoSQLTheme = Object.freeze({ setTheme })"),
+                "the controller must expose the shared setTheme API");
+        assertTrue(themeJs.indexOf("document.documentElement.dataset.theme = theme")
+                        < themeJs.indexOf("window.localStorage.setItem"),
+                "theme changes must be applied before attempting persistence");
+    }
+
     // ---------------------------------------------------------------- helpers
 
     private void loginAdmin() throws Exception {
