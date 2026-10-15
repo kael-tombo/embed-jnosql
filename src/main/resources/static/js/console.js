@@ -753,7 +753,7 @@ function qbAddRow(field = '', op = '$eq', value = '') {
   row.innerHTML = `
     <div><label class="fld">Field</label><input type="text" class="qb-field" placeholder="price" value="${esc(field)}"></div>
     <div><label class="fld">Operator</label>
-      <select class="qb-op">${QB_OPERATORS.map((o) => `<option${o === op ? ' selected' : ''}>${o}</option>`).join('')}</select></div>
+      <select class="qb-op" aria-label="Operator">${QB_OPERATORS.map((o) => `<option${o === op ? ' selected' : ''}>${o}</option>`).join('')}</select></div>
     <div><label class="fld">Value (JSON — "text", 42, true, ["a","b"])</label><input type="text" class="qb-value" placeholder='e.g. 10 or "admin"'></div>
     <button class="btn sm danger qb-del" aria-label="Remove condition">×</button>`;
   row.querySelector('.qb-del').onclick = () => { row.remove(); qbPreviewUpdate(); };
