@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="EmbedJNoSQL favicon">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 64 64" role="img" aria-label="EmbedJNoSQL favicon">
   <!-- Canonical EmbedJNoSQL brand mark sourced from docs/assets; shared visual identity across website and console. -->
-  <image width="64" height="64" preserveAspectRatio="xMidYMid meet" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAaV0lEQVR42uWb
+  <image width="64" height="64" preserveAspectRatio="xMidYMid meet" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAaV0lEQVR42uWb
 d5hV1dX/P2vvc26byjDUoYnSUVS6oIiIxN5e0CQkrxrFxF5ijWYcojEao7HE
 xBJj7BkiGmsUlSAIShOIIEWUpsDA9HrvOWev9497KfrmyS8NfZPffZ773Puc
 OXPO2Wuv9V3f9V3rwlf8Ki/HADTNZUjmHYYDaCWW/19eqgiALqY0mCcfZuYx
