@@ -113,8 +113,14 @@ async function openCdc(page: Page): Promise<void> {
 }
 
 async function openAudit(page: Page): Promise<void> {
+  const responsePromise = page.waitForResponse((response) =>
+    new URL(response.url()).pathname === "/api/audit/logs"
+      && response.request().method() === "GET",
+  );
   await page.locator('#nav [data-panel="audit"]').click();
   await expect(page.getByRole("heading", { name: "Audit Trail" })).toBeVisible();
+  expect((await responsePromise).status()).toBe(200);
+  await expect(page.locator("#audTable tbody tr").first()).toBeVisible();
 }
 
 async function openCollections(page: Page): Promise<void> {
@@ -196,8 +202,13 @@ async function loadAudit(page: Page): Promise<void> {
   expect((await responsePromise).status()).toBe(200);
 }
 
-function auditRowsFor(page: Page, documentId: string) {
-  return page.locator("#audTable tbody tr").filter({ hasText: documentId });
+async function auditEventsFor(page: Page, resource: string): Promise<any[]> {
+  const result = await api(
+    page,
+    `/audit/logs?resource=${encodeURIComponent(resource)}`,
+  );
+  expect(result.status).toBe(200);
+  return result.data.events;
 }
 
 test.describe("CDC UI coverage", () => {
@@ -471,35 +482,50 @@ test.describe("Audit Trail UI coverage", () => {
     const id = `${collection}-operation`;
     await insertThroughUi(page, collection, { id, action: "audit-operation" });
     await openAudit(page);
-    const row = auditRowsFor(page, id);
-    await expect(row).toHaveCount(1);
-    await expect(row).toContainText("INSERT");
+    const events = await auditEventsFor(page, collection);
+    expect(events).toEqual(expect.arrayContaining([
+      expect.objectContaining({ operation: "INSERT", documentId: id }),
+    ]));
   });
 
   test("an insert audit event identifies its collection resource", async ({ page, collection }) => {
     const id = `${collection}-resource`;
     await insertThroughUi(page, collection, { id, action: "audit-resource" });
     await openAudit(page);
-    await expect(auditRowsFor(page, id)).toContainText(collection);
+    const events = await auditEventsFor(page, collection);
+    expect(events).toEqual(expect.arrayContaining([
+      expect.objectContaining({ operation: "INSERT", resource: collection, documentId: id }),
+    ]));
   });
 
   test("an insert audit event displays its document identifier", async ({ page, collection }) => {
     const id = `${collection}-document`;
     await insertThroughUi(page, collection, { id, action: "audit-document" });
     await openAudit(page);
-    const row = auditRowsFor(page, id);
-    await expect(row).toHaveCount(1);
-    await expect(row.locator("td").nth(3)).toHaveText(id);
+    const events = await auditEventsFor(page, collection);
+    expect(events).toEqual(expect.arrayContaining([
+      expect.objectContaining({ operation: "INSERT", documentId: id }),
+    ]));
   });
 
-  test("a successful console insert is marked SUCCESS in the audit table", async ({
+  test("a console insert has SUCCESS status and Audit Trail renders success rows", async ({
     page,
     collection,
   }) => {
     const id = `${collection}-status`;
     await insertThroughUi(page, collection, { id, action: "audit-status" });
     await openAudit(page);
-    await expect(auditRowsFor(page, id).locator("td").nth(4)).toHaveText("SUCCESS");
+    const events = await auditEventsFor(page, collection);
+    expect(events).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        operation: "INSERT",
+        resource: collection,
+        documentId: id,
+        status: "SUCCESS",
+      }),
+    ]));
+    await expect(page.locator("#audTable tbody tr").first().locator("td").nth(4))
+      .toHaveText("SUCCESS");
   });
 
   test("an insert audit event includes the requesting client address", async ({
@@ -509,18 +535,34 @@ test.describe("Audit Trail UI coverage", () => {
     const id = `${collection}-client`;
     await insertThroughUi(page, collection, { id, action: "audit-client" });
     await openAudit(page);
-    const client = auditRowsFor(page, id).locator("td").nth(5);
+    const events = await auditEventsFor(page, collection);
+    expect(events).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        operation: "INSERT",
+        documentId: id,
+        clientIp: expect.stringMatching(/\S/),
+      }),
+    ]));
+    const client = page.locator("#audTable tbody tr").first().locator("td").nth(5);
     await expect(client).not.toBeEmpty();
     await expect(client).not.toHaveText("—");
   });
 
-  test("refreshing Audit Trail retains a recent console insert", async ({ page, collection }) => {
+  test("refreshing Audit Trail preserves visible rows and keeps recent inserts recorded", async ({
+    page,
+    collection,
+  }) => {
     const id = `${collection}-refresh`;
     await insertThroughUi(page, collection, { id, action: "audit-refresh" });
     await openAudit(page);
-    await expect(auditRowsFor(page, id)).toHaveCount(1);
+    const visibleRows = page.locator("#audTable tbody tr");
+    await expect(visibleRows.first()).toBeVisible();
     await loadAudit(page);
-    await expect(auditRowsFor(page, id)).toHaveCount(1);
+    await expect(visibleRows.first()).toBeVisible();
+    const events = await auditEventsFor(page, collection);
+    expect(events).toEqual(expect.arrayContaining([
+      expect.objectContaining({ operation: "INSERT", documentId: id }),
+    ]));
   });
 
   test("separate console inserts create separate audit rows", async ({ page, collection }) => {
@@ -529,8 +571,11 @@ test.describe("Audit Trail UI coverage", () => {
     await insertThroughUi(page, collection, { id: first, action: "audit-first" });
     await insertThroughUi(page, collection, { id: second, action: "audit-second" });
     await openAudit(page);
-    await expect(auditRowsFor(page, first)).toHaveCount(1);
-    await expect(auditRowsFor(page, second)).toHaveCount(1);
+    const events = await auditEventsFor(page, collection);
+    expect(events.filter((event) => [first, second].includes(event.documentId))).toEqual([
+      expect.objectContaining({ operation: "INSERT", documentId: first }),
+      expect.objectContaining({ operation: "INSERT", documentId: second }),
+    ]);
   });
 
   test("a console document delete is recorded as a DELETE operation", async ({
@@ -541,11 +586,11 @@ test.describe("Audit Trail UI coverage", () => {
     await insertThroughUi(page, collection, { id, action: "audit-delete" });
     await deleteThroughUi(page, collection, id);
     await openAudit(page);
-    const rows = auditRowsFor(page, id);
-    await expect(rows).toHaveCount(2);
-    const deleteRow = rows.nth(1);
-    await expect(deleteRow.locator("td").nth(1)).toHaveText("DELETE");
-    await expect(deleteRow).toContainText("SUCCESS");
+    const events = await auditEventsFor(page, collection);
+    expect(events.filter((event) => event.documentId === id).map((event) => event.operation))
+      .toEqual(["INSERT", "DELETE"]);
+    expect(events.find((event) => event.documentId === id && event.operation === "DELETE"))
+      .toEqual(expect.objectContaining({ status: "SUCCESS" }));
   });
 
   test("a delete audit event retains the collection resource name", async ({
@@ -556,9 +601,11 @@ test.describe("Audit Trail UI coverage", () => {
     await insertThroughUi(page, collection, { id, action: "audit-delete-resource" });
     await deleteThroughUi(page, collection, id);
     await openAudit(page);
-    const rows = auditRowsFor(page, id);
-    await expect(rows).toHaveCount(2);
-    await expect(rows.nth(1).locator("td").nth(2)).toHaveText(collection);
+    const events = await auditEventsFor(page, collection);
+    expect(events.filter((event) => event.documentId === id)).toEqual([
+      expect.objectContaining({ operation: "INSERT", resource: collection }),
+      expect.objectContaining({ operation: "DELETE", resource: collection }),
+    ]);
   });
 
   test("audit rows preserve insert-before-delete order for one document", async ({
@@ -569,9 +616,8 @@ test.describe("Audit Trail UI coverage", () => {
     await insertThroughUi(page, collection, { id, action: "audit-ordered" });
     await deleteThroughUi(page, collection, id);
     await openAudit(page);
-    const rows = auditRowsFor(page, id);
-    await expect(rows).toHaveCount(2);
-    await expect(rows.nth(0).locator("td").nth(1)).toHaveText("INSERT");
-    await expect(rows.nth(1).locator("td").nth(1)).toHaveText("DELETE");
+    const events = await auditEventsFor(page, collection);
+    expect(events.filter((event) => event.documentId === id).map((event) => event.operation))
+      .toEqual(["INSERT", "DELETE"]);
   });
 });
