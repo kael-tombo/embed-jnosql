@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [1.0.3] — Release candidate (not yet published)
 
 ### Documentation
 
@@ -28,6 +28,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added new tabbed **Framework Integration Guide** section (`#fw-guide`) with syntax-highlighted code examples for all five integration modes (Vert.x, Javalin, Helidon SE, Dropwizard, Generic)
   - Updated SEO meta keywords to include Vert.x, Javalin, Helidon, Dropwizard
   - Added `showFwTab()` JavaScript tab controller and `.fw-tab`/`.fw-panel` CSS
+
+### Changed
+
+- Simplified the public landing page while retaining the Install, Features, and Demo sections.
+- Made light mode the default for the embedded console.
+
+### Testing
+
+- Expanded Playwright coverage for console navigation, collections, key-value buckets, column
+  families, transactions, backups, CDC, schema and indexes, vector search, and responsive behavior.
+
+## [Unreleased]
 
 ---
 

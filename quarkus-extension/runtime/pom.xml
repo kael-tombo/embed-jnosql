@@ -7,7 +7,7 @@
     <parent>
         <groupId>io.github.kael-tombo</groupId>
         <artifactId>embed-jnosql-quarkus-extension</artifactId>
-        <version>1.0.2</version>
+        <version>1.0.3</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -53,7 +53,7 @@
         <dependency>
             <groupId>io.github.kael-tombo</groupId>
             <artifactId>embed-jnosql-core</artifactId>
-            <version>1.0.2</version>
+            <version>1.0.3</version>
         </dependency>
         <dependency>
             <groupId>jakarta.nosql</groupId>

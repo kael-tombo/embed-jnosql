@@ -103,10 +103,9 @@ EmbedJNoSQL executes all data models over a **single unified engine**. Collectio
 
 ## Installation
 
-> **Maven Central release status:** all seven `1.0.2` artifacts are published and their POMs,
-> JARs, source/Javadoc artifacts, and signatures are verified on Central. The hosted validation
-> gates also passed.
-> Until then, install the release artifacts from this checkout:
+> **Release candidate:** this checkout prepares version `1.0.3`; its artifacts are not yet
+> published on Maven Central. Version `1.0.2` remains the current published release. The
+> dependency examples below target the candidate; the source-build commands install it locally.
 
 ```bash
 git clone https://github.com/kael-tombo/embed-jnosql.git && cd embed-jnosql
@@ -130,7 +129,7 @@ Quarkus, Micronaut, Jakarta CDI, Hibernate annotations, Micrometer — is option
 <dependency>
     <groupId>io.github.kael-tombo</groupId>
     <artifactId>embed-jnosql-core</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
 </dependency>
 ```
 
@@ -164,21 +163,21 @@ the [validation matrix](demo/VALIDATION-MATRIX.md) for test counts and scope.
 <dependency>
     <groupId>io.github.kael-tombo</groupId>
     <artifactId>embed-jnosql-spring-boot-starter</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
 </dependency>
 
 <!-- Published and verified on Maven Central as of 2026-10-13. -->
 <dependency>
     <groupId>io.github.kael-tombo</groupId>
     <artifactId>embed-jnosql-quarkus-extension-runtime</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
 </dependency>
 
 <!-- Published and verified on Maven Central as of 2026-10-13. -->
 <dependency>
     <groupId>io.github.kael-tombo</groupId>
     <artifactId>embedjnosql-micronaut-integration</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
 </dependency>
 ```
 
@@ -321,7 +320,7 @@ In your `pom.xml`:
 <dependency>
     <groupId>io.github.kael-tombo</groupId>
     <artifactId>embed-jnosql-spring-boot-starter</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
 </dependency>
 ```
 
@@ -385,7 +384,7 @@ keep all database calls **off the Vert.x event loop** by dispatching them throug
 <dependency>
     <groupId>io.github.kael-tombo</groupId>
     <artifactId>embed-jnosql-core</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
 </dependency>
 
 <!-- Your Vert.x dependencies -->
@@ -709,7 +708,7 @@ try (var db = EmbedJNoSQL.create(EmbedJNoSQL.embed()
 Or from the shaded jar:
 
 ```bash
-java -jar target/embed-jnosql-core-1.0.2.jar --port 8080 --engine FILE --data-dir ./data
+java -jar target/embed-jnosql-core-1.0.3.jar --port 8080 --engine FILE --data-dir ./data
 ```
 
 Panels: **Overview, Collections (documents), Key-Value & Redis Structures, Wide-Column
@@ -734,7 +733,7 @@ EmbedJNoSQL includes a standalone interactive terminal shell for database inspec
 ./mvnw -B -f cli/pom.xml package -DskipTests
 
 # Start interactive shell on data directory
-java -jar cli/target/embed-jnosql-cli-1.0.2.jar ./data
+java -jar cli/target/embed-jnosql-cli-1.0.3.jar ./data
 ```
 
 ```text
