@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/assets/embedjnosql-mark-512.png" alt="EmbedJNoSQL — the embedded NoSQL database for Java" width="220" />
+<img src="docs/assets/embedjnosql-banner.png" alt="EmbedJNoSQL — the embedded NoSQL database for Java" width="760" />
 
 **The embedded NoSQL database for the JVM — Document and Key-Value.**  
 One JAR, zero infrastructure. No server, no Docker, no daemon, no network.
