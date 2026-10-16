@@ -40,7 +40,7 @@ The CSV uses these columns, in this order:
 | `applicability_evidence` | Concise repository evidence and rationale for the applicability decision. Required for `unsupported` and `not_applicable`; otherwise use `unassessed` if evidence is insufficient. |
 | `coverage` | One of `full`, `partial`, `none`, or `not_assessed`, describing how much of the scenario’s stated acceptance criteria is demonstrated by cited tests. |
 | `test_references` | Repository-relative paths and stable test names/IDs, or empty when none are mapped. |
-| `execution_status` | One of `passed`, `failed`, `mixed`, `not_run`, `blocked`, or `not_applicable`. It describes only the cited test evidence, not an inference from source or test existence. |
+| `execution_status` | One of `passed`, `failed`, `mixed`, `not_run`, `blocked`, or `not_applicable`. It records the observed outcome of the cited test evidence, independently of how much of the scenario that evidence covers. |
 | `test_command` | Exact command used for the cited execution evidence; empty when no execution is claimed. |
 | `environment` | Relevant runtime/browser/OS details known for the cited run; unknown details must not be guessed. |
 | `run_date` | Date of the cited run in ISO `YYYY-MM-DD` format; empty when not run. |
@@ -57,7 +57,7 @@ For missing information, use the field’s designated empty value or status, not
 - `not_applicable` requires a specific scope-based rationale. It is distinct from unsupported and from unassessed.
 - `unassessed` is the default when available repository evidence does not justify a stronger applicability decision.
 - `full` coverage means the cited assertions exercise the complete acceptance intent of that scenario. `partial` means only a subset is demonstrated. `none` means no relevant test evidence is mapped. `not_assessed` means coverage has not yet been evaluated.
-- `passed` is a scenario-level pass only when applicability is `applicable`, coverage is `full`, and every cited required test passed in the recorded run. A passing but partial test remains recorded as partial evidence and must not be counted as a fully passed catalog case.
+- `execution_status=passed` records that all cited required tests passed in the recorded run, even when they cover only part of the scenario. A catalog case counts as fully passed only when applicability is `applicable`, coverage is `full`, and `execution_status=passed`; passing partial evidence must not be counted as a fully passed catalog case.
 - `failed` indicates a required mapped assertion failed. `mixed` indicates the mapped run had both passing and failing required evidence, or evidence does not support one unambiguous outcome. `not_run` is used when no applicable mapped test was run. `blocked` requires a concrete execution blocker. `not_applicable` is reserved for cases with an evidenced not-applicable decision.
 - A source location, manifest entry, build success, test class name, or dated report without the relevant executed assertion is not a scenario pass.
 - Framework compatibility claims require scenario-relevant framework evidence. Module presence or compilation alone is insufficient for an end-to-end compatibility claim.
